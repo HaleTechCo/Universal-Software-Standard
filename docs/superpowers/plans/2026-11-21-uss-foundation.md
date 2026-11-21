@@ -4,46 +4,72 @@
 
 **Goal:** Build the repository skeleton, the machine-readable framework of the
 standard (registry, fact vocabulary, schemas, templates, conventions) and the
-`uss` validator CLI with all its commands, so rule content can be written and
-checked from Plan 2 on.
+`uss` validator, a Rust library plus CLI with all its commands, so rule
+content can be written and checked from Plan 2 on.
 
-**Architecture:** One Go module at the repository root, so `go:embed` can
-carry `standard/`, `schema/` and `templates/` into the binary (binary version =
-standard version). The CLI lives in `tools/uss`; logic lives in small internal
-packages: `expr` (applicability expressions), `catalog` (parse and lint the
-standard), `record` (load and schema-validate project records and audit
-results), `evaluate` (applicability, record checks, compliance, scores),
-`report` (Markdown rendering), `release` (git checks). The Markdown parser is a
-strict line-based parser for USS's own fixed format, not a general Markdown
-library.
+**Architecture:** A Cargo workspace at the repository root with two members:
+`tools/uss` (the `uss` library and CLI) and `tools/xtask` (`cargo xtask check`,
+every check in one command). The **library does no I/O**. It works on file
+contents handed to it through two small traits (`Source` for the standard's
+own files, `ProjectFiles` for an adopting project's files), so it can later run
+inside a VS Code extension through WebAssembly. All filesystem and `git` work
+lives in the `cli` module, behind the default `cli` feature. A build script
+embeds `standard/`, `schema/` and `templates/` into the binary, so the binary's
+version is always the standard's version. The Markdown parser is a strict
+line-based parser for USS's own fixed format.
 
-**Tech Stack:** Go 1.27.4 (installed); `go.yaml.in/yaml/v3`;
-`github.com/santhosh-tekuri/jsonschema/v6`; golangci-lint v2 and govulncheck
-run through `go tool`; GitHub Actions.
+**Tech Stack:** Rust 1.100.0 (installed; edition 2024). Crates: `serde` +
+`serde_json`, one YAML crate chosen in Task 2, `jsonschema` (default features
+off), `regex`, `minijinja`, `clap` (only with the `cli` feature); dev:
+`tempfile`. Tooling: rustfmt, Clippy, cargo-deny (installed project-locally),
+GitHub Actions.
 
 **Spec:** `docs/superpowers/specs/2026-11-21-universal-software-standard-design.md`
 
 **Roadmap** (each later plan is written when the previous one is done; Plan 2's
 review calibrates the content plans):
 
-1. **This plan:** foundation and `uss` tool (spec §13 step 1).
+1. **This plan:** foundation and the `uss` tool (spec §13 step 1).
 2. Security and Supply chain areas, then **stop for the user's review**.
 3. Remaining core areas, in batches.
 4. Modules, vendor profiles and regulation modules, plus validator support for
    the profile and regulation mapping format.
 5. AGENTS.md workflows, Claude plugin and skills, adopter templates
    (`AGENTS.snippet.md`, `templates/ci/`), CODEOWNERS, community files
-   (CONTRIBUTING, SECURITY, CODE_OF_CONDUCT), CHANGELOG, this repo's
-   `.uss/` self-audit, release 0.1.0.
+   (CONTRIBUTING, SECURITY, CODE_OF_CONDUCT), CHANGELOG, release binaries,
+   this repo's `.uss/` self-audit, release 0.1.0.
+
+Later, outside these five: the VS Code extension built on the `uss` library.
+
+## Before you start: toolchain check
+
+Builds MUST run on the **rustup-managed** toolchain pinned in
+`rust-toolchain.toml`. A standalone Rust install earlier on `PATH` silently
+ignores that file. On the user's machine, standalone winget installs (GNU,
+GNU-LLVM, MSVC) currently come before rustup on `PATH`, so plain `cargo`
+runs the GNU-LLVM toolchain. Before Task 1, and again after Task 1 creates
+`rust-toolchain.toml`, run:
+
+```
+rustc --print sysroot
+rustc -vV
+```
+
+Expected: the sysroot is under `.rustup\toolchains\` (or `.rustup/toolchains/`),
+and `rustc -vV` shows `release: 1.100.0`. If not, **stop and ask the user** to
+put `%USERPROFILE%\.cargo\bin` first on `PATH` or remove the standalone
+installs. Do not change `PATH` or uninstall anything yourself.
 
 ## Global Constraints
 
+- Toolchain: only the rustup-managed toolchain from `rust-toolchain.toml`.
+  `cargo xtask check` refuses to run on any other (Task 15).
 - Keywords: exactly `MUST`, `MUST NOT`, `SHOULD`, `SHOULD NOT`, `MAY` (RFC 2119
   as clarified by RFC 8174). `SHALL`, `SHALL NOT`, `REQUIRED`, `RECOMMENDED`,
   `NOT RECOMMENDED`, `OPTIONAL` are never used. One rule, one level.
 - Rule IDs: `USS-<PREFIX>-<NNN>`, prefix `^[A-Z][A-Z0-9]{1,7}$`, three digits.
   Never reused or renumbered; retired in place.
-- Audit results: exactly `pass`, `fail`, `deviation`, `declined`,
+- Audit outcomes: exactly `pass`, `fail`, `deviation`, `declined`,
   `unverified`, `not-applicable`.
 - Score categories, in this order: Safety, Reliability, Efficiency,
   Maintainability, Contributability, Compatibility, Fairness,
@@ -53,16 +79,25 @@ review calibrates the content plans):
 - Compliant = every applicable MUST/MUST NOT `pass`; every applicable
   SHOULD/SHOULD NOT `pass` or `deviation`; every applicable MAY has a recorded
   decision; nothing `unverified`.
-- Standard version starts at `0.1.0`; 0.x until the user declares 1.0.0.
-- Dependencies: only those named in Tech Stack; any other needs a written
-  reason in the commit message. Never modify system-level installs or global
-  config; tools run through `go tool`.
-- CI actions pinned by full commit SHA with the version in a comment;
-  workflow `permissions: contents: read`.
+- Standard version and crate version both start at `0.1.0` and must stay
+  equal; 0.x until the user declares 1.0.0.
+- **Library purity:** outside `tools/uss/src/cli/` (and tests, `main.rs` and
+  `build.rs`), no `std::fs`, `std::process`, `std::net` or `std::env`.
+- **Safety and lint policy** (workspace `[lints]`): `unsafe_code = "forbid"`;
+  `missing_docs` deny; Clippy `all` and `pedantic` deny; `unwrap_used`,
+  `expect_used` and `panic` deny outside tests; `allow_attributes` and
+  `allow_attributes_without_reason` deny. Suppress only with
+  `#[expect(clippy::<lint>, reason = "<why>")]`, which also fails if the
+  warning goes away. This is the check-integrity rule from spec §6.5 applied
+  to this repo.
+- Dependencies: only those in Tech Stack. Any other needs a reason in the
+  commit message and must pass `cargo deny check`. `Cargo.lock` is committed.
+- Never modify system-level installs or global config. Tools such as
+  cargo-deny install under the repository's own `.tools/` directory.
+- CI actions pinned by full commit SHA with the version in a comment; workflow
+  `permissions: contents: read`.
 - Must work on Windows, Linux and macOS. Repository text files use LF
   (`.gitattributes`), but the tool accepts CRLF and a UTF-8 BOM in any input.
-- Check integrity applies to this repo's Go code: every `//nolint` names the
-  linter and gives a reason (golangci-lint `nolintlint`).
 - Step-by-step instructions in README files are written in ASD-STE100 style
   (one instruction per sentence, imperative, active voice).
 - The content of `Initial_Idea.md` and `todo.txt` is never modified
@@ -71,149 +106,234 @@ review calibrates the content plans):
 
 ## Plan-level decisions (refining the spec, for the builder)
 
-- `go.mod` sits at the repository root rather than in `tools/uss/`, because
-  `go:embed` cannot reach outside its module. The Go code is still under
-  `tools/uss/`. Install path: `github.com/HaleTechCo/Universal-Software-Standard/tools/uss@vX.Y.Z`.
-- Area and module prefixes are declared in each standard file's header and
-  checked for uniqueness by `uss lint`, rather than listed again in
-  `conventions.md`. That avoids two sources of truth. Categories and stack IDs
-  live in `standard/registry.yaml`.
-- Facts set by a MAY (`Enabled by`) are added to `applicability.md` together
-  with the rule that enables them (Plan 3). Plan 1 writes only the asked facts.
-- Facts gain an `Implies` field (e.g. `has-web-ui` implies `has-ui`), so rules
-  for `has-ui` also apply to web UIs without repeating `or` everywhere.
-- Report template: `templates/audit-report.md.tmpl` (Go `text/template`).
-- Audit results record the full 40-character SHA of the audited commit.
-- The flag `--standard-root DIR` (a USS checkout) replaces the built-in copy
-  for every command.
+- **Workspace at the root, crate at `tools/uss`.** The crate embeds
+  `../../standard` and friends. That works for local builds and for
+  `cargo install --locked --git <repo> --tag vX.Y.Z uss`, but not for
+  crates.io, so `publish = false` (distribution is decided in Plan 5).
+- **Embedding through `build.rs`**, not the `include_dir` crate. The build
+  script writes a sorted `(path, include_bytes!)` table and emits
+  `cargo:rerun-if-changed` for each embedded directory, so an edited standard
+  file always triggers a rebuild. That is one fewer dependency, and no stale
+  embedded copies.
+- **Two I/O traits** keep the library pure: `Source` (USS's own files:
+  embedded, in memory, or a `--standard-root` checkout) and `ProjectFiles`
+  (an adopting project's files, relative to its root).
+- **Prefixes** are declared in each standard file's header and checked for
+  uniqueness by `uss lint`, rather than listed again in `conventions.md`.
+  Categories and stack IDs live in `standard/registry.yaml`.
+- **Facts set by a MAY** (`Enabled by`) are added to `applicability.md`
+  together with the rule that enables them (Plan 3). Plan 1 writes only asked
+  facts. Facts gain an `Implies` field (e.g. `has-web-ui` implies `has-ui`).
+- **Report template:** `templates/audit-report.md.j2` (minijinja).
+- **Audit results** record the full 40-character SHA of the audited commit.
+- **ADRs** in MADR format under `docs/adr/`: 0001 records the choice of Rust,
+  0002 the YAML crate. This applies the Architecture area's own rule to this
+  repo.
+- `--standard-root DIR` (a USS checkout) replaces the embedded copy for every
+  command.
 
 ## Review Focus
 
 1. **CRLF line endings** in standard files, records and results (Windows
    editors, adopters without `.gitattributes`): parsed the same as LF.
-   Tests: Task 4 `TestParseDoc_CRLFAndBOM`, Task 5
-   `TestParseRuleFile_CRLFAndBOM`, Task 7 `TestLoadRecord_CRLFAndBOM`.
+   Tests: Task 4 `parse_doc_crlf_and_bom`, Task 5
+   `rule_file_crlf_and_bom`, Task 7 `record_crlf_and_bom`.
 2. **UTF-8 BOM** at the start of Markdown or YAML (Notepad): ignored. Same
    tests as 1.
 3. **Headings, fields and keywords inside fenced code blocks**: not parsed as
    rules or fields, and not keyword-scanned. Tests: Task 4
-   `TestParseDoc_Fences`, Task 5 `TestParseRuleFile_CodeFence`.
+   `parse_doc_fences`, Task 5 `rule_file_code_fence`.
 4. **Shallow CI clones** (`actions/checkout` defaults to depth 1), where the
    audited commit is missing: `release-check` says to fetch full history
    instead of passing on a raw git error. Test: Task 12
-   `TestReleaseCheck_ShallowClone`.
+   `release_check_shallow_clone`.
 5. **Windows path separators** in record paths (`docs\deviations\X.md`) and
    git's forward-slash output: deviation documents resolve on every OS, and
    `.uss/` detection works for nested components. Tests: Task 9
-   `TestCheckRecord_BackslashPath`, Task 12 `TestOnlyUSSChanges`.
+   `check_backslash_path` (library and CLI), Task 12 `only_uss_changes_table`.
 
 ---
 
-### Task 1: Repository bootstrap and CLI entry point
+### Task 1: Workspace bootstrap, lint policy and CLI entry point
 
 **Files:**
-- Create: `go.mod`, `.gitattributes`, `.gitignore`, `.editorconfig`, `LICENSE`, `README.md`
-- Create: `tools/uss/main.go`, `tools/uss/main_test.go`
+- Create: `Cargo.toml` (workspace), `rust-toolchain.toml`, `.cargo/config.toml`, `clippy.toml`
+- Create: `.gitattributes`, `.gitignore`, `.editorconfig`, `LICENSE`, `README.md`
+- Create: `docs/adr/0001-validator-in-rust.md`
+- Create: `tools/uss/Cargo.toml`, `tools/uss/src/lib.rs`, `tools/uss/src/main.rs`, `tools/uss/src/cli/mod.rs`
+- Create: `tools/xtask/Cargo.toml`, `tools/xtask/src/main.rs` (stub that prints usage; filled in Task 15)
 
 **Interfaces:**
-- Produces: `func run(args []string, stdout, stderr io.Writer) int` in
-  `tools/uss/main.go`. Every later command is a case in its dispatch. Exit
-  codes: `0` OK, `1` problems found, `2` usage error.
+- Produces: `uss::cli::run(args: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32`
+  (behind `#[cfg(feature = "cli")]`). `main.rs` calls it with `std::env::args()`
+  and exits with its code. Exit codes: `0` OK, `1` problems found, `2` usage
+  error. Every later command is a clap subcommand handled in `run`.
 
-- [ ] **Step 1: Create `go.mod`**
+- [ ] **Step 1: Create the workspace files**
 
+`Cargo.toml`:
+
+```toml
+[workspace]
+members = ["tools/uss", "tools/xtask"]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.100"
+license = "MIT"
+repository = "https://github.com/HaleTechCo/Universal-Software-Standard"
+publish = false
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "deny"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+allow_attributes = "deny"
+allow_attributes_without_reason = "deny"
 ```
-module github.com/HaleTechCo/Universal-Software-Standard
 
-go 1.27
+`rust-toolchain.toml`: `channel = "1.100.0"`, `components = ["rustfmt", "clippy"]`,
+`targets = ["wasm32-unknown-unknown"]`, `profile = "minimal"`.
+`.cargo/config.toml`: `[alias] xtask = "run --quiet --package xtask --"`.
+`clippy.toml`: `allow-unwrap-in-tests = true`, `allow-expect-in-tests = true`.
+Each member's `Cargo.toml` inherits `version`, `edition`, `rust-version`,
+`license`, `repository` and `publish` with `.workspace = true`, and
+`[lints] workspace = true`.
 
-toolchain go1.27.4
-```
+Then run `rustup toolchain install` (it reads `rust-toolchain.toml`) and repeat
+the toolchain check from "Before you start".
 
-- [ ] **Step 2: Create repository hygiene files**
+`tools/uss/Cargo.toml`: package `uss`; `[features] default = ["cli"]`,
+`cli = ["dep:clap"]`; `[[bin]] name = "uss"`, `path = "src/main.rs"`,
+`required-features = ["cli"]`; dependency `clap = { version = "<latest 4.x>", features = ["derive"], optional = true }`.
 
-`.gitattributes`: `* text=auto eol=lf`. `.gitignore`: `/uss`, `/uss.exe`,
-`/dist/`, `*.out`, `uss-report.md`. `.editorconfig`: root, utf-8, lf, final
-newline, trim trailing whitespace; `[*.go]` tabs; `[*.{md,yaml,yml,json}]`
-2 spaces.
+- [ ] **Step 2: Create the repository hygiene files**
 
-- [ ] **Step 3: Renormalise line endings**
+`.gitattributes`: `* text=auto eol=lf`. `.gitignore`: `/target`, `/.tools`,
+`uss-report.md`. `.editorconfig`: root, utf-8, lf, final newline, trim
+trailing whitespace; `[*.rs]` 4 spaces; `[*.{md,yaml,yml,json,toml}]` 2 spaces.
+Then run `git add --renormalize .` and check that
+`git diff --cached --ignore-cr-at-eol -- Initial_Idea.md todo.txt` prints nothing.
 
-Run: `git add --renormalize . && git status --short`
-Expected: only the new files appear; `Initial_Idea.md` and `todo.txt` content
-is unchanged (`git diff --cached --ignore-cr-at-eol -- Initial_Idea.md todo.txt` prints nothing).
-
-- [ ] **Step 4: Create `LICENSE` and `README.md`**
+- [ ] **Step 3: Create `LICENSE`, `README.md` and ADR 0001**
 
 `LICENSE`: standard MIT text, `Copyright (c) 2026 HaleTechCo`. `README.md`:
 title "Universal Software Standard (USS)", one paragraph from spec §1 (the
 promise and the two uses), "Status: 0.x, in development; rules not yet
-published", and a link to the design spec. No install steps yet (Plan 5).
+published", and a link to the design spec.
+`docs/adr/0001-validator-in-rust.md` in MADR format:
+- Context: the validator must be easy to run anywhere and must later run
+  inside a VS Code extension.
+- Options considered: Go, Rust, Python, TypeScript.
+- Decision: Rust, for WebAssembly and library embedding (VS Code), its type
+  system, and the original "OS-native → Rust" rule.
+- Consequences: more dependencies (so cargo-deny); a weaker YAML ecosystem
+  (so ADR 0002); slower builds; an I/O-free library core.
 
-- [ ] **Step 5: Write the failing tests**
+- [ ] **Step 4: Write the failing tests** (in `tools/uss/src/cli/mod.rs`)
 
-```go
-func TestRunNoArgsPrintsUsage(t *testing.T) {
-	var out, errb bytes.Buffer
-	if code := run(nil, &out, &errb); code != 2 { t.Fatalf("exit %d, want 2", code) }
-	if !strings.Contains(errb.String(), "usage: uss <command>") { t.Fatalf("stderr %q", errb.String()) }
+```rust
+#[test]
+fn run_no_args_prints_usage() {
+    let (code, _out, err) = run_capture(&[]);
+    assert_eq!(code, 2);
+    assert!(err.contains("Usage: uss"), "stderr: {err}");
 }
-func TestRunUnknownCommand(t *testing.T) {
-	var out, errb bytes.Buffer
-	if code := run([]string{"bogus"}, &out, &errb); code != 2 { t.Fatalf("exit %d", code) }
-	if !strings.Contains(errb.String(), `unknown command "bogus"`) { t.Fatalf("stderr %q", errb.String()) }
+#[test]
+fn run_unknown_command() {
+    let (code, _out, err) = run_capture(&["bogus"]);
+    assert_eq!(code, 2);
+    assert!(err.contains("bogus"), "stderr: {err}");
 }
 ```
 
-- [ ] **Step 6: Run the tests to verify they fail**
+`run_capture(args) -> (i32, String, String)` is a test helper that prepends
+`"uss"` and captures both streams.
 
-Run: `go test ./tools/uss/ -v`
-Expected: FAIL (`run` undefined).
+- [ ] **Step 5: Run the tests to verify they fail**
 
-- [ ] **Step 7: Implement `run` and `main`**
+Run: `cargo test -p uss`
+Expected: FAIL (`run` not defined).
 
-`main` calls `os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))`. The usage text
-lists `lint`, `applicable`, `check`, `report`, `release-check`, `export`,
-`version`, one line each.
+- [ ] **Step 6: Implement `run` with a clap-derived `Cli`**
 
-- [ ] **Step 8: Run the tests to verify they pass**
+Use `Cli::try_parse_from`, with `arg_required_else_help`. On a clap error,
+write `e.render()` to `err` when `e.use_stderr()` and to `out` otherwise, then
+return `e.exit_code()`. Declare the subcommands as they are implemented
+(none yet).
 
-Run: `go test ./tools/uss/ -v && go vet ./...`
-Expected: PASS, no vet output.
+- [ ] **Step 7: Run the tests and Clippy to verify they pass**
 
-- [ ] **Step 9: Commit**
+Run: `cargo test -p uss && cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --all --check`
+Expected: PASS, no Clippy findings, no formatting diff.
+
+- [ ] **Step 8: Commit**
 
 ```bash
 git add -A
-git commit -m "chore: bootstrap repository and uss CLI entry point"
+git commit -m "chore: bootstrap Rust workspace, lint policy and uss CLI entry point"
 ```
 
 ---
 
-### Task 2: Registry, embedded standard and `uss version`
+### Task 2: Registry, embedded files, YAML crate and `uss version`
 
 **Files:**
-- Create: `standard/registry.yaml`, `embed.go`
-- Create: `tools/uss/internal/catalog/diag.go`, `registry.go`, `registry_test.go`
-- Modify: `tools/uss/main.go`, `tools/uss/main_test.go`
+- Create: `standard/registry.yaml`, `tools/uss/build.rs`
+- Create: `tools/uss/src/source.rs`, `tools/uss/src/yaml.rs`, `tools/uss/src/catalog/mod.rs`, `tools/uss/src/catalog/diag.rs`, `tools/uss/src/catalog/registry.rs`
+- Create: `docs/adr/0002-yaml-crate.md`
+- Modify: `tools/uss/Cargo.toml`, `tools/uss/src/lib.rs`, `tools/uss/src/cli/mod.rs`
 
 **Interfaces:**
-- Consumes: `run` (Task 1).
 - Produces:
-  - `package uss` at the repo root: `var Files embed.FS` with `//go:embed standard`
-    (Task 7 adds `schema`, Task 11 adds `templates`).
-  - `catalog.Diagnostic{File string; Line int; Message string}` with
-    `String() string` → `"file:line: message"`, or `"file: message"` when
-    `Line == 0`.
-  - `catalog.Category{ID, Name string}`;
-    `catalog.Registry{Version string; Categories []Category; Stack map[string][]string}`;
-    `func LoadRegistry(fsys fs.FS) (Registry, []Diagnostic)` reading
-    `standard/registry.yaml`; `func (r Registry) CategoryByName(name string) (Category, bool)`;
-    `func (r Registry) HasStack(kind, id string) bool`.
-  - In `main.go`: `func loadFS(standardRoot string) fs.FS` returning
-    `uss.Files` when `standardRoot == ""`, else `os.DirFS(standardRoot)`.
+  - `uss::source::Source` trait:
+    `fn read(&self, path: &str) -> Option<Cow<'_, [u8]>>` (forward-slash path
+    relative to the USS root, e.g. `standard/registry.yaml`) and
+    `fn list(&self, dir: &str) -> Vec<String>` (every file under `dir`,
+    recursively, forward slashes, sorted).
+  - `uss::source::MemSource(pub BTreeMap<String, Vec<u8>>)` and
+    `uss::source::Embedded` (a unit struct over the generated table); both
+    implement `Source`.
+  - `uss::catalog::Diagnostic { pub file: String, pub line: usize, pub message: String }`
+    with `Display` → `file:line: message`, or `file: message` when `line == 0`.
+  - `uss::catalog::Category { pub id: String, pub name: String }`
+  - `uss::catalog::Registry { pub version: String, pub categories: Vec<Category>, pub stack: BTreeMap<String, Vec<String>> }`,
+    with `fn category_by_name(&self, name: &str) -> Option<&Category>` and
+    `fn has_stack(&self, kind: &str, id: &str) -> bool`.
+  - `uss::catalog::load_registry(src: &dyn Source) -> Result<Registry, Vec<Diagnostic>>`
+  - `uss::yaml::from_slice<T: DeserializeOwned>(data: &[u8]) -> Result<T, String>`:
+    the one place the chosen YAML crate is called. It strips a UTF-8 BOM and
+    turns CRLF into LF before parsing.
+  - In `cli`: `fn source_for(standard_root: Option<&Path>) -> Box<dyn Source>`
+    (`Embedded` by default, otherwise a `DirSource` reading the given
+    checkout); a global `--standard-root DIR` option.
 
-- [ ] **Step 1: Create `standard/registry.yaml`**
+- [ ] **Step 1: Choose the YAML crate and record it in ADR 0002**
+
+Candidates: `serde-saphyr` and `serde_norway`. Rejected without evaluation:
+`serde_yaml` (archived in 2024) and `serde_yml` (check RustSec; reject if it
+has an advisory). For each candidate, check:
+- a release within the last 12 months;
+- no RustSec advisory;
+- pure safe Rust preferred over transpiled C;
+- deserializes into structs with `deny_unknown_fields` and into
+  `serde_json::Value`;
+- builds for `wasm32-unknown-unknown`.
+
+Pick one, record the evidence in `docs/adr/0002-yaml-crate.md` (MADR), and add
+it to `tools/uss/Cargo.toml`. If neither passes, stop and report. Also run
+`cargo add -p uss serde --features derive`, `cargo add -p uss serde_json` and
+`cargo add -p uss regex`. All three are needed from this task on.
+
+- [ ] **Step 2: Create `standard/registry.yaml`**
 
 ```yaml
 version: 0.1.0
@@ -234,49 +354,50 @@ stack:
   tool: [maven]
 ```
 
-- [ ] **Step 2: Add the YAML dependency**
+- [ ] **Step 3: Write `build.rs`**
 
-Run: `go get go.yaml.in/yaml/v3@latest`
-Expected: `go.mod` gains the requirement. If this module path does not
-resolve, stop and report. Do not fall back to the archived `gopkg.in/yaml.v3`.
+Walk `../../standard`, `../../schema` and `../../templates`, relative to
+`CARGO_MANIFEST_DIR`; skip any that do not exist yet. Write
+`$OUT_DIR/embedded.rs` containing
+`pub(crate) static FILES: &[(&str, &[u8])] = &[("standard/registry.yaml", include_bytes!(<path>)), …];`,
+sorted by path. Write each absolute path with `{:?}`, so Windows backslashes
+are escaped. Emit `cargo:rerun-if-changed=` for each of the three directories
+and for `build.rs`. `source.rs` `include!`s the file.
 
-- [ ] **Step 3: Write the failing tests**
+- [ ] **Step 4: Write the failing tests**
 
-`TestLoadRegistry_Valid` (MapFS holding the real file contents): no
-diagnostics; `Version == "0.1.0"`; `len(Categories) == 9`;
-`Categories[7].Name == "Accessibility & Usability"`; `HasStack("lang","go")`;
-`!HasStack("lang","cobol")`.
+- `load_registry_valid` (`MemSource` holding the real file): `version == "0.1.0"`,
+  9 categories, `categories[7].name == "Accessibility & Usability"`,
+  `has_stack("lang", "go")`, `!has_stack("lang", "cobol")`.
+- `load_registry_errors`, a table of `(yaml, expected substring)`:
+  `version: "1.0"` → `"version"`; duplicate category name →
+  `"duplicate category"`; stack kind `os` → `"unknown stack kind \"os\""`;
+  unknown top-level key `colour` → `"colour"`; missing file →
+  `"standard/registry.yaml"`.
+- `embedded_contains_registry`: `Embedded.read("standard/registry.yaml").is_some()`.
+- `crate_version_matches_registry`: `env!("CARGO_PKG_VERSION")` equals the
+  embedded registry's version.
+- `run_version` (cli): `["version"]` → exit 0, stdout `"uss 0.1.0\n"`.
 
-`TestLoadRegistry_Errors`, a table of `{yaml, wantSubstring}`:
-`version: "1.0"` → `"version"`; duplicate category name → `"duplicate category"`;
-stack kind `os` → `"unknown stack kind \"os\""`; unknown top-level key
-`colour:` → `"field colour not found"`; missing file → `"standard/registry.yaml"`.
+- [ ] **Step 5: Run to verify they fail; implement; run to verify they pass**
 
-`TestRunVersion` in `main_test.go`: `run([]string{"version"})` → exit 0,
-stdout `"uss 0.1.0\n"`.
+Run: `cargo test -p uss`
+Expected: FAIL before implementation, PASS after. Decode strictly
+(`deny_unknown_fields`). Version regex `^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$`.
+Stack kinds: `lang`, `framework`, `platform`, `tool`. IDs match
+`^[a-z0-9]+(-[a-z0-9]+)*$`.
 
-- [ ] **Step 4: Run the tests to verify they fail**
+- [ ] **Step 6: Verify that rebuilds track standard files**
 
-Run: `go test ./tools/uss/... -v`
-Expected: FAIL (undefined `LoadRegistry`, and `version` is an unknown command).
-
-- [ ] **Step 5: Implement**
-
-Decode strictly (`KnownFields(true)`). Version regex
-`^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$`. Stack kinds: `lang`, `framework`,
-`platform`, `tool`. IDs kebab-case `^[a-z0-9]+(-[a-z0-9]+)*$`. `version`
-prints `uss <Registry.Version>`.
-
-- [ ] **Step 6: Run the tests to verify they pass**
-
-Run: `go test ./tools/uss/... -v`
-Expected: PASS.
+Run `cargo run -p uss -- version`. Change `version:` in
+`standard/registry.yaml` to `0.1.1` and run it again: it prints `uss 0.1.1`.
+Put `0.1.0` back.
 
 - [ ] **Step 7: Commit**
 
 ```bash
 git add -A
-git commit -m "feat(uss): add standard registry, embedded files and version command"
+git commit -m "feat(uss): embed the standard, add the registry and the version command"
 ```
 
 ---
@@ -284,16 +405,18 @@ git commit -m "feat(uss): add standard registry, embedded files and version comm
 ### Task 3: Applicability expressions
 
 **Files:**
-- Create: `tools/uss/internal/expr/expr.go`, `tools/uss/internal/expr/expr_test.go`
+- Create: `tools/uss/src/expr.rs`
 
 **Interfaces:**
 - Produces:
-  - `type Expr interface { Eval(facts map[string]bool) bool; Idents() []string; String() string }`
-  - `func Parse(s string) (Expr, error)`
-  - `var Always Expr`
-  - `func And(a, b Expr) Expr`, with `And(Always, e)` and `And(e, Always)` returning `e`.
-    Otherwise `String()` is `"(" + a + ") and (" + b + ")"`.
-  - `Idents()` returns the sorted unique identifiers, excluding `always`.
+  - `pub enum Expr { Always, Ident(String), Not(Box<Expr>), And(Box<Expr>, Box<Expr>), Or(Box<Expr>, Box<Expr>) }`
+  - `pub fn parse(s: &str) -> Result<Expr, String>`
+  - `impl Expr { pub fn eval(&self, facts: &BTreeSet<String>) -> bool; pub fn idents(&self) -> BTreeSet<String>; pub fn and(a: Expr, b: Expr) -> Expr }`.
+    `and` returns the other operand when one side is `Always`. `idents`
+    excludes `always`.
+  - `impl Display for Expr`: `Ident` and `Always` print bare; `Not(x)` prints
+    `not x`; `And` and `Or` print `l and r` / `l or r`, with an operand
+    wrapped in parentheses when it is itself an `And` or `Or`.
 
 Grammar (pinned):
 
@@ -311,37 +434,28 @@ Keywords are lowercase only; tokens are separated by whitespace or parentheses.
 
 - [ ] **Step 1: Write the failing tests**
 
-`TestEval`, a table of `{src, facts, want}`: `"always"`→true;
-`"has-ui"` with `{has-ui:true}`→true; `"a or b and c"` with `{b:true}`→false
-(and binds tighter); `"not a and b"` with `{b:true}`→true; `"(a or b) and c"`
-with `{a:true,c:true}`→true; `"lang.go"` with `{lang.go:true}`→true; a missing
-fact is false.
+- `eval_table`: `"always"`→true; `"has-ui"` with {has-ui}→true;
+  `"a or b and c"` with {b}→false; `"not a and b"` with {b}→true;
+  `"(a or b) and c"` with {a,c}→true; `"lang.go"` with {lang.go}→true;
+  a missing fact is false.
+- `parse_errors`: each of these fails: `""`, `"a and"`, `"(a"`, `"a b"`,
+  `"AND"`, `"has_ui"`, `"lang."`, `"os.linux"` (message contains
+  `unknown stack kind "os"`).
+- `idents_sorted_unique`: `"not b or (a and lang.go) or always"` →
+  `{"a","b","lang.go"}`.
+- `display_forms`: `parse("a and b")` displays `a and b`;
+  `Expr::and(parse("lang.go"), parse("has-ui or b"))` displays
+  `lang.go and (has-ui or b)`; `Expr::and(Expr::Always, parse("x"))` displays `x`.
 
-`TestParseErrors`, each of these must fail: `""`, `"a and"`, `"(a"`, `"a b"`,
-`"AND"`, `"has_ui"`, `"lang."`, `"os.linux"` (message contains
-`unknown stack kind "os"`).
+- [ ] **Step 2: Run to verify they fail; implement a recursive-descent parser; run to verify they pass**
 
-`TestIdents`: `Parse("not b or (a and lang.go) or always").Idents()` ==
-`[]string{"a","b","lang.go"}`.
+Run: `cargo test -p uss expr`
+Expected: FAIL before implementation, PASS after.
 
-`TestAndSimplifies`: `And(Always, e).String() == e.String()`.
-
-- [ ] **Step 2: Run the tests to verify they fail**
-
-Run: `go test ./tools/uss/internal/expr/ -v`
-Expected: FAIL (package has no code).
-
-- [ ] **Step 3: Implement the recursive-descent parser and AST in `expr.go`**
-
-- [ ] **Step 4: Run the tests to verify they pass**
-
-Run: `go test ./tools/uss/internal/expr/ -v`
-Expected: PASS.
-
-- [ ] **Step 5: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
-git add tools/uss/internal/expr
+git add tools/uss/src
 git commit -m "feat(uss): parse and evaluate applicability expressions"
 ```
 
@@ -350,73 +464,73 @@ git commit -m "feat(uss): parse and evaluate applicability expressions"
 ### Task 4: Markdown scanner and fact vocabulary
 
 **Files:**
-- Create: `tools/uss/internal/catalog/markdown.go`, `markdown_test.go`
-- Create: `tools/uss/internal/catalog/facts.go`, `facts_test.go`
+- Create: `tools/uss/src/catalog/markdown.rs`, `tools/uss/src/catalog/facts.rs`
 - Create: `standard/applicability.md`
 
 **Interfaces:**
-- Produces (package-internal, used by Tasks 5 and 6):
-  - `type fieldVal struct{ Value string; Line int }`; `type fields map[string]fieldVal`
-  - `type mdSection struct{ Heading string; Line int; Fields fields; Body string; BodyLine int }`
-  - `type mdDoc struct{ File, Title string; Header fields; Sections []mdSection }`
-  - `func parseDoc(file string, data []byte) (mdDoc, []Diagnostic)`
-- Produces (exported):
-  - `type Fact struct{ ID, Question, Definition, EnabledBy string; Implies []string; File string; Line int }`
-  - `func parseFacts(file string, data []byte) (map[string]Fact, []Diagnostic)`
+- Produces (crate-internal):
+  - `struct Field { value: String, line: usize }`
+  - `struct Section { heading: String, line: usize, fields: BTreeMap<String, Field>, body: String, prose: String }`.
+    `prose` is `body` with fenced blocks removed.
+  - `struct Doc { file: String, title: String, header: BTreeMap<String, Field>, sections: Vec<Section> }`
+  - `fn parse_doc(file: &str, data: &[u8]) -> (Doc, Vec<Diagnostic>)`
+- Produces (public):
+  - `pub enum FactSource { Question(String), EnabledBy(String) }`
+  - `pub struct Fact { pub id: String, pub source: FactSource, pub definition: String, pub implies: Vec<String>, pub file: String, pub line: usize }`
+  - crate-internal `fn parse_facts(file: &str, data: &[u8]) -> (BTreeMap<String, Fact>, Vec<Diagnostic>)`
 
 Scanner rules (pinned):
 - Strip a leading UTF-8 BOM; turn `\r\n` into `\n`.
 - Lines starting with three backticks or `~~~` open and close a fence. Inside
-  a fence nothing is a heading or a field; the lines belong to the body.
-- The first `# ` line is the title. The header field block follows it.
+  a fence nothing is a heading or a field; the lines go to `body` only.
+- The first `# ` line is the title, and the header field block follows it.
 - `## ` lines are grouping headings: they end the current section and are
   otherwise ignored.
 - `### ` lines start a section.
 - A field block starts on the first non-blank line after a heading and
   continues while lines match `^- \*\*([A-Za-z ]+):\*\* (.*)$` or are
   continuation lines (two-space indent, non-empty; appended with one space).
-- A duplicate field name gives the diagnostic `duplicate field "<name>"`.
+- A duplicate field name gives `duplicate field "<name>"`.
 
-Facts file rules: `### <fact-id>`, with fields `Question`, `Definition`,
-`Enabled by` and `Implies` (comma-separated) only. `Definition` is required.
-Exactly one of `Question` or `Enabled by` is present. Implied facts must
-exist, and implications must not form a cycle.
+Fact rules: headings `### <fact-id>`; allowed fields `Question`, `Definition`,
+`Enabled by`, `Implies` (comma-separated). `Definition` is required, and
+exactly one of `Question` or `Enabled by`. Implied facts must exist, and
+implications must not form a cycle.
 
 - [ ] **Step 1: Write the failing scanner tests**
 
-`TestParseDoc_Basic`: title, header fields, two sections with fields and body,
-and a `##` grouping heading between them that is not a section.
-`TestParseDoc_Fences`: a section body containing a fenced block with
-`### USS-X-001: y` and `- **Level:** MAY` → one section, and the fenced lines
-appear verbatim in `Body`. `TestParseDoc_CRLFAndBOM`: the same input as `_Basic`
-with BOM and CRLF → a `mdDoc` deep-equal to `_Basic`'s (except `File`).
-`TestParseDoc_Continuation`: a two-line `Verify` value joined with one space.
-`TestParseDoc_DuplicateField` → diagnostic with line number.
+`parse_doc_basic` (title, header, two sections, a `##` between them that is
+not a section); `parse_doc_fences` (a section body with a fenced
+`### USS-X-001: y` and `- **Level:** MAY` → one section; the fenced lines are
+in `body` but not in `prose`); `parse_doc_crlf_and_bom` (the `_basic` input
+with BOM and CRLF → an equal `Doc`); `parse_doc_continuation` (a two-line
+field joined with one space); `parse_doc_duplicate_field` (a diagnostic with
+the line number).
 
-- [ ] **Step 2: Run to verify they fail; implement `markdown.go`; run to verify they pass**
+- [ ] **Step 2: Run to verify they fail; implement `markdown.rs`; run to verify they pass**
 
-Run: `go test ./tools/uss/internal/catalog/ -run TestParseDoc -v`
+Run: `cargo test -p uss parse_doc`
 Expected: FAIL before implementation, PASS after.
 
 - [ ] **Step 3: Write the failing fact tests**
 
-`TestParseFacts_Valid`: two facts, with `has-web-ui` implying `has-ui`.
-`TestParseFacts_Errors`, a table: bad ID `Has_UI`; both `Question` and
-`Enabled by`; neither; `Implies: nope` → `unknown fact "nope"`; cycle `a`→`b`→`a`
-→ `implication cycle`; unknown field `Colour` → `unknown field "Colour"`.
-`TestApplicabilityFile`: `parseFacts` on the embedded
+`parse_facts_valid` (two facts, `has-web-ui` implies `has-ui`);
+`parse_facts_errors`, a table: bad ID `Has_UI`; both `Question` and
+`Enabled by`; neither; `Implies: nope` → `unknown fact "nope"`; cycle a→b→a →
+`implication cycle`; unknown field `Colour` → `unknown field "Colour"`.
+`applicability_file_is_valid`: `parse_facts` on the embedded
 `standard/applicability.md` gives zero diagnostics and exactly the 27 IDs in
 Step 5.
 
-- [ ] **Step 4: Implement `facts.go`**
+- [ ] **Step 4: Implement `facts.rs`**
 
 - [ ] **Step 5: Write `standard/applicability.md`**
 
 H1 "Applicability facts". An intro paragraph explains that facts are yes/no
 statements about a project, that agents infer them from the code and then
 confirm them with the developer, and that rules use them in `Applies when`.
-Then one `###` section per fact. Each has a `Question` (one short question)
-and a `Definition` (when the answer is yes). `Implies` is given where listed:
+Then one `###` section per fact, each with a `Question` (one short question)
+and a `Definition` (when the answer is yes). Add `Implies` where listed:
 
 | Fact | Implies | Yes when |
 |---|---|---|
@@ -448,9 +562,9 @@ and a `Definition` (when the answer is yes). `Implies` is given where listed:
 | sold-in-eu | | it is placed on the EU market |
 | processes-eu-personal-data | | it processes personal data of people in the EU |
 
-- [ ] **Step 6: Run all catalog tests**
+- [ ] **Step 6: Run all tests**
 
-Run: `go test ./tools/uss/internal/catalog/ -v`
+Run: `cargo test -p uss`
 Expected: PASS.
 
 - [ ] **Step 7: Commit**
@@ -465,68 +579,63 @@ git commit -m "feat(uss): add Markdown scanner and applicability fact vocabulary
 ### Task 5: Rule file parsing
 
 **Files:**
-- Create: `tools/uss/internal/catalog/rules.go`, `rules_test.go`
+- Create: `tools/uss/src/catalog/rules.rs`
 
 **Interfaces:**
-- Consumes: `parseDoc` (Task 4), `expr.Parse` / `expr.And` (Task 3).
+- Consumes: `parse_doc` (Task 4); `expr::parse` and `Expr::and` (Task 3).
 - Produces:
-  - `type Level string` with constants `Must = "MUST"`, `MustNot = "MUST NOT"`,
-    `Should = "SHOULD"`, `ShouldNot = "SHOULD NOT"`, `May = "MAY"`;
-    `func ParseLevel(s string) (Level, bool)`.
-  - `type Rule struct{ ID, Title string; Level Level; AppliesWhen string; Applies expr.Expr; Category, Verify, References string; Enables, Refines []string; Retired bool; RetiredIn, ReplacedBy string; Body string; Kind string; File string; Line int }`.
-    `Applies` is `expr.And(file Applies, rule Applies)`; `Kind` is copied from the file.
-  - `type RuleFile struct{ File, Title, Prefix, Kind, AppliesWhen string; Applies expr.Expr; Rules []Rule }`
-  - `func parseRuleFile(file string, data []byte) (RuleFile, []Diagnostic)`
+  - `pub enum Level { Must, MustNot, Should, ShouldNot, May }` with `Display`
+    giving `MUST`, `MUST NOT`, `SHOULD`, `SHOULD NOT`, `MAY`, and `FromStr`.
+  - `pub enum FileKind { Area, Module }`
+  - `pub struct Active { pub level: Level, pub applies_when: String, pub applies: Expr, pub category: String, pub verify: String, pub references: String, pub enables: Vec<String>, pub refines: Vec<String>, pub body: String }`.
+    `applies` is `Expr::and(file applies, rule applies)`.
+  - `pub enum RuleState { Active(Active), Retired { retired_in: String, replaced_by: Option<String> } }`
+  - `pub struct Rule { pub id: String, pub title: String, pub kind: FileKind, pub file: String, pub line: usize, pub state: RuleState }`
+    with `fn active(&self) -> Option<&Active>`.
+  - `pub struct RuleFile { pub file: String, pub title: String, pub prefix: String, pub kind: FileKind, pub applies_when: String, pub rules: Vec<Rule> }`
+  - crate-internal `fn parse_rule_file(file: &str, data: &[u8]) -> (RuleFile, Vec<Diagnostic>)`
 
 File-local checks (pinned):
-- Header: `Prefix` (required, `^[A-Z][A-Z0-9]{1,7}$`), `Kind` (required,
-  `area` or `module`), `Applies when` (optional, default `always`).
+- Header: `Prefix` (required, `^[A-Z][A-Z0-9]{1,7}$`); `Kind` (required,
+  `area` or `module`); `Applies when` (optional, default `always`).
 - Every `###` heading matches `^(USS-([A-Z][A-Z0-9]{1,7})-(\d{3})): (.+)$`,
   otherwise `heading is not a rule`. The prefix equals the file's `Prefix`.
 - Allowed fields: Level, Applies when, Category, Verify, References, Enables,
   Refines, Status, Retired in, Replaced by.
-- Active rules require Level, Applies when, Category, Verify, References, and
-  a non-empty body. Retired rules (`Status: Retired`) require `Retired in`
+- Active rules require Level, Applies when, Category, Verify, References and a
+  non-empty body. A retired rule (`Status: Retired`) requires `Retired in`
   (semver) and `Replaced by` (a rule ID or `none`).
-- `Enables` only when the level is `MAY`. `Refines` only when the file kind is
-  `module`.
-- **Keyword scan** of the body, outside fences, with the regex
+- `Enables` only on `MAY`. `Refines` only in `module` files.
+- **Keyword scan** of `prose` with the regex
   `\b(MUST NOT|SHOULD NOT|SHALL NOT|NOT RECOMMENDED|MUST|SHOULD|SHALL|MAY|REQUIRED|RECOMMENDED|OPTIONAL)\b`:
-  a forbidden synonym gives `forbidden keyword "<kw>"`; any keyword other than
-  the rule's level gives `keyword "<kw>" in a <level> rule`; the level keyword
-  must appear at least once, otherwise `body does not state the rule with "<level>"`.
+  a forbidden synonym → `forbidden keyword "<kw>"`; any other level's keyword
+  → `keyword "<kw>" in a <LEVEL> rule`; the rule's own keyword absent →
+  `body does not state the rule with "<LEVEL>"`.
 
 - [ ] **Step 1: Write the failing tests**
 
-`TestParseRuleFile_Valid`: the spec §5.2 example (`USS-SEC-012`, MUST,
-`uses-database`, Safety) in a file with `Prefix: SEC`, `Kind: area` → one rule
-with each field equal to the spec's values.
-`TestParseRuleFile_ModuleAppliesWhen`: a module file with
-`Applies when: lang.go` and a rule with `always` → `Applies.String() == "lang.go"`.
-`TestParseRuleFile_Errors`, a table with one bad input per check above, each
-with its expected message substring.
-`TestParseRuleFile_CodeFence`: a rule body with a fenced example containing
-`### USS-SEC-999: x` and `SHOULD` → one rule, no diagnostics.
-`TestParseRuleFile_CRLFAndBOM`: the `_Valid` input with BOM and CRLF → equal
-`Rule` values. `TestParseRuleFile_Retired`: a retired rule without Verify is
-valid; one missing `Replaced by` is not.
+- `rule_file_valid`: the spec §5.2 example (`USS-SEC-012`, MUST,
+  `uses-database`, Safety) in a file with `Prefix: SEC`, `Kind: area` → one
+  active rule with each field equal to the spec's values.
+- `rule_file_module_applies_when`: a module file with `Applies when: lang.go`
+  and a rule with `always` → `applies.to_string() == "lang.go"`.
+- `rule_file_errors`: a table, one bad input per check above, each with its
+  expected substring.
+- `rule_file_code_fence`: a body with a fenced example containing
+  `### USS-SEC-999: x` and `SHOULD` → one rule, no diagnostics.
+- `rule_file_crlf_and_bom`: the `_valid` input with BOM and CRLF → equal rules.
+- `rule_file_retired`: a retired rule without `Verify` is valid; one missing
+  `Replaced by` is not.
 
-- [ ] **Step 2: Run to verify they fail**
+- [ ] **Step 2: Run to verify they fail; implement; run to verify they pass**
 
-Run: `go test ./tools/uss/internal/catalog/ -run TestParseRuleFile -v`
-Expected: FAIL.
+Run: `cargo test -p uss rule_file`
+Expected: FAIL before implementation, PASS after.
 
-- [ ] **Step 3: Implement `rules.go`**
-
-- [ ] **Step 4: Run to verify they pass**
-
-Run: `go test ./tools/uss/internal/catalog/ -v`
-Expected: PASS.
-
-- [ ] **Step 5: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
-git add tools/uss/internal/catalog
+git add tools/uss/src
 git commit -m "feat(uss): parse and check rule files"
 ```
 
@@ -535,37 +644,36 @@ git commit -m "feat(uss): parse and check rule files"
 ### Task 6: Catalog loading, cross-file lint and `uss lint`
 
 **Files:**
-- Create: `tools/uss/internal/catalog/catalog.go`, `catalog_test.go`
-- Create: `tools/uss/internal/testfixture/fixture.go`
-- Modify: `tools/uss/main.go`, `tools/uss/main_test.go`
+- Modify: `tools/uss/src/catalog/mod.rs`
+- Create: `tools/uss/src/testfixture.rs` (`#[cfg(test)]`)
+- Modify: `tools/uss/src/cli/mod.rs`
 
 **Interfaces:**
-- Consumes: `LoadRegistry`, `parseFacts`, `parseRuleFile`.
+- Consumes: `load_registry`, `parse_facts`, `parse_rule_file`.
 - Produces:
-  - `type Catalog struct{ Registry Registry; Facts map[string]Fact; Files []RuleFile; Rules []Rule }`.
-    `Rules` holds every rule, retired ones included, sorted by ID.
-  - `func Load(fsys fs.FS) (*Catalog, []Diagnostic)`. It reads
-    `standard/registry.yaml`, `standard/applicability.md`, every `.md` under
-    `standard/core/` (Kind must be `area`), and every `.md` under
-    `standard/modules/` recursively (Kind must be `module`). A missing
-    directory is not an error. Diagnostics are sorted by File, then Line.
-  - `func (c *Catalog) Rule(id string) (Rule, bool)`
-  - `func (c *Catalog) KnownIdent(id string) bool`: true for a defined fact or
-    a `kind.id` whose ID is in the registry stack.
-  - `testfixture.Standard() fstest.MapFS`: a valid mini-standard used by all
-    later tests (below).
-  - CLI: `uss lint [--standard-root DIR]`.
+  - `pub struct Catalog { pub registry: Registry, pub facts: BTreeMap<String, Fact>, pub rules: Vec<Rule>, pub file_count: usize }`.
+    `rules` holds every rule, retired ones included, sorted by ID.
+  - `pub fn load(src: &dyn Source) -> Result<Catalog, Vec<Diagnostic>>`. It
+    reads `standard/registry.yaml`, `standard/applicability.md`, every `.md`
+    under `standard/core/` (kind must be `area`), and every `.md` under
+    `standard/modules/` recursively (kind must be `module`). A missing
+    directory is fine. Diagnostics are sorted by file, then line.
+  - `impl Catalog { pub fn rule(&self, id: &str) -> Option<&Rule>; pub fn known_ident(&self, id: &str) -> bool }`.
+    `known_ident` is true for a defined fact or a `kind.id` whose ID is in the
+    registry stack.
+  - `testfixture::standard() -> MemSource`: the mini-standard below.
+  - CLI: `uss lint`.
 
 Cross-file checks: duplicate rule IDs; the same prefix in two files; an
-unregistered category; an expression identifier that `KnownIdent` rejects; an
-`Enables` fact that does not exist or whose `Enabled by` differs; a fact whose
-`Enabled by` is not a MAY rule listing it in `Enables`; a `Refines` target that
-is missing or not in an `area` file; a `Replaced by` target that is missing.
+unregistered category; an expression identifier that `known_ident` rejects;
+an `Enables` fact that does not exist or whose `Enabled by` differs; a fact
+whose `Enabled by` is not a MAY rule listing it in `Enables`; a `Refines`
+target that is missing or not in an `area` file; a `Replaced by` target that
+is missing.
 
-Fixture `testfixture.Standard()`: registry version `0.1.0`; categories
-Safety and Features; stack `lang: [go]`; facts `has-ui`, `uses-database`,
-`has-web-ui` (implies `has-ui`) with Questions, and `has-plugin-interface`
-(`Enabled by: USS-EXT-001`). Rules:
+Fixture: registry version `0.1.0`; categories Safety and Features; stack
+`lang: [go]`; facts `has-ui`, `uses-database`, `has-web-ui` (implies `has-ui`)
+with Questions, and `has-plugin-interface` (`Enabled by: USS-EXT-001`).
 
 | ID | Level | Applies when | Category | Notes |
 |---|---|---|---|---|
@@ -579,32 +687,25 @@ Safety and Features; stack `lang: [go]`; facts `has-ui`, `uses-database`,
 
 - [ ] **Step 1: Write the failing tests**
 
-`TestLoad_Fixture`: no diagnostics; 7 rules; `Rules[0].ID == "USS-EXT-001"`;
-`Rule("USS-GO-001").Applies.String() == "lang.go"`.
-`TestLoad_CrossFileErrors`: a table that alters the fixture once per
-cross-file check, each with its expected message substring.
-`TestRunLint_Embedded`: `run([]string{"lint"})` → exit 0, and stdout starts
-with `"uss lint: ok ("` (counts change as rules are added in later plans).
-`TestRunLint_StandardRoot`: write the fixture to `t.TempDir()` with one rule
-missing `Verify` → exit 1, stdout contains `standard/core/security.md:` and
-ends with `uss lint: 1 problem\n`.
+- `load_fixture`: Ok; 7 rules; `rules[0].id == "USS-EXT-001"`; the
+  `USS-GO-001` `applies` displays `lang.go`.
+- `load_cross_file_errors`: a table that alters the fixture once per check,
+  each with its expected substring.
+- `run_lint_embedded`: `["lint"]` → exit 0, stdout starts with `uss lint: ok (`.
+- `run_lint_standard_root` (first run `cargo add -p uss --dev tempfile`):
+  write the fixture to a `tempfile::TempDir` with
+  one rule missing `Verify`, then
+  `["--standard-root", <dir>, "lint"]` → exit 1; stdout contains
+  `standard/core/security.md:` and ends with `uss lint: 1 problem\n`.
 
-- [ ] **Step 2: Run to verify they fail**
+- [ ] **Step 2: Run to verify they fail; implement; run to verify they pass**
 
-Run: `go test ./tools/uss/... -v`
-Expected: FAIL.
+Run: `cargo test -p uss`
+Expected: FAIL before implementation, PASS after. Output: one diagnostic per
+line, then `uss lint: ok (N rules, M files)` or `uss lint: N problem(s)`
+("problem" when N is 1).
 
-- [ ] **Step 3: Implement `Load`, the fixture and the `lint` command**
-
-Output: one diagnostic per line, then `uss lint: ok (N rules, M files)` or
-`uss lint: N problem(s)` ("problem" when N is 1, "problems" otherwise).
-
-- [ ] **Step 4: Run to verify they pass**
-
-Run: `go test ./tools/uss/... -v`
-Expected: PASS.
-
-- [ ] **Step 5: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
 git add -A
@@ -617,31 +718,33 @@ git commit -m "feat(uss): load the catalog and add the lint command"
 
 **Files:**
 - Create: `schema/record.schema.json`, `schema/audit-results.schema.json`
-- Modify: `embed.go` (pattern `standard schema`)
-- Create: `tools/uss/internal/record/record.go`, `results.go`, `record_test.go`, `testdata/`
+- Create: `tools/uss/src/record/mod.rs`, `tools/uss/src/record/results.rs`, `tools/uss/src/record/testdata/`
 
 **Interfaces:**
-- Produces (package `record`):
-  - `type StandardRef struct{ Version string }`; `type Project struct{ Name string }`
-  - `type Stack struct{ Languages, Frameworks, Platforms, Tools []string }`
-  - `type Decision struct{ Adopt bool }`
-  - `type Deviation struct{ Rule, Document, ApprovedBy, Date, ReviewBy string }`
-    (YAML keys `rule`, `document`, `approved-by`, `date`, `review-by`)
-  - `type AuditRef struct{ Date, Results, Report string }`
-  - `type Record struct{ Standard StandardRef; Project Project; Stack Stack; Facts map[string]bool; Decisions map[string]Decision; Deviations []Deviation; Audits []AuditRef; Components []string; Path, Root string }`.
-    `Path` and `Root` are not read from YAML. `Root` is the parent of the
-    `.uss` directory holding the record; if the record is not inside `.uss`,
-    it is the record's own directory.
-  - `func LoadRecord(uss fs.FS, path string) (*Record, error)`. Schemas come
-    from `uss` at `schema/*.json`.
-  - `func (r *Record) LatestAudit() (AuditRef, bool)`: the greatest `Date`;
-    on a tie, the later list entry.
-  - Result constants `Pass`, `Fail`, `Deviation`, `Declined`, `Unverified`,
-    `NotApplicable` with the Global Constraints values.
-  - `type Result struct{ Result, Evidence string }`;
-    `type Suppression struct{ File string; Line int; Rule, Reason string }`
-  - `type Results struct{ Standard StandardRef; Commit, Date, Auditor string; Results map[string]Result; Suppressions []Suppression; Path string }`
-  - `func LoadResults(uss fs.FS, path string) (*Results, error)`
+- Produces (module `uss::record`; serde with `deny_unknown_fields` and
+  `rename_all = "kebab-case"`):
+  - `StandardRef { version: String }`, `Project { name: String }`,
+    `Stack { languages, frameworks, platforms, tools: Vec<String> }` (each defaults to empty)
+  - `Decision { adopt: bool }`
+  - `Deviation { rule, document, approved_by, date: String, review_by: Option<String> }`
+  - `AuditRef { date, results, report: String }`
+  - `Record { standard, project, stack, facts: BTreeMap<String, bool>, decisions: BTreeMap<String, Decision>, deviations: Vec<Deviation>, audits: Vec<AuditRef>, components: Vec<String>, #[serde(skip)] path: String }`,
+    with `fn latest_audit(&self) -> Option<&AuditRef>` (greatest `date`; on
+    a tie, the later entry).
+  - `pub enum Outcome { Pass, Fail, Deviation, Declined, Unverified, NotApplicable }`
+    (kebab-case in YAML, with `Display` giving the same text)
+  - `Entry { result: Outcome, evidence: String (default empty) }`
+  - `Suppression { file: String, line: Option<u32>, rule: String, reason: String }`
+  - `Results { standard, commit, date, auditor: String (default empty), results: BTreeMap<String, Entry>, suppressions: Vec<Suppression>, #[serde(skip)] path: String }`
+  - `pub struct LoadError { pub path: String, pub problems: Vec<String> }`,
+    with `Display` → `path: p1; p2`
+  - `pub fn parse_record(src: &dyn Source, path: &str, data: &[u8]) -> Result<Record, LoadError>`
+  - `pub fn parse_results(src: &dyn Source, path: &str, data: &[u8]) -> Result<Results, LoadError>`
+
+Pipeline: `yaml::from_slice::<serde_json::Value>` → validate against
+`schema/*.json`, read from `src` with `jsonschema` (default features off, no
+remote references) → `serde_json::from_value` into the struct. Each problem
+names the JSON pointer of the failing instance.
 
 Schema content (draft 2020-12, `additionalProperties: false` everywhere, `$id`
 under `https://github.com/HaleTechCo/Universal-Software-Standard/schema/`):
@@ -657,47 +760,35 @@ under `https://github.com/HaleTechCo/Universal-Software-Standard/schema/`):
   `pass`, `fail` or `deviation`. Suppression items require `file`, `rule`,
   `reason`; `line` is an integer ≥ 1.
 
-Loading: decode YAML into `any`, normalise it to JSON-compatible values
-(`time.Time` becomes `YYYY-MM-DD`), validate against the schema, then decode
-strictly into the struct. Errors name the JSON pointer of each failure.
+- [ ] **Step 1: Add `jsonschema` (default features off)**
 
-- [ ] **Step 1: Add the schema dependency**
-
-Run: `go get github.com/santhosh-tekuri/jsonschema/v6@latest`
-Expected: `go.mod` updated.
+Run: `cargo add -p uss jsonschema --no-default-features`
+Expected: `cargo build -p uss` succeeds.
 
 - [ ] **Step 2: Write the failing tests**
 
-`TestLoadRecord_Valid` (`testdata/record-valid.yaml`, with an unquoted
-`date: 2026-11-21`): fields populated; `Deviations[0].Date == "2026-11-21"`.
-`TestLoadRecord_Root`: a record at `<tmp>/proj/.uss/record.yaml` →
-`Root == <tmp>/proj`. `TestLoadRecord_CRLFAndBOM`: the same file with BOM and
-CRLF → an equal `Record` (except `Path`/`Root`). `TestLoadRecord_SchemaErrors`,
-a table: unknown top-level key `colour` → error contains `colour`; `has-ui: "yes"` →
-`"/facts/has-ui"`; decision key `SEC-1` → `"/decisions"`; deviation without
-`approved-by` → `"/deviations/0"`; `date: 21/11/2026` → `"/deviations/0/date"`.
-`TestLoadResults_Valid`; `TestLoadResults_Errors`: commit `1ab35de` → `"/commit"`;
-result `passed` → `"/results/USS-SEC-001/result"`; `pass` without evidence →
-`"/results/USS-SEC-001"`. `TestLatestAudit`: three entries, tie on the latest
-date → the later entry.
+- `record_valid` (`testdata/record-valid.yaml` with an unquoted
+  `date: 2026-11-21`): fields populated; `deviations[0].date == "2026-11-21"`.
+- `record_crlf_and_bom`: the same file with BOM and CRLF → an equal `Record`.
+- `record_schema_errors`, a table: unknown top-level key `colour` → a problem
+  containing `colour`; `has-ui: "yes"` → `/facts/has-ui`; decision key
+  `SEC-1` → `/decisions`; deviation without `approved-by` → `/deviations/0`;
+  `date: 21/11/2026` → `/deviations/0/date`.
+- `results_valid`; `results_errors`: commit `1ab35de` → `/commit`; result
+  `passed` → `/results/USS-SEC-001/result`; `pass` without evidence →
+  `/results/USS-SEC-001`.
+- `latest_audit_tie_takes_later`.
 
-- [ ] **Step 3: Run to verify they fail**
+- [ ] **Step 3: Run to verify they fail; write the schemas and implement; run to verify they pass**
 
-Run: `go test ./tools/uss/internal/record/ -v`
-Expected: FAIL.
+Run: `cargo test -p uss record`
+Expected: FAIL before implementation, PASS after.
 
-- [ ] **Step 4: Write the schemas, extend `embed.go`, implement `record.go` and `results.go`**
-
-- [ ] **Step 5: Run to verify they pass**
-
-Run: `go test ./tools/uss/... -v`
-Expected: PASS.
-
-- [ ] **Step 6: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add -A
-git commit -m "feat(uss): add record and audit-results schemas and loaders"
+git commit -m "feat(uss): add record and audit-results schemas and parsers"
 ```
 
 ---
@@ -705,43 +796,51 @@ git commit -m "feat(uss): add record and audit-results schemas and loaders"
 ### Task 8: Fact resolution and `uss applicable`
 
 **Files:**
-- Create: `tools/uss/internal/evaluate/facts.go`, `facts_test.go`
-- Modify: `tools/uss/main.go`, `tools/uss/main_test.go`
+- Create: `tools/uss/src/evaluate/mod.rs`, `tools/uss/src/evaluate/facts.rs`
+- Create: `tools/uss/src/cli/files.rs` (`DirSource`, `OsProject`, `read_record`, `project_root`)
+- Modify: `tools/uss/src/cli/mod.rs`
 
 **Interfaces:**
-- Consumes: `catalog.Catalog`, `record.Record`.
+- Consumes: `Catalog`, `Record`.
 - Produces:
-  - `type Facts map[string]bool`
-  - `func ResolveFacts(c *catalog.Catalog, r *record.Record) Facts`
-  - `func Applicable(c *catalog.Catalog, r *record.Record) []catalog.Rule`:
-    active rules whose `Applies` is true under `ResolveFacts`, sorted by ID.
-  - In `main.go`: `func versionError(pinned, carried, command, arg string) string`
-    returning
-    `record pins USS <pinned>; this uss carries USS <carried>. Run: go run github.com/HaleTechCo/Universal-Software-Standard/tools/uss@v<pinned> <command> <arg>`.
-  - CLI: `uss applicable [--standard-root DIR] [--json] RECORD`.
+  - `pub fn resolve_facts(c: &Catalog, r: &Record) -> BTreeSet<String>`
+    (the set of true facts)
+  - `pub fn applicable<'c>(c: &'c Catalog, r: &Record) -> Vec<&'c Rule>`:
+    active rules whose `applies` is true, sorted by ID.
+  - cli: `fn project_root(record_path: &Path) -> PathBuf` (the parent of the
+    `.uss` directory that holds the record, or the record's own directory);
+    `fn read_record(src: &dyn Source, path: &Path) -> Result<Record, String>`
+    (sets `path` to the given path, with forward slashes);
+    `fn version_error(pinned: &str, carried: &str) -> String`, returning
+    `record pins USS <pinned>; this uss carries USS <carried>. Use uss <pinned>: download it from the v<pinned> release, or run: cargo install --locked --git https://github.com/HaleTechCo/Universal-Software-Standard --tag v<pinned> uss`.
+  - CLI: `uss applicable [--json] RECORD`.
 
-Resolution (pinned): start from the record's facts; add `lang.<x>` for each
-`Stack.Languages`, `framework.<x>`, `platform.<x>` and `tool.<x>` likewise.
-Then repeat until nothing changes: add `Implies` closures; for each active MAY
-rule that applies and has `Decisions[id].Adopt == true`, set its `Enables`
-facts. Unset facts are false.
+Resolution (pinned): start from the record's true facts; add `lang.<x>` for
+each `stack.languages`, and `framework.<x>`, `platform.<x>` and `tool.<x>`
+likewise. Then repeat until nothing changes: add `implies` closures; for each
+active MAY rule that applies and has `decisions[id].adopt == true`, add its
+`enables` facts.
 
 Output: one line per rule, `ID<TAB>LEVEL<TAB>Category<TAB>Title`. With
 `--json`: an array of `{"id","title","level","category","file"}`.
 
-- [ ] **Step 1: Write the failing tests** (all on `testfixture.Standard()`)
+- [ ] **Step 1: Write the failing tests** (on `testfixture::standard()`)
 
-`TestResolveFacts`: `{has-web-ui:true}` → `has-ui` true; stack `[go]` →
-`lang.go` true; `has-plugin-interface` true only with `USS-EXT-001` adopted.
-`TestApplicable`: all facts false, no stack, no decisions → IDs
-`[USS-EXT-001, USS-SEC-001]`; with `USS-EXT-001` adopted → adds `USS-EXT-002`;
-with stack `[go]` → adds `USS-GO-001`; `USS-SEC-004` (retired) never appears.
-`TestRunApplicable_VersionMismatch`: record pins `9.9.9` → exit 1, stderr
-contains `tools/uss@v9.9.9 applicable`.
+- `resolve_facts_rules`: `{has-web-ui}` → contains `has-ui`; stack `[go]` →
+  contains `lang.go`; `has-plugin-interface` present only when
+  `USS-EXT-001` is adopted.
+- `applicable_sets`: all facts false, no stack, no decisions →
+  `[USS-EXT-001, USS-SEC-001]`; with `USS-EXT-001` adopted → adds
+  `USS-EXT-002`; with stack `[go]` → adds `USS-GO-001`; `USS-SEC-004` never
+  appears.
+- `run_applicable_version_mismatch`: a record pinning `9.9.9` → exit 1, stderr
+  contains `--tag v9.9.9 uss`.
+- `project_root_cases`: `<tmp>/proj/.uss/record.yaml` → `<tmp>/proj`;
+  `<tmp>/x/record.yaml` → `<tmp>/x`.
 
 - [ ] **Step 2: Run to verify they fail; implement; run to verify they pass**
 
-Run: `go test ./tools/uss/... -v`
+Run: `cargo test -p uss`
 Expected: FAIL before implementation, PASS after.
 
 - [ ] **Step 3: Commit**
@@ -756,19 +855,28 @@ git commit -m "feat(uss): resolve facts and add the applicable command"
 ### Task 9: Record checks and `uss check`
 
 **Files:**
-- Create: `tools/uss/internal/evaluate/check.go`, `check_test.go`
-- Modify: `tools/uss/main.go`, `tools/uss/main_test.go`
+- Create: `tools/uss/src/evaluate/check.rs`, `tools/uss/src/evaluate/project.rs`
+- Modify: `tools/uss/src/cli/files.rs`, `tools/uss/src/cli/mod.rs`
 
 **Interfaces:**
-- Consumes: `ResolveFacts`, `Applicable`, `record.LoadRecord`.
+- Consumes: `resolve_facts`, `applicable`, `parse_record`.
 - Produces:
-  - `func CheckRecord(uss fs.FS, c *catalog.Catalog, r *record.Record) []catalog.Diagnostic`.
-    `File` is `r.Path`. Component records are loaded and checked recursively,
-    and their diagnostics carry their own path.
-  - CLI: `uss check [--standard-root DIR] RECORD`. It prints the diagnostics,
-    then `uss check: ok` (exit 0) or `uss check: N problem(s)` (exit 1).
+  - `pub trait ProjectFiles { fn exists(&self, rel: &str) -> bool; fn read(&self, rel: &str) -> Option<Vec<u8>>; }`.
+    `rel` is a forward-slash path relative to the project root.
+  - `pub struct MemProject(pub BTreeMap<String, Vec<u8>>)` and
+    `pub struct SubProject<'a> { pub inner: &'a dyn ProjectFiles, pub prefix: String }`
+    (a component's view of its parent's files); both implement `ProjectFiles`.
+  - cli: `OsProject { root: PathBuf }` implements `ProjectFiles` by joining
+    `rel`'s `/`-separated parts onto `root`.
+  - `pub fn check_record(src: &dyn Source, c: &Catalog, r: &Record, project: &dyn ProjectFiles) -> Vec<Diagnostic>`.
+    `file` is `r.path`. Component records are parsed and checked
+    recursively, and their diagnostics carry their own path
+    (`<component>/.uss/record.yaml`).
+  - CLI: `uss check RECORD`. It prints the diagnostics, then `uss check: ok`
+    (exit 0) or `uss check: N problem(s)` (exit 1).
 
-Checks and messages (pinned):
+Checks and messages (pinned). Normalise every path from a record with
+`replace('\\', "/")` before using it.
 - A fact key that is not defined → `unknown fact "<id>"`.
 - A fact set by a rule → `fact "<id>" is set by <rule>, not answered directly`.
 - An asked fact missing → `fact "<id>" is not answered`.
@@ -779,28 +887,30 @@ Checks and messages (pinned):
 - A deviation for an unknown rule, a MAY rule, a non-applicable rule, or the
   same rule twice → messages naming the rule.
 - A missing deviation document → `deviation document "<doc>" not found`.
-  Resolve the path with `filepath.Join(r.Root, filepath.FromSlash(strings.ReplaceAll(doc, "\\", "/")))`.
 - `review-by` earlier than `date` → `review-by is before date for <id>`.
 - A missing audit results file → `audit results "<path>" not found`.
-- A component path that is absolute or contains `..` → `component path "<p>" leaves the project`.
-  A missing `<root>/<p>/.uss/record.yaml` → `component record "<path>" not found`.
+- A component path that is absolute or contains `..` →
+  `component path "<p>" leaves the project`. A missing
+  `<p>/.uss/record.yaml` → `component record "<path>" not found`.
 
 - [ ] **Step 1: Write the failing tests**
 
-`TestCheckRecord_Valid`: a complete fixture record in `t.TempDir()` (all three
-asked facts answered, a decision for `USS-EXT-001`, a deviation for
-`USS-SEC-002` with `uses-database: true` and the document present) → no
-diagnostics. `TestCheckRecord_Errors`: a table, one case per check, each with
-its message substring. `TestCheckRecord_BackslashPath`: deviation document
-`docs\deviations\USS-SEC-002.md` exists as `docs/deviations/USS-SEC-002.md` →
-no diagnostic, on every OS. `TestCheckRecord_Components`: root record with
-`components: [svc]` whose `svc/.uss/record.yaml` leaves `has-ui` unanswered →
-one diagnostic whose `File` ends with `svc/.uss/record.yaml` (compare with
-forward slashes).
+- `check_valid` (`MemProject`): a complete fixture record (all three asked
+  facts answered, a decision for `USS-EXT-001`, `uses-database: true`, a
+  deviation for `USS-SEC-002` with its document present) → no diagnostics.
+- `check_errors`: a table, one case per check, each with its message substring.
+- `check_backslash_path` (library): document `docs\deviations\USS-SEC-002.md`
+  with `docs/deviations/USS-SEC-002.md` present in the `MemProject` → no
+  diagnostic.
+- `check_backslash_path_cli`: the same with `OsProject` on a temp dir, run
+  through `["check", <record>]` → exit 0, on every OS.
+- `check_components`: root `components: [svc]`, and `svc/.uss/record.yaml`
+  leaves `has-ui` unanswered → one diagnostic whose file is
+  `svc/.uss/record.yaml`.
 
 - [ ] **Step 2: Run to verify they fail; implement; run to verify they pass**
 
-Run: `go test ./tools/uss/... -v`
+Run: `cargo test -p uss`
 Expected: FAIL before implementation, PASS after.
 
 - [ ] **Step 3: Commit**
@@ -815,66 +925,68 @@ git commit -m "feat(uss): check project records and add the check command"
 ### Task 10: Compliance status and category scores
 
 **Files:**
-- Create: `tools/uss/internal/evaluate/evaluate.go`, `evaluate_test.go`
+- Create: `tools/uss/src/evaluate/score.rs`
 
 **Interfaces:**
-- Consumes: `Applicable`, `record.Results`.
+- Consumes: `applicable`, `Results`.
 - Produces:
-  - `type RuleResult struct{ Rule catalog.Rule; Result, Evidence string }`
-  - `type Status struct{ Compliant bool; MustFailures, MustDeviations, ShouldFailures, Unverified, MissingDecisions int }`
-  - `type Score struct{ Category string; Pass, Applicable, Percent int }`
-    (`Percent` is `-1` for n/a)
-  - `type Evaluation struct{ Version, Date, Commit, Auditor string; Status Status; Scores []Score; Rules []RuleResult; Suppressions []record.Suppression; Deviations []record.Deviation }`
-  - `func Evaluate(c *catalog.Catalog, r *record.Record, res *record.Results) (*Evaluation, []catalog.Diagnostic)`
-  - `func (e *Evaluation) Statement() string`
-  - `func (e *Evaluation) ScoreLine() string`
+  - `pub struct RuleOutcome<'c> { pub rule: &'c Rule, pub outcome: Outcome, pub evidence: String }`
+  - `pub struct Status { pub compliant: bool, pub must_failures: usize, pub must_deviations: usize, pub should_failures: usize, pub unverified: usize, pub missing_decisions: usize }`
+  - `pub struct Score { pub category: String, pub pass: usize, pub applicable: usize, pub percent: Option<u32> }`
+    (`None` means n/a)
+  - `pub struct Evaluation<'c> { pub version: String, pub date: String, pub commit: String, pub auditor: String, pub status: Status, pub scores: Vec<Score>, pub rules: Vec<RuleOutcome<'c>>, pub suppressions: Vec<Suppression>, pub deviations: Vec<Deviation> }`
+  - `pub fn evaluate<'c>(c: &'c Catalog, r: &Record, res: &Results) -> Result<Evaluation<'c>, Vec<Diagnostic>>`
+  - `impl Evaluation<'_> { pub fn statement(&self) -> String; pub fn score_line(&self) -> String }`
 
 Rules (pinned):
-- Each applicable rule takes its result from `res`; a missing result is
-  `unverified` with evidence `no result recorded`.
-- Consistency diagnostics (`File` = `res.Path`): a result for an unknown,
-  retired or non-applicable rule; `not-applicable` for an applicable rule;
-  `deviation` on a MAY or without a record deviation for that rule; `declined`
-  on a non-MAY or without `adopt: false`; a MAY with `adopt: false` and any
-  result other than `declined`; results version ≠ record version.
-- Counting: MUST/MUST NOT `fail` → MustFailures, `deviation` → MustDeviations;
-  SHOULD/SHOULD NOT `fail` → ShouldFailures; `unverified` at any level →
-  Unverified; an applicable MAY without a decision → MissingDecisions.
-  `Compliant` means every count is 0.
-- Scores: for each registry category in order, `Percent = Pass*100/Applicable`
-  (integer division), or `-1` when `Applicable == 0`.
-- `Statement()`: `Compliant with USS <v> as of <date>.` or
-  `Not compliant with USS <v> as of <date>: <parts>.` The parts are, in this
+- Each applicable rule takes its outcome from `res`. A missing one is
+  `Unverified` with evidence `no result recorded`.
+- Consistency diagnostics (`file` = `res.path`) make `evaluate` return `Err`:
+  - a result for an unknown, retired or non-applicable rule;
+  - `not-applicable` for an applicable rule;
+  - `deviation` on a MAY, or without a record deviation for that rule;
+  - `declined` on a non-MAY, or without `adopt: false`;
+  - a MAY with `adopt: false` and any outcome other than `declined`;
+  - a results version different from the record version.
+- Counting: MUST/MUST NOT `fail` → `must_failures`, `deviation` →
+  `must_deviations`; SHOULD/SHOULD NOT `fail` → `should_failures`;
+  `unverified` at any level → `unverified`; an applicable MAY without a
+  decision → `missing_decisions`. `compliant` means every count is 0.
+- Scores: for each registry category in order,
+  `percent = Some(pass * 100 / applicable)` (integer division), or `None` when
+  `applicable == 0`.
+- `statement()`: `Compliant with USS <v> as of <date>.` or
+  `Not compliant with USS <v> as of <date>: <parts>.`. The parts are, in this
   order and only when non-zero, joined by `, `: `N MUST failure(s)`,
-  `N documented MUST deviation(s)`, `N SHOULD failure(s)`, `N unverified rule(s)`,
-  `N missing MAY decision(s)`. Singular when N is 1.
-- `ScoreLine()`: `<Name> <P>%` or `<Name> n/a` for every category, joined by
+  `N documented MUST deviation(s)`, `N SHOULD failure(s)`,
+  `N unverified rule(s)`, `N missing MAY decision(s)`. Singular when N is 1.
+- `score_line()`: `<Name> <P>%` or `<Name> n/a` for every category, joined by
   `, `, ending with `.`.
 
 - [ ] **Step 1: Write the failing tests** (fixture standard and records)
 
-`TestEvaluate_CompliantWithDeclinedMay`: facts all false; `USS-EXT-001`
-declined (`adopt: false`, result `declined`); `USS-SEC-001` pass →
-`Statement() == "Compliant with USS 0.1.0 as of 2026-11-21."`,
-`ScoreLine() == "Safety 100%, Features 0%."`.
-`TestEvaluate_NotCompliant`: `uses-database: true`; `USS-SEC-001` deviation
-(recorded); `USS-SEC-002` fail; no decision for `USS-EXT-001` →
-`"Not compliant with USS 0.1.0 as of 2026-11-21: 1 documented MUST deviation, 1 SHOULD failure, 1 unverified rule, 1 missing MAY decision."`
-(`USS-EXT-001` has no result, so it is unverified too).
-`TestEvaluate_FloorRounding`: `uses-database` and `has-ui` true; SEC-001 pass,
-SEC-002 pass, SEC-003 fail → the Safety score is 66 and the statement contains
-`1 MUST failure`. `TestEvaluate_MissingResultIsUnverified`.
-`TestEvaluate_ConsistencyErrors`: a table, one case per consistency rule.
+- `compliant_with_declined_may`: all facts false; `USS-EXT-001` declined
+  (`adopt: false`, outcome `declined`); `USS-SEC-001` pass →
+  `statement() == "Compliant with USS 0.1.0 as of 2026-11-21."`,
+  `score_line() == "Safety 100%, Features 0%."`.
+- `not_compliant_parts`: `uses-database: true`; `USS-SEC-001` deviation
+  (recorded); `USS-SEC-002` fail; no decision and no result for `USS-EXT-001`
+  → `"Not compliant with USS 0.1.0 as of 2026-11-21: 1 documented MUST deviation, 1 SHOULD failure, 1 unverified rule, 1 missing MAY decision."`
+- `floor_rounding`: `uses-database` and `has-ui` true; SEC-001 and SEC-002
+  pass, SEC-003 fail; EXT-001 declined → Safety `Some(66)`; the statement
+  contains `1 MUST failure`.
+- `missing_result_is_unverified`.
+- `consistency_errors`: a table, one case per consistency rule.
 
 - [ ] **Step 2: Run to verify they fail; implement; run to verify they pass**
 
-Run: `go test ./tools/uss/internal/evaluate/ -v`
+Run: `cargo test -p uss evaluate`
 Expected: FAIL before implementation, PASS after.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add tools/uss/internal/evaluate
+git add tools/uss/src
 git commit -m "feat(uss): compute compliance status and category scores"
 ```
 
@@ -883,29 +995,28 @@ git commit -m "feat(uss): compute compliance status and category scores"
 ### Task 11: Audit report and `uss report`
 
 **Files:**
-- Create: `templates/audit-report.md.tmpl`
-- Modify: `embed.go` (pattern `standard schema templates`)
-- Create: `tools/uss/internal/report/report.go`, `report_test.go`, `testdata/report.golden.md`
-- Modify: `tools/uss/main.go`, `tools/uss/main_test.go`
+- Create: `templates/audit-report.md.j2`
+- Create: `tools/uss/src/report.rs`, `tools/uss/src/testdata/report.golden.md`
+- Modify: `tools/uss/src/cli/mod.rs`
 
 **Interfaces:**
-- Consumes: `evaluate.Evaluate`, `Evaluation`.
+- Consumes: `evaluate`, `Evaluation`.
 - Produces:
-  - `type Data struct{ Project string; Eval *evaluate.Evaluation }`
-  - `func Render(w io.Writer, tmpl string, d Data) error`. Template functions:
-    `percent` (int → `"N%"` or `"n/a"`) and `cell` (escapes `|` as `\|` and
-    turns newlines into `<br>`).
-  - CLI: `uss report [--standard-root DIR] [--record PATH] [--out PATH] RESULTS`.
-    `--record` defaults to `.uss/record.yaml`; `--out` defaults to RESULTS
-    with `.yaml` replaced by `.md`. Consistency diagnostics → print them,
-    exit 1, write nothing. Otherwise write the report, print `Statement()`
-    and `ScoreLine()`, and exit 0, even when not compliant.
+  - `pub fn render(src: &dyn Source, project: &str, ev: &Evaluation) -> Result<String, String>`.
+    It loads `templates/audit-report.md.j2` from `src` and renders it with
+    minijinja, using filters `percent` (`Option<u32>` → `N%` or `n/a`) and
+    `cell` (escapes `|` as `\|`, turns newlines into `<br>`).
+  - CLI: `uss report [--record PATH] [--out PATH] RESULTS`. `--record`
+    defaults to `.uss/record.yaml`; `--out` defaults to RESULTS with `.yaml`
+    replaced by `.md`. Consistency diagnostics → print them, exit 1, write
+    nothing. Otherwise write the report, print `statement()` and
+    `score_line()`, and exit 0, even when not compliant.
 
-Report layout (pinned headings, sections omitted when empty):
+Report layout (pinned headings; empty sections omitted):
 
 ```
 # USS audit report: <project>
-<Statement>
+<statement>
 **Audited commit:** `<commit>` · **Date:** <date> · **Auditor:** <auditor>
 ## Scores            table: Category | Score | Passed | Applicable
 ## Results
@@ -915,27 +1026,32 @@ Report layout (pinned headings, sections omitted when empty):
 ## Suppressions          table: File | Line | Rule | Reason
 ```
 
-Within each result section, sort by level (MUST, MUST NOT, SHOULD, SHOULD NOT,
-MAY), then by ID, so MUST failures come first.
+Within each outcome section, sort by level (MUST, MUST NOT, SHOULD,
+SHOULD NOT, MAY), then by ID, so MUST failures come first.
 
-- [ ] **Step 1: Write the failing tests**
+- [ ] **Step 1: Add minijinja**
 
-`TestRender_Golden`: the `TestEvaluate_NotCompliant` evaluation, plus one
-suppression → output equals `testdata/report.golden.md`. Regenerate it with
-`go test ./tools/uss/internal/report/ -update`, then review the golden file by
-eye against the layout above before committing.
-`TestRender_EscapesCells`: evidence `a|b\nc` renders as `a\|b<br>c`.
-`TestRunReport_WritesFile`: record and results in `t.TempDir()` → the `.md`
-file exists, stdout starts with `Compliant with USS 0.1.0`, exit 0.
-`TestRunReport_ConsistencyError`: a result for an unknown rule → exit 1, no
-`.md` written.
+Run: `cargo add -p uss minijinja`
+Expected: the build succeeds.
 
-- [ ] **Step 2: Run to verify they fail; implement; run to verify they pass**
+- [ ] **Step 2: Write the failing tests**
 
-Run: `go test ./tools/uss/... -v`
+- `render_golden`: the `not_compliant_parts` evaluation plus one suppression
+  → equals `testdata/report.golden.md`. When `USS_UPDATE_GOLDEN=1` is set,
+  the test writes the file instead. Check the golden file by eye against the
+  layout above before committing it.
+- `render_escapes_cells`: evidence `a|b\nc` renders as `a\|b<br>c`.
+- `run_report_writes_file`: record and results in a temp dir → the `.md` file
+  exists, stdout starts with `Compliant with USS 0.1.0`, exit 0.
+- `run_report_consistency_error`: a result for an unknown rule → exit 1, no
+  `.md` written.
+
+- [ ] **Step 3: Run to verify they fail; implement; run to verify they pass**
+
+Run: `cargo test -p uss`
 Expected: FAIL before implementation, PASS after.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add -A
@@ -947,53 +1063,59 @@ git commit -m "feat(uss): render audit reports and add the report command"
 ### Task 12: `uss release-check`
 
 **Files:**
-- Create: `tools/uss/internal/release/git.go`, `release.go`, `release_test.go`
-- Modify: `tools/uss/main.go`, `tools/uss/main_test.go`
+- Create: `tools/uss/src/release.rs` (pure), `tools/uss/src/cli/git.rs`
+- Modify: `tools/uss/src/cli/mod.rs`
 
 **Interfaces:**
-- Consumes: `record.LoadRecord`, `LatestAudit`, `record.LoadResults`,
-  `evaluate.Evaluate`, `report.Render`.
-- Produces (package `release`, all running `git -C <repoDir> …`):
-  - `func CommitExists(repoDir, commit string) (bool, error)` (`git cat-file -e <commit>^{commit}`)
-  - `func IsShallow(repoDir string) (bool, error)` (`git rev-parse --is-shallow-repository`)
-  - `func IsAncestor(repoDir, commit string) (bool, error)` (`git merge-base --is-ancestor <commit> HEAD`)
-  - `func ChangedFiles(repoDir, commit string) ([]string, error)` (`git diff --name-only <commit> HEAD`, forward slashes)
-  - `func OnlyUSSChanges(paths []string) []string`: returns the offending
-    paths. A path is allowed when any `/`-separated segment equals `.uss`.
-  - CLI: `uss release-check [--standard-root DIR] [--record PATH] [--out PATH] [--require-compliant]`.
+- Consumes: `read_record`, `latest_audit`, `parse_results`, `evaluate`, `render`.
+- Produces:
+  - `uss::release::only_uss_changes(paths: &[String]) -> Vec<String>`: returns
+    the offending paths. A path is allowed when any `/`-separated segment
+    equals `.uss`.
+  - cli `git` (each runs `git -C <repo> …` through `std::process::Command`):
+    `commit_exists(repo, sha) -> Result<bool, String>`
+    (`cat-file -e <sha>^{commit}`); `is_shallow(repo) -> Result<bool, String>`
+    (`rev-parse --is-shallow-repository`); `is_ancestor(repo, sha) -> Result<bool, String>`
+    (`merge-base --is-ancestor <sha> HEAD`); `changed_files(repo, sha) -> Result<Vec<String>, String>`
+    (`diff --name-only <sha> HEAD`).
+  - CLI: `uss release-check [--record PATH] [--out PATH] [--require-compliant]`.
     `--out` defaults to `uss-report.md`.
 
-Behaviour (pinned): for the root record and each component record: no audit
-→ `no audit recorded in <record>`. A missing commit → if the clone is shallow,
-`audited commit <sha> is not in this clone; the clone is shallow. Fetch full history (actions/checkout: fetch-depth: 0).`,
-otherwise `audited commit <sha> not found`. Not an ancestor →
-`audited commit <sha> is not an ancestor of HEAD`. Offending changes →
-`changes since the audit outside .uss/:` followed by one path per line. Any
-of these → exit 1. Otherwise evaluate (consistency errors → exit 1), render
-each record's report and join them (root first) with `\n---\n\n` into `--out`,
-and print each `Statement()`. With `--require-compliant`, exit 1 if any record
-is not compliant.
+Behaviour (pinned). For the root record and each component record:
+- No audit → `no audit recorded in <record>`.
+- A missing commit → if the clone is shallow,
+  `audited commit <sha> is not in this clone; the clone is shallow. Fetch full history (actions/checkout: fetch-depth: 0).`,
+  otherwise `audited commit <sha> not found`.
+- Not an ancestor → `audited commit <sha> is not an ancestor of HEAD`.
+- Offending changes → `changes since the audit outside .uss/:` followed by one
+  path per line.
+
+Any of these → exit 1. Otherwise evaluate (consistency errors → exit 1),
+render each record's report, join them (root first) with `\n---\n\n` into
+`--out`, and print each `statement()`. With `--require-compliant`, exit 1 if
+any record is not compliant.
 
 - [ ] **Step 1: Write the failing tests**
 
-Helper `newRepo(t)`: `git init`, then commits made with
+Helper `new_repo()`: `git init` in a temp dir; commit with
 `git -c user.name=uss-test -c user.email=uss-test@example.invalid commit`.
-`TestOnlyUSSChanges`: table: `.uss/audits/a.yaml` allowed;
-`svc/.uss/record.yaml` allowed; `src/main.go` offending; `.ussx/a` offending.
-`TestReleaseCheck_OK`: commit A holds the source and the record. Commit B adds
-`.uss/audits/a.yaml` (results with A's full SHA) and the record's `audits`
-entry, and changes nothing outside `.uss/` → exit 0 and the report file exists.
-`TestReleaseCheck_ChangesOutsideUSS` → exit 1; output lists `src/main.go`.
-`TestReleaseCheck_NoAudit` → exit 1. `TestReleaseCheck_ShallowClone`:
-`git clone --depth 1 <file URL of the repo>` where the audit is at an older
-commit → exit 1; message contains `fetch-depth: 0`. Use a `file://` URL,
-because git ignores `--depth` for plain local paths. On Windows the URL is
-`file:///C:/...` (build it from `filepath.ToSlash` with a leading `/`). Each test skips when
-`exec.LookPath("git")` fails.
+- `only_uss_changes_table`: `.uss/audits/a.yaml` allowed;
+  `svc/.uss/record.yaml` allowed; `src/main.rs` offending; `.ussx/a` offending.
+- `release_check_ok`: commit A holds the source and the record. Commit B adds
+  `.uss/audits/a.yaml` (results with A's full SHA) and the record's `audits`
+  entry, and changes nothing outside `.uss/` → exit 0 and the report file
+  exists.
+- `release_check_changes_outside_uss` → exit 1; output lists `src/main.rs`.
+- `release_check_no_audit` → exit 1.
+- `release_check_shallow_clone`: `git clone --depth 1 <file URL>` where the
+  audit is at an older commit → exit 1; message contains `fetch-depth: 0`.
+  Use a `file://` URL, because git ignores `--depth` for plain local paths. On
+  Windows the URL is `file:///C:/...`.
+- Every git test returns early with a printed note when `git --version` fails.
 
 - [ ] **Step 2: Run to verify they fail; implement; run to verify they pass**
 
-Run: `go test ./tools/uss/... -v`
+Run: `cargo test -p uss release`
 Expected: FAIL before implementation, PASS after.
 
 - [ ] **Step 3: Commit**
@@ -1008,30 +1130,31 @@ git commit -m "feat(uss): add release-check tying audits to release commits"
 ### Task 13: `uss export --json`
 
 **Files:**
-- Create: `tools/uss/internal/catalog/export.go`, `export_test.go`
-- Modify: `tools/uss/main.go`, `tools/uss/main_test.go`
+- Create: `tools/uss/src/catalog/export.rs`
+- Modify: `tools/uss/src/cli/mod.rs`
 
 **Interfaces:**
 - Consumes: `Catalog`.
-- Produces: `type Export struct{ Version string; Categories []Category; Facts []Fact; Rules []ExportRule }`
-  and `func (c *Catalog) Export() Export`. JSON keys in camelCase.
-  `ExportRule` fields: `id`, `title`, `level`, `appliesWhen` (the effective
-  `Applies.String()`), `category`, `verify`, `references`, `enables`,
-  `refines`, `status` (`active` or `retired`), `retiredIn`, `replacedBy`,
-  `file`, `body`. Facts are sorted by ID; rules by ID.
-  CLI: `uss export [--standard-root DIR] --json` prints indented JSON
-  (2 spaces). Without `--json` → exit 2, `export: only --json is supported`.
+- Produces: `pub struct Export { version, categories, facts, rules }`
+  (`Serialize`, camelCase) and `impl Catalog { pub fn export(&self) -> Export }`.
+  Each exported rule has `id`, `title`, `level` (`null` when retired),
+  `appliesWhen` (the effective `applies` display), `category`, `verify`,
+  `references`, `enables`, `refines`, `status` (`active` or `retired`),
+  `retiredIn`, `replacedBy`, `file` and `body`. Each exported fact has `id`,
+  `question`, `enabledBy`, `definition` and `implies`. Facts and rules are
+  sorted by ID. CLI: `uss export --json` prints indented JSON; without
+  `--json` → exit 2 with `export: only --json is supported`.
 
 - [ ] **Step 1: Write the failing tests**
 
-`TestExport_Fixture`: 7 rules; `USS-GO-001.AppliesWhen == "lang.go"`;
-`USS-SEC-004.Status == "retired"`; 4 facts.
-`TestRunExport_JSON`: stdout parses with `encoding/json`, and `version` is
-`0.1.0`. `TestRunExport_NoFormat` → exit 2.
+- `export_fixture`: 7 rules; `USS-GO-001` has `appliesWhen == "lang.go"`;
+  `USS-SEC-004` has `status == "retired"`; 4 facts.
+- `run_export_json`: stdout parses as JSON, and `version` is `0.1.0`.
+- `run_export_no_format` → exit 2.
 
 - [ ] **Step 2: Run to verify they fail; implement; run to verify they pass**
 
-Run: `go test ./tools/uss/... -v`
+Run: `cargo test -p uss export`
 Expected: FAIL before implementation, PASS after.
 
 - [ ] **Step 3: Commit**
@@ -1047,27 +1170,27 @@ git commit -m "feat(uss): export the rule catalog as JSON"
 
 **Files:**
 - Create: `standard/conventions.md`, `templates/record.yaml`, `templates/standard-deviation.md`
-- Create: `tools/uss/internal/record/templates_test.go`
+- Modify: `tools/uss/src/record/mod.rs` (one test)
 
 **Interfaces:**
-- Consumes: `record.LoadRecord`, `catalog.Load` (the embedded standard).
+- Consumes: `parse_record`, `catalog::load`, `Embedded`.
 
 `standard/conventions.md` is the normative home of everything below. The spec
-is design history; where both exist, write it here once.
+is design history; write each item here once.
 1. Keywords: RFC 2119 + RFC 8174; the five keywords; synonyms not used; one
    rule, one level.
 2. Standard files: area and module files; header fields Prefix, Kind,
    Applies when.
-3. Rule format: the spec §5.2 field table plus `Refines`; body; `**Rationale:**`;
-   the keyword-scan rules from Task 5. Use the spec's `USS-SEC-012` as the
-   example (in a code fence).
+3. Rule format: the spec §5.2 field table plus `Refines`; body;
+   `**Rationale:**`; the keyword-scan rules from Task 5. Use the spec's
+   `USS-SEC-012` as the example, in a code fence.
 4. Rule IDs and retiring rules (spec §5.4).
-5. Applicability: facts (`applicability.md`), `Implies`, stack identifiers, the
-   Task 3 grammar, `Enables`, module-level `Applies when`.
+5. Applicability: facts (`applicability.md`), `Implies`, stack identifiers,
+   the Task 3 grammar, `Enables`, module-level `Applies when`.
 6. Score categories: the nine, with the "Measures" text from spec §5.5.
 7. Choosing a level, reference don't reinvent, and pairing "zero violations"
    rules with check integrity (spec §6.4).
-8. Compliance and scores: the result values, the compliant definition,
+8. Compliance and scores: the outcome values, the compliant definition,
    scoring, "as perfect as it can be", and the exact statement formats from
    Task 10.
 9. Standard Deviations (spec §5.6), and that a MUST deviation means not
@@ -1078,8 +1201,8 @@ is design history; where both exist, write it here once.
 
 `templates/record.yaml`: a starter record with a comment above each key. It
 lists every asked fact as `false`, each preceded by its Question as a comment
-and the line `# Answer this. false is not a default.` Version `0.1.0`;
-project name `example`; empty stack lists, decisions, deviations and audits.
+and the line `# Answer this. false is not a default.` Version `0.1.0`; project
+name `example`; empty stack lists, decisions, deviations and audits.
 
 `templates/standard-deviation.md`: headings Rule, Level, USS version, Scope,
 Reason, Risks and impact, Compensating controls, Approval (Approver, Date;
@@ -1087,21 +1210,21 @@ Reason, Risks and impact, Compensating controls, Approval (Approver, Date;
 
 - [ ] **Step 1: Write the failing test**
 
-`TestRecordTemplateMatchesStandard`: `LoadRecord(uss.Files, "templates/record.yaml")`
-(read through a temp copy when the loader needs an OS path) succeeds; its
-`Standard.Version` equals the embedded registry version; its fact keys equal
-exactly the set of facts with a `Question` in the embedded catalog.
+`record_template_matches_standard`: `parse_record(&Embedded, "templates/record.yaml", <embedded bytes>)`
+is Ok; its `standard.version` equals the embedded registry version; and its
+fact keys equal exactly the set of facts whose source is
+`FactSource::Question` in the embedded catalog.
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `go test ./tools/uss/internal/record/ -run TestRecordTemplate -v`
+Run: `cargo test -p uss record_template`
 Expected: FAIL (the template does not exist).
 
 - [ ] **Step 3: Write the three documents**
 
 - [ ] **Step 4: Run all tests and lint the embedded standard**
 
-Run: `go test ./... && go run ./tools/uss lint`
+Run: `cargo test --workspace && cargo run -p uss -- lint`
 Expected: PASS; `uss lint: ok (0 rules, 0 files)`.
 
 - [ ] **Step 5: Commit**
@@ -1113,77 +1236,91 @@ git commit -m "docs: add standard conventions and adopter templates"
 
 ---
 
-### Task 15: Strict linting, one-command checks and CI
+### Task 15: One-command checks, supply-chain policy, WebAssembly check and CI
 
 **Files:**
-- Create: `tools/tools.mod`, `tools/tools.sum`, `.golangci.yml`
-- Create: `tools/devcheck/main.go`
+- Create: `deny.toml`
+- Modify: `tools/xtask/src/main.rs`
 - Create: `.github/workflows/ci.yml`
 - Modify: `README.md` (a "Development" section)
 
 **Interfaces:**
-- Produces: `go run ./tools/devcheck [-race]`, the single command that runs
-  every check, used both locally and in CI.
+- Produces: `cargo xtask check`, the single command that runs every check,
+  used both locally and in CI. xtask uses only `std`.
 
-- [ ] **Step 1: Pin the tools in a separate modfile**
+- [ ] **Step 1: Create `deny.toml`**
 
-Create `tools/tools.mod` containing only the `module` line and `go 1.27`. Then:
-`go get -modfile=tools/tools.mod -tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint@<latest v2 release>`
-`go get -modfile=tools/tools.mod -tool golang.org/x/vuln/cmd/govulncheck@<latest release>`
-Expected: `go tool -modfile=tools/tools.mod golangci-lint version` prints the
-pinned version. If `-modfile` tool resolution does not work with this Go
-version, add the tools to the main `go.mod` with `go get -tool` instead, and
-note that in the commit message.
+`[advisories]`: `version = 2`, `yanked = "deny"`. `[licenses]`: `version = 2`,
+with an `allow` list of only the licences the current dependency tree needs
+(start from MIT, Apache-2.0, Unicode-3.0; add any other only with a note in
+the commit message). `[bans]`: `wildcards = "deny"`,
+`multiple-versions = "warn"`. `[sources]`: `unknown-registry = "deny"`,
+`unknown-git = "deny"`.
 
-- [ ] **Step 2: Create `.golangci.yml`**
+- [ ] **Step 2: Implement `cargo xtask check`**
 
-`version: "2"`. Linters: the default set plus `errorlint`, `gosec`, `revive`,
-`nolintlint`, `misspell`, `unparam`, `exhaustive`, `gocritic`. `nolintlint`:
-`require-explanation: true`, `require-specific: true`, `allow-unused: false`.
-Formatters: `gofmt`, `goimports`.
+It runs these in order, prints `==> <step>` before each, and stops with exit
+1 at the first failure:
+0. Toolchain guard: read `channel` from `rust-toolchain.toml`; run
+   `rustc -vV` and `rustc --print sysroot`. Fail unless the release equals the
+   channel and the sysroot path contains a `.rustup` segment. The message is:
+   `The active rustc is <release> at <sysroot>. This repository needs the rustup toolchain <channel>. Put the rustup bin directory first on PATH. Then run: rustup toolchain install`.
+   Test it with a pure function
+   `fn toolchain_problem(channel: &str, release: &str, sysroot: &str) -> Option<String>`
+   and unit tests for: a match (None); a wrong release; a standalone sysroot
+   such as `C:\Program Files\Rust stable LLVM 1.100`.
+1. `cargo fmt --all --check`
+2. `cargo clippy --workspace --all-targets --all-features -- -D warnings`
+3. `cargo test --workspace --all-features`
+4. `cargo build -p uss --lib --no-default-features --target wasm32-unknown-unknown`
+5. `.tools/bin/cargo-deny check`. If the binary is missing, first run
+   `cargo install cargo-deny --locked --version <pinned> --root .tools`, with
+   the version as a constant in xtask (the latest release at implementation
+   time).
+6. `cargo run --quiet -p uss -- lint`
 
-- [ ] **Step 3: Implement `tools/devcheck/main.go`**
+- [ ] **Step 3: Run it and fix every finding**
 
-It runs these in order, prints `==> <step>` before each, and stops with exit 1
-at the first failure:
-1. `go vet ./...`
-2. `go tool -modfile=tools/tools.mod golangci-lint run ./...`
-3. `go test ./...` (with `-race` when the `-race` flag is given)
-4. `go tool -modfile=tools/tools.mod govulncheck ./...`
-5. `go run ./tools/uss lint`
+Run: `cargo xtask check`
+Expected: all seven steps (0–6) pass. Fix findings in the code; suppress only with
+`#[expect(..., reason = "...")]`. If step 4 fails because a dependency does
+not support `wasm32-unknown-unknown`, do not work around it beyond that
+crate's documented options. Record the blocking crate in ADR 0001's
+consequences, remove step 4, and report it.
 
-- [ ] **Step 4: Run devcheck and fix every finding**
-
-Run: `go run ./tools/devcheck`
-Expected: all five steps pass. Fix findings in the code. Suppress only with
-`//nolint:<linter> // <reason>`.
-
-- [ ] **Step 5: Create `.github/workflows/ci.yml`**
+- [ ] **Step 4: Create `.github/workflows/ci.yml`**
 
 `on: push` (branch `main`) and `pull_request`; `permissions: contents: read`.
 Job `check`: matrix `os: [ubuntu-latest, windows-latest, macos-latest]`.
-Steps: `actions/checkout` (`persist-credentials: false`), `actions/setup-go`
-(`go-version-file: go.mod`), then
-`go run ./tools/devcheck ${{ matrix.os == 'ubuntu-latest' && '-race' || '' }}`.
+Steps:
+1. `actions/checkout` with `persist-credentials: false`.
+2. `rustup toolchain install`, which reads `rust-toolchain.toml`.
+3. `Swatinem/rust-cache`.
+4. `actions/cache` for `.tools`, keyed on `hashFiles('tools/xtask/src/main.rs')`.
+5. `cargo xtask check`.
+
 Pin each action to its latest release's full commit SHA, with the tag in a
 trailing comment. Resolve the SHA with
-`gh api repos/<owner>/<repo>/git/ref/tags/<tag> --jq .object` and, when
-`type` is `tag`, dereference it with
+`gh api repos/<owner>/<repo>/git/ref/tags/<tag> --jq .object`; when `type` is
+`tag`, dereference it with
 `gh api repos/<owner>/<repo>/git/tags/<sha> --jq .object.sha`.
 
-- [ ] **Step 6: Add the README "Development" section (STE style)**
+- [ ] **Step 5: Add the README "Development" section (STE style)**
 
-"Install Go 1.27.4 or later. Run `go run ./tools/devcheck` to do all checks.
-Run `go run ./tools/uss lint` to check the standard files."
+"Install rustup. Run `cargo xtask check` to do all checks. Run
+`cargo run -p uss -- lint` to check the standard files." rustup installs the
+pinned toolchain from `rust-toolchain.toml` automatically.
 
-- [ ] **Step 7: Verify**
+- [ ] **Step 6: Verify locally, push, and verify CI**
 
-Run: `go run ./tools/devcheck`
-Expected: exit 0. (CI itself runs once the repository is pushed to GitHub.)
+Run: `cargo xtask check`
+Expected: exit 0.
+Then commit, run `git push`, and run `gh run watch --exit-status`.
+Expected: the `check` job passes on all three operating systems.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 7: Commit** (before the push in Step 6)
 
 ```bash
 git add -A
-git commit -m "ci: add strict linting, one-command checks and CI workflow"
+git commit -m "ci: add one-command checks, cargo-deny policy, wasm check and CI workflow"
 ```

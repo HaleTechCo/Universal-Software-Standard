@@ -103,6 +103,8 @@ platforms and tools with their own quirks get **modules** over time.
 - **Audits run at any time** in a project's life, and **every release** MUST
   be audited with its report (compliance status and scores) published with it
   (§8.3).
+- **The validator is written in Rust** (chosen over Go after weighing both), so
+  a future VS Code extension can use it directly (§9).
 - **Contributability** area: how easy it is to contribute (§6.1 CTB).
 - **Backup** area (§6.1 BAK).
 - **Vendor profiles**: tool vendors add their own sections mapping their
@@ -157,7 +159,7 @@ record per released unit for monorepos (§7); release audits can run locally
 or headless in CI, with `uss release-check` tying the audit to the release
 commit (§8.3); vendor profiles live in this repo, are reviewed by USS
 maintainers, and v1 ships community-maintained ones for the recommended tools
-(§6.6); the validator is written in Go;
+(§6.6); the Rust validator split into an I/O-free library and a thin CLI (§9);
 MIT licence for this repo; packaging as a Claude plugin plus a tool-agnostic
 AGENTS.md.
 
@@ -702,19 +704,32 @@ Universal-Software-Standard/
 ├── templates/
 │   ├── record.yaml
 │   ├── standard-deviation.md
-│   ├── audit-report.md
+│   ├── audit-report.md.j2     report template used by `uss report`
 │   ├── AGENTS.snippet.md
 │   └── ci/                    release-audit workflow for adopters (§8.3)
 ├── skills/                    Claude skills: uss-adopt, uss-audit
 ├── .claude-plugin/            plugin + marketplace manifests
-├── tools/uss/                 validator CLI (Go)
+├── Cargo.toml, Cargo.lock     Rust workspace (lock file committed)
+├── rust-toolchain.toml        pinned Rust toolchain
+├── deny.toml                  cargo-deny policy (advisories, licences, sources)
+├── tools/uss/                 validator: Rust library + `uss` CLI
+├── tools/xtask/               `cargo xtask check`: every check in one command
 ├── .uss/                      this repo's own record and audits
 ├── .github/CODEOWNERS         vendor profile ownership
 └── .github/workflows/         CI
 ```
 
-**Validator CLI `uss`** (Go: single static binary, memory-safe, easy
-cross-compile; pinned toolchain):
+**Validator `uss`**, in **Rust** (the user's call, made for a future VS Code
+extension, in line with the plugin install methods in the original idea). It
+is a **library plus a thin CLI**. The library holds all the logic (parsing,
+linting, applicability, compliance, scores, report rendering) and does no
+filesystem, network or process I/O: it works on file contents handed to it.
+The CLI does the I/O (reading files, calling `git`). That keeps the library
+able to run inside a VS Code extension or a web page through WebAssembly, or
+to be embedded elsewhere, without a rewrite. The standard's files are embedded
+in the binary, so a binary's version is always the standard's version.
+Distribution: release binaries per OS, plus
+`cargo install --git <repo> --tag vX.Y.Z uss` for people with Rust. Commands:
 
 - `uss lint` — checks the standard: header format, valid levels, unique IDs,
   registered prefixes, applicability expressions reference defined facts,
@@ -734,16 +749,18 @@ The tool is optional for adopters (agents can work from the Markdown), required
 in this repo's CI.
 
 **Dogfooding.** This repo complies with its own standard: MIT LICENSE,
-SECURITY.md, pinned Go toolchain, CI actions pinned by SHA, strict linting for
-the Go tool, its own `.uss/record.yaml` and audit report, a Keep a Changelog
-CHANGELOG.md, and the step-by-step parts of AGENTS.md and the skills written in
+SECURITY.md, pinned Rust toolchain, CI actions pinned by SHA, strict Clippy
+linting (with `allow_attributes_without_reason` for check integrity) and
+cargo-deny for the tool, an ADR recording the choice of Rust, its own
+`.uss/record.yaml` and audit report, a Common Changelog CHANGELOG.md, and the step-by-step parts of AGENTS.md and the skills written in
 ASD-STE100. It is the first audit target and the reference example.
 
 ## 10. Constraints
 
 - RFC 2119 + RFC 8174.
 - Hosted on GitHub under HaleTechCo; CI on GitHub Actions.
-- The working directory is not yet a git repository; it needs `git init`.
+- Repository: `HaleTechCo/Universal-Software-Standard` on GitHub, private for
+  now, default branch `main`.
 - Development machine is Windows; everything must also work on Linux and macOS.
 - `Initial_Idea.md` and `todo.txt` are source material and stay untouched; the
   user decides what happens to them.
@@ -755,6 +772,9 @@ ASD-STE100. It is the first audit target and the reference example.
   conventions, mobile, etc.).
 - Dashboards over audit results across many projects.
 - Regulation modules for PCI DSS, HIPAA and US federal requirements.
+- VS Code extension (then other IDE plugins) using the `uss` library, through
+  WebAssembly or a bundled binary: inline rule diagnostics in records, results
+  and standard files.
 - Cloud cost management, export controls on cryptography.
 - Modules for mobile, embedded and games.
 - Compliance badge.
