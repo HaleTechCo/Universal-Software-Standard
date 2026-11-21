@@ -30,7 +30,8 @@ GitHub Actions.
 review calibrates the content plans):
 
 1. **This plan:** foundation and the `uss` tool (spec §13 step 1).
-2. Security and Supply chain areas, then **stop for the user's review**.
+2. Security, Supply chain and Dependencies areas, then **stop for the user's
+   review**.
 3. Remaining core areas, in batches.
 4. Modules, vendor profiles and regulation modules, plus validator support for
    the profile and regulation mapping format.
@@ -91,7 +92,11 @@ installs. Do not change `PATH` or uninstall anything yourself.
   warning goes away. This is the check-integrity rule from spec §6.5 applied
   to this repo.
 - Dependencies: only those in Tech Stack. Any other needs a reason in the
-  commit message and must pass `cargo deny check`. `Cargo.lock` is committed.
+  commit message and must pass `cargo deny check`. `Cargo.lock` is committed,
+  and every cargo build, test, Clippy and run in xtask and CI uses `--locked`
+  (the Dependencies area's "exact, verified resolution" rule, applied here).
+  Version requirements stay in Cargo's default caret form (e.g. `1.2`), which
+  is a soft pin bounded by the next major version.
 - Never modify system-level installs or global config. Tools such as
   cargo-deny install under the repository's own `.tools/` directory.
 - CI actions pinned by full commit SHA with the version in a comment; workflow
@@ -1270,14 +1275,14 @@ It runs these in order, prints `==> <step>` before each, and stops with exit
    and unit tests for: a match (None); a wrong release; a standalone sysroot
    such as `C:\Program Files\Rust stable LLVM 1.100`.
 1. `cargo fmt --all --check`
-2. `cargo clippy --workspace --all-targets --all-features -- -D warnings`
-3. `cargo test --workspace --all-features`
-4. `cargo build -p uss --lib --no-default-features --target wasm32-unknown-unknown`
+2. `cargo clippy --locked --workspace --all-targets --all-features -- -D warnings`
+3. `cargo test --locked --workspace --all-features`
+4. `cargo build --locked -p uss --lib --no-default-features --target wasm32-unknown-unknown`
 5. `.tools/bin/cargo-deny check`. If the binary is missing, first run
    `cargo install cargo-deny --locked --version <pinned> --root .tools`, with
    the version as a constant in xtask (the latest release at implementation
    time).
-6. `cargo run --quiet -p uss -- lint`
+6. `cargo run --locked --quiet -p uss -- lint`
 
 - [ ] **Step 3: Run it and fix every finding**
 
