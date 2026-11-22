@@ -1,0 +1,135 @@
+# USS project record: the inputs to compliance for one independently
+# released unit. Copy this file to .uss/record.yaml in the project root,
+# fill it in, then run: uss check .uss/record.yaml
+# Format: schema/record.schema.json. Meaning: standard/conventions.md.
+
+# The version of the standard that the project follows.
+standard:
+  # The pinned USS version. Change it only to upgrade on purpose.
+  version: 0.1.0
+
+# The project that this record describes.
+project:
+  # The project's name, as audit reports show it.
+  name: example
+
+# The project's stack. Use the identifiers in standard/registry.yaml.
+# Each entry sets a stack fact, such as lang.go for go in languages.
+stack:
+  # Programming languages, such as go or python.
+  languages: []
+  # Frameworks, such as react.
+  frameworks: []
+  # Platforms, such as postgresql or kubernetes.
+  platforms: []
+  # Other tools, such as maven.
+  tools: []
+
+# One answer, true or false, for every fact in standard/applicability.md
+# that has a Question.
+facts:
+  # Do people use it through a user interface?
+  # Answer this. false is not a default.
+  has-ui: false
+  # Does it serve a UI in a web browser?
+  # Answer this. false is not a default.
+  has-web-ui: false
+  # Does it have a command-line interface?
+  # Answer this. false is not a default.
+  has-cli: false
+  # Does it keep data across restarts?
+  # Answer this. false is not a default.
+  stores-persistent-data: false
+  # Does it store data about its users or created by them?
+  # Answer this. false is not a default.
+  stores-user-data: false
+  # Does it use a database engine?
+  # Answer this. false is not a default.
+  uses-database: false
+  # Is the database a relational (SQL) database?
+  # Answer this. false is not a default.
+  uses-relational-database: false
+  # Does it accept requests over a network?
+  # Answer this. false is not a default.
+  exposes-network-api: false
+  # Does it run as a long-lived network service?
+  # Answer this. false is not a default.
+  is-network-service: false
+  # Does the project run its own production deployment?
+  # Answer this. false is not a default.
+  operates-service: false
+  # Does it authenticate users or clients?
+  # Answer this. false is not a default.
+  handles-authentication: false
+  # Does it handle sensitive data?
+  # Answer this. false is not a default.
+  handles-sensitive-data: false
+  # Could a failure cause serious harm?
+  # Answer this. false is not a default.
+  high-assurance: false
+  # Does it use cryptography?
+  # Answer this. false is not a default.
+  uses-cryptography: false
+  # Must it run in a FIPS 140-3 validated configuration?
+  # Answer this. false is not a default.
+  requires-fips: false
+  # Does it publish a container image?
+  # Answer this. false is not a default.
+  ships-container-image: false
+  # Does it ship Kubernetes manifests or Helm charts?
+  # Answer this. false is not a default.
+  deploys-to-kubernetes: false
+  # Do others use it as a library or SDK?
+  # Answer this. false is not a default.
+  is-library: false
+  # Is it released as an installable package or binary?
+  # Answer this. false is not a default.
+  distributed-as-package: false
+  # Can people outside the core team contribute?
+  # Answer this. false is not a default.
+  accepts-external-contributions: false
+  # Does it call or run AI models?
+  # Answer this. false is not a default.
+  uses-ai-models: false
+  # Does it provide an MCP server?
+  # Answer this. false is not a default.
+  exposes-mcp-server: false
+  # Does more than one person or account use one installation?
+  # Answer this. false is not a default.
+  has-multiple-users: false
+  # Is any part of it sold?
+  # Answer this. false is not a default.
+  is-commercial: false
+  # Is it released under an OSI-approved licence?
+  # Answer this. false is not a default.
+  is-foss: false
+  # Is it placed on the EU market?
+  # Answer this. false is not a default.
+  sold-in-eu: false
+  # Does it process personal data of people in the EU?
+  # Answer this. false is not a default.
+  processes-eu-personal-data: false
+
+# One decision for every applicable MAY rule. Run
+# uss applicable .uss/record.yaml to list the rules that apply. Form:
+#   USS-<PREFIX>-<NNN>: { adopt: true }
+decisions: {}
+
+# One entry for every approved Standard Deviation, each written from
+# templates/standard-deviation.md. Form:
+#   - rule: USS-<PREFIX>-<NNN>
+#     document: docs/standard-deviations/USS-<PREFIX>-<NNN>.md
+#     approved-by: "<name and role>"
+#     date: YYYY-MM-DD
+#     review-by: YYYY-MM-DD
+deviations: []
+
+# One entry for every audit. Form:
+#   - date: YYYY-MM-DD
+#     results: .uss/audits/YYYY-MM-DD.yaml
+#     report: .uss/audits/YYYY-MM-DD.md
+audits: []
+
+# The directories of child components, relative to the project root. Each
+# one has its own .uss/record.yaml. Example: [libs/core, cli]
+components: []

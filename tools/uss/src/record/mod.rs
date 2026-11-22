@@ -326,6 +326,30 @@ mod tests {
     }
 
     #[test]
+    fn record_template_matches_standard() {
+        use std::collections::BTreeSet;
+
+        use crate::catalog::{self, FactSource};
+        use crate::source::Source;
+
+        const TEMPLATE: &str = "templates/record.yaml";
+        let data = Embedded
+            .read(TEMPLATE)
+            .expect("the record template is embedded");
+        let r = parse_record(&Embedded, TEMPLATE, &data).unwrap();
+        let c = catalog::load(&Embedded).unwrap();
+        assert_eq!(r.standard.version, c.registry.version);
+        let asked: BTreeSet<&str> = c
+            .facts
+            .values()
+            .filter(|f| matches!(f.source, FactSource::Question(_)))
+            .map(|f| f.id.as_str())
+            .collect();
+        let keys: BTreeSet<&str> = r.facts.keys().map(String::as_str).collect();
+        assert_eq!(keys, asked);
+    }
+
+    #[test]
     fn latest_audit_tie_takes_later() {
         let audit = |date: &str, results: &str| AuditRef {
             date: date.into(),
