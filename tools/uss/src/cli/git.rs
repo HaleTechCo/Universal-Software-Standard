@@ -3,11 +3,31 @@
 use std::path::Path;
 use std::process::{Command, Output};
 
+/// The variables that point git at a repository other than the one `-C`
+/// names. A git hook or `git rebase -x` exports some of them to its children.
+pub(super) const REPOSITORY_ENV: [&str; 6] = [
+    "GIT_DIR",
+    "GIT_WORK_TREE",
+    "GIT_INDEX_FILE",
+    "GIT_COMMON_DIR",
+    "GIT_OBJECT_DIRECTORY",
+    "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+];
+
+/// Returns the command `git -C repo`, without the [`REPOSITORY_ENV`]
+/// variables of this process, so `repo` is the repository git uses.
+fn command(repo: &Path) -> Command {
+    let mut cmd = Command::new("git");
+    for var in REPOSITORY_ENV {
+        cmd.env_remove(var);
+    }
+    cmd.arg("-C").arg(repo);
+    cmd
+}
+
 /// Runs `git -C repo args…`.
 fn run(repo: &Path, args: &[&str]) -> Result<Output, String> {
-    Command::new("git")
-        .arg("-C")
-        .arg(repo)
+    command(repo)
         .args(args)
         .output()
         .map_err(|e| format!("cannot run git {}: {e}", args.join(" ")))
@@ -85,4 +105,31 @@ pub fn changed_files(repo: &Path, sha: &str) -> Result<Vec<String>, String> {
         .filter(|path| !path.is_empty())
         .map(String::from)
         .collect())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn command_ignores_the_callers_repository() {
+        let cmd = command(Path::new("repo"));
+        let removed: Vec<String> = cmd
+            .get_envs()
+            .filter(|(_, value)| value.is_none())
+            .map(|(key, _)| key.to_string_lossy().into_owned())
+            .collect();
+        for var in [
+            "GIT_DIR",
+            "GIT_WORK_TREE",
+            "GIT_INDEX_FILE",
+            "GIT_COMMON_DIR",
+            "GIT_OBJECT_DIRECTORY",
+            "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        ] {
+            assert!(removed.iter().any(|r| r == var), "{var}: {removed:?}");
+        }
+        let args: Vec<_> = cmd.get_args().collect();
+        assert_eq!(args, ["-C", "repo"]);
+    }
 }

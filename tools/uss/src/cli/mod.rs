@@ -1026,11 +1026,26 @@ mod tests {
 
     // ---- release-check ----
 
-    /// Runs git in `dir` with the user's global configuration kept out of the way.
+    /// Returns a `git` command without the variables that point git at
+    /// another repository. A test run from a git hook inherits them, and
+    /// they would make git act on the developer's repository.
+    fn git_command() -> std::process::Command {
+        let mut cmd = std::process::Command::new("git");
+        for var in git::REPOSITORY_ENV {
+            cmd.env_remove(var);
+        }
+        cmd
+    }
+
+    /// Runs git in `dir` with the user's global configuration and hooks kept
+    /// out of the way: the hooks path is a directory in `dir` that does not exist.
     fn git(dir: &Path, args: &[&str]) -> String {
-        let output = std::process::Command::new("git")
+        let hooks = dir.join("no-hooks").to_string_lossy().replace('\\', "/");
+        let output = git_command()
             .arg("-C")
             .arg(dir)
+            .arg("-c")
+            .arg(format!("core.hooksPath={hooks}"))
             .args([
                 "-c",
                 "user.name=uss-test",
@@ -1054,11 +1069,7 @@ mod tests {
 
     /// Returns a new git repository in a temp dir, or `None` when git is not installed.
     fn new_repo() -> Option<tempfile::TempDir> {
-        if std::process::Command::new("git")
-            .arg("--version")
-            .output()
-            .is_err()
-        {
+        if git_command().arg("--version").output().is_err() {
             println!("git is not installed; skipping");
             return None;
         }
@@ -1075,7 +1086,7 @@ mod tests {
 
     fn commit_all(root: &Path, message: &str) -> String {
         git(root, &["add", "-A"]);
-        git(root, &["commit", "-q", "-m", message]);
+        git(root, &["commit", "-q", "--no-verify", "-m", message]);
         git(root, &["rev-parse", "HEAD"])
     }
 
@@ -1264,16 +1275,9 @@ mod tests {
         };
         let holder = tempfile::TempDir::new().unwrap();
         let clone = holder.path().join("clone");
-        let output = std::process::Command::new("git")
-            .args(["-c", "core.autocrlf=false", "clone", "-q", "--depth", "1"])
-            .arg(&url)
-            .arg(&clone)
-            .output()
-            .unwrap();
-        assert!(
-            output.status.success(),
-            "clone: {}",
-            String::from_utf8_lossy(&output.stderr)
+        git(
+            holder.path(),
+            &["clone", "-q", "--depth", "1", &url, clone.to_str().unwrap()],
         );
         let (code, out, _err, report) = release_check(&clone, &[]);
         assert_eq!(code, 1, "stdout: {out}");
@@ -1289,11 +1293,7 @@ mod tests {
 
     #[test]
     fn release_check_not_a_repository() {
-        if std::process::Command::new("git")
-            .arg("--version")
-            .output()
-            .is_err()
-        {
+        if git_command().arg("--version").output().is_err() {
             println!("git is not installed; skipping");
             return;
         }
