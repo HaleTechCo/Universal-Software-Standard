@@ -8,6 +8,7 @@ use crate::catalog::Level;
 use crate::evaluate::Evaluation;
 use crate::record::Outcome;
 use crate::source::Source;
+use crate::text;
 
 /// Where the report template lives in the standard.
 const TEMPLATE: &str = "templates/audit-report.md.j2";
@@ -186,12 +187,9 @@ pub fn render(src: &dyn Source, project: &str, ev: &Evaluation) -> Result<String
     let bytes = src
         .read(TEMPLATE)
         .ok_or_else(|| format!("{TEMPLATE}: template not found"))?;
-    let text = String::from_utf8(bytes.into_owned())
+    let raw = String::from_utf8(bytes.into_owned())
         .map_err(|_| format!("{TEMPLATE}: template is not valid UTF-8"))?;
-    let text = text
-        .strip_prefix('\u{feff}')
-        .unwrap_or(&text)
-        .replace("\r\n", "\n");
+    let text = text::normalise(&raw);
 
     let syntax = minijinja::syntax::SyntaxConfig::builder()
         .trim_blocks(true)

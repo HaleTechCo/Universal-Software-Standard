@@ -3,6 +3,8 @@
 use serde::de::DeserializeOwned;
 use serde_saphyr::{DefaultMessageFormatter, MessageFormatter};
 
+use crate::text;
+
 /// Parses YAML bytes into `T`.
 ///
 /// A leading UTF-8 byte order mark is ignored and CRLF line endings are
@@ -13,10 +15,8 @@ use serde_saphyr::{DefaultMessageFormatter, MessageFormatter};
 /// Returns the parser's message when the input is not valid UTF-8, not valid
 /// YAML, or does not match `T`.
 pub fn from_slice<T: DeserializeOwned>(data: &[u8]) -> Result<T, String> {
-    let data = data.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(data);
-    let text = std::str::from_utf8(data).map_err(|e| format!("not valid UTF-8: {e}"))?;
-    let text = text.replace("\r\n", "\n");
-    serde_saphyr::from_str(&text).map_err(|e| one_line(&e))
+    let raw = std::str::from_utf8(data).map_err(|e| format!("not valid UTF-8: {e}"))?;
+    serde_saphyr::from_str(&text::normalise(raw)).map_err(|e| one_line(&e))
 }
 
 /// Renders a parse error as one line: `line L column C: <message>`, or just

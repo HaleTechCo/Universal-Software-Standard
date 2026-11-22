@@ -7,6 +7,7 @@ use regex::Regex;
 
 use super::Diagnostic;
 use super::registry::constant_regex;
+use crate::text;
 
 static FIELD_RE: LazyLock<Regex> =
     LazyLock::new(|| constant_regex(r"^- \*\*([A-Za-z ]+):\*\* (.*)$"));
@@ -70,9 +71,8 @@ enum Block {
 
 /// Scans `data` into a [`Doc`], reporting malformed fields.
 pub(crate) fn parse_doc(file: &str, data: &[u8]) -> (Doc, Vec<Diagnostic>) {
-    let text = String::from_utf8_lossy(data);
-    let text = text.strip_prefix('\u{feff}').unwrap_or(&text);
-    let text = text.replace("\r\n", "\n");
+    let raw = String::from_utf8_lossy(data);
+    let text = text::normalise(&raw);
 
     let mut doc = Doc {
         file: file.to_string(),

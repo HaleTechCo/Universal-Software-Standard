@@ -13,7 +13,7 @@ use serde::Deserialize;
 use serde::de::DeserializeOwned;
 
 use crate::source::Source;
-use crate::yaml;
+use crate::{text, yaml};
 
 pub use results::{Entry, Outcome, Results, Suppression, parse_results};
 
@@ -172,7 +172,9 @@ fn load<T: DeserializeOwned>(
     let schema_bytes = src
         .read(schema_path)
         .ok_or_else(|| fail(format!("/: schema {schema_path} not found")))?;
-    let schema: serde_json::Value = serde_json::from_slice(&schema_bytes)
+    let schema_text = std::str::from_utf8(&schema_bytes)
+        .map_err(|e| fail(format!("/: schema {schema_path} is not valid UTF-8: {e}")))?;
+    let schema: serde_json::Value = serde_json::from_str(&text::normalise(schema_text))
         .map_err(|e| fail(format!("/: schema {schema_path} is not valid JSON: {e}")))?;
     let validator = jsonschema::draft202012::new(&schema)
         .map_err(|e| fail(format!("/: schema {schema_path} is invalid: {e}")))?;
@@ -276,6 +278,22 @@ mod tests {
         let err = record_err("standard: [\n");
         assert_eq!(err.problems.len(), 1, "{err}");
         assert!(err.to_string().starts_with(".uss/record.yaml: "), "{err}");
+    }
+
+    #[test]
+    fn schema_with_bom_and_crlf_loads() {
+        use crate::source::Source;
+
+        let schema = Embedded.read(RECORD_SCHEMA).unwrap();
+        let schema = String::from_utf8(schema.into_owned()).unwrap();
+        let mut src = crate::source::MemSource::default();
+        src.0.insert(
+            RECORD_SCHEMA.to_string(),
+            format!("\u{feff}{}", schema.replace('\n', "\r\n")).into_bytes(),
+        );
+        let a = parse_record(&Embedded, "r.yaml", RECORD.as_bytes()).unwrap();
+        let b = parse_record(&src, "r.yaml", RECORD.as_bytes()).unwrap();
+        assert_eq!(a, b);
     }
 
     #[test]

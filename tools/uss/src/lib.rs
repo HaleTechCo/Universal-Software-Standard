@@ -11,4 +11,5 @@ pub mod report;
 pub mod source;
 #[cfg(test)]
 mod testfixture;
+mod text;
 pub mod yaml;
