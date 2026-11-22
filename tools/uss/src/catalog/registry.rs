@@ -14,7 +14,7 @@ use crate::yaml;
 const REGISTRY_PATH: &str = "standard/registry.yaml";
 
 /// The valid stack kinds.
-const STACK_KINDS: [&str; 4] = ["lang", "framework", "platform", "tool"];
+pub(crate) const STACK_KINDS: [&str; 4] = ["lang", "framework", "platform", "tool"];
 
 /// Compiles a pattern that is a constant of this crate.
 #[expect(
