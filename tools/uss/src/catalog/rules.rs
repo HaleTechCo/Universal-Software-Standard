@@ -32,6 +32,9 @@ const FORBIDDEN: [&str; 6] = [
     "OPTIONAL",
 ];
 
+/// The fields a rule file's header may have.
+const HEADER: [&str; 3] = ["Prefix", "Kind", "Applies when"];
+
 /// The fields a rule section may have.
 const ALLOWED: [&str; 10] = [
     "Level",
@@ -227,6 +230,11 @@ pub(crate) fn parse_rule_file(file: &str, data: &[u8]) -> (RuleFile, Vec<Diagnos
         }
     };
     let (applies_when, file_applies) = condition(doc.header.get("Applies when"), &at, &mut diags);
+    for (name, f) in &doc.header {
+        if !HEADER.contains(&name.as_str()) {
+            diags.push(at(f.line, format!("unknown header field \"{name}\"")));
+        }
+    }
 
     let mut rules = Vec::new();
     for s in &doc.sections {
@@ -533,6 +541,13 @@ mod tests {
                 "invalid \"Applies when\"",
             ),
             (
+                VALID.replace(
+                    "- **Kind:** area\n",
+                    "- **Kind:** area\n- **Applies When:** lang.go\n",
+                ),
+                "unknown header field \"Applies When\"",
+            ),
+            (
                 rule("area", &FIELDS.replace("always", "a or"), ok),
                 "invalid \"Applies when\"",
             ),
@@ -652,6 +667,14 @@ mod tests {
         assert!(text.contains("sec.md:13: unknown field"), "{text}");
         let (_, text) = run(&rule("area", FIELDS, ""));
         assert!(text.contains("sec.md:6: empty rule body"), "{text}");
+        let (_, text) = run(&VALID.replace(
+            "- **Kind:** area\n",
+            "- **Kind:** area\n- **Colour:** red\n",
+        ));
+        assert_eq!(
+            text,
+            "standard/core/sec.md:5: unknown header field \"Colour\""
+        );
     }
 
     #[test]

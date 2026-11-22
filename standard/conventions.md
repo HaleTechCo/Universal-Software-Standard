@@ -48,6 +48,8 @@ The header has these fields:
 | Kind | always | `area` in a file under `standard/core/`; `module` in a file under `standard/modules/`. |
 | Applies when | when needed | A condition for every rule in the file (section 5). The default is `always`. |
 
+The header MUST NOT have any field that is not in this table.
+
 The `Prefix` header registers the prefix. There is no other list of
 prefixes. A prefix MUST be unique across all rule files.
 
