@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 use clap::{Parser, Subcommand};
 
-use crate::catalog::load_registry;
+use crate::catalog::{load, load_registry};
 use crate::source::{Embedded, Source};
 
 mod files;
@@ -35,6 +35,8 @@ struct Cli {
 /// The `uss` subcommands.
 #[derive(Subcommand, Debug)]
 enum Command {
+    /// Check the standard's files for problems.
+    Lint,
     /// Print the version of the standard.
     Version,
 }
@@ -69,6 +71,29 @@ fn run_version(src: &dyn Source, out: &mut dyn Write, err: &mut dyn Write) -> i3
     }
 }
 
+/// Loads the standard and prints each problem, then a summary line, to `out`.
+fn run_lint(src: &dyn Source, out: &mut dyn Write) -> i32 {
+    let written = match load(src) {
+        Ok(catalog) => writeln!(
+            out,
+            "uss lint: ok ({} rules, {} files)",
+            catalog.rules.len(),
+            catalog.file_count
+        )
+        .map(|()| 0),
+        Err(diagnostics) => {
+            let n = diagnostics.len();
+            let noun = if n == 1 { "problem" } else { "problems" };
+            diagnostics
+                .iter()
+                .try_for_each(|d| writeln!(out, "{d}"))
+                .and_then(|()| writeln!(out, "uss lint: {n} {noun}"))
+                .map(|()| 1)
+        }
+    };
+    written.unwrap_or(EXIT_USAGE)
+}
+
 /// Runs the `uss` CLI with `args` (including the program name).
 ///
 /// Returns the process exit code: `0` for success, `1` when problems were
@@ -79,6 +104,7 @@ pub fn run(args: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
             let src = source_for(cli.standard_root.as_deref());
             match cli.command {
                 Command::Version => run_version(src.as_ref(), out, err),
+                Command::Lint => run_lint(src.as_ref(), out),
             }
         }
         Err(e) => {
@@ -143,6 +169,39 @@ mod tests {
         assert_eq!(code, 0);
         assert_eq!(out, "uss 7.8.9\n");
         std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn run_lint_embedded() {
+        let (code, out, _err) = run_capture(&["lint"]);
+        assert_eq!(code, 0);
+        assert!(out.starts_with("uss lint: ok ("), "stdout: {out}");
+    }
+
+    #[test]
+    fn run_lint_standard_root() {
+        let dir = tempfile::TempDir::new().unwrap();
+        for (path, bytes) in &crate::testfixture::standard().0 {
+            let bytes = if path == "standard/core/security.md" {
+                String::from_utf8(bytes.clone())
+                    .unwrap()
+                    .replace(
+                        "- **Verify:** Check that external input is validated.\n",
+                        "",
+                    )
+                    .into_bytes()
+            } else {
+                bytes.clone()
+            };
+            let target = dir.path().join(path);
+            std::fs::create_dir_all(target.parent().unwrap()).unwrap();
+            std::fs::write(target, bytes).unwrap();
+        }
+        let root = dir.path().to_str().unwrap();
+        let (code, out, _err) = run_capture(&["--standard-root", root, "lint"]);
+        assert_eq!(code, 1);
+        assert!(out.contains("standard/core/security.md:"), "stdout: {out}");
+        assert!(out.ends_with("uss lint: 1 problem\n"), "stdout: {out}");
     }
 
     #[test]

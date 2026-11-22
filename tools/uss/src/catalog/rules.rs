@@ -192,10 +192,6 @@ fn list(value: &str) -> Vec<String> {
 }
 
 /// Parses one rule file and runs the checks that need no other file.
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "the catalog loader uses it from the next task")
-)]
 pub(crate) fn parse_rule_file(file: &str, data: &[u8]) -> (RuleFile, Vec<Diagnostic>) {
     let (doc, mut diags) = parse_doc(file, data);
     let at = |line: usize, message: String| Diagnostic {

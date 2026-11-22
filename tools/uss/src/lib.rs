@@ -8,4 +8,6 @@ pub mod catalog;
 pub mod cli;
 pub mod expr;
 pub mod source;
+#[cfg(test)]
+mod testfixture;
 pub mod yaml;

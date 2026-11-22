@@ -39,13 +39,6 @@ const ALLOWED: [&str; 4] = ["Question", "Definition", "Enabled by", "Implies"];
 ///
 /// Facts whose section has an invalid ID are left out of the map; the
 /// diagnostics say why.
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "the rule-file parser and the catalog loader use it from the next tasks"
-    )
-)]
 pub(crate) fn parse_facts(file: &str, data: &[u8]) -> (BTreeMap<String, Fact>, Vec<Diagnostic>) {
     let (doc, mut diags) = parse_doc(file, data);
     let at = |line: usize, message: String| Diagnostic {
