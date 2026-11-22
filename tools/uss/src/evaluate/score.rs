@@ -73,6 +73,12 @@ pub struct Evaluation<'c> {
 
 /// Evaluates `r` against `c` using the audit `res`.
 ///
+/// A `not-applicable` result for an active rule that does not apply to the
+/// record is accepted and ignored: it is in no outcome, count or score. An
+/// applicable `MAY` rule with `adopt: false` in the record and no result gets
+/// the outcome `declined` (evidence `declined in the record`). Any other
+/// applicable rule without a result is `unverified`.
+///
 /// # Errors
 ///
 /// Returns every consistency problem between the results, the record and the
@@ -96,6 +102,15 @@ pub fn evaluate<'c>(
                 outcome: e.result,
                 evidence: e.evidence.clone(),
             },
+            None if r.decisions.get(&rule.id).is_some_and(|d| !d.adopt)
+                && rule.active().is_some_and(|a| a.level == Level::May) =>
+            {
+                RuleOutcome {
+                    rule,
+                    outcome: Outcome::Declined,
+                    evidence: "declined in the record".to_string(),
+                }
+            }
             None => RuleOutcome {
                 rule,
                 outcome: Outcome::Unverified,
@@ -199,6 +214,9 @@ fn consistency(c: &Catalog, r: &Record, res: &Results, rules: &[&Rule]) -> Vec<D
             continue;
         };
         if !applies.contains(id.as_str()) {
+            if entry.result == Outcome::NotApplicable {
+                continue;
+            }
             add(format!("{id}: rule does not apply to this project"));
             continue;
         }
@@ -406,6 +424,42 @@ mod tests {
         let e = evaluate(&c, &r, &results(&[])).unwrap();
         assert_eq!(e.scores[2].percent, None);
         assert_eq!(e.score_line(), "Safety 0%, Features 0%, Fairness n/a.");
+        assert_eq!(
+            e.statement(),
+            "Not compliant with USS 0.1.0 as of 2026-11-21: 1 unverified rule."
+        );
+    }
+
+    #[test]
+    fn not_applicable_on_non_applicable_rule_is_ignored() {
+        let c = catalog();
+        let r = record(&format!("facts: {{}}\n{DECLINE_EXT}"));
+        let res = results(&[
+            ("USS-SEC-001", Outcome::Pass),
+            ("USS-EXT-001", Outcome::Declined),
+            ("USS-SEC-002", Outcome::NotApplicable),
+        ]);
+        let e = evaluate(&c, &r, &res).unwrap();
+        assert!(e.rules.iter().all(|o| o.rule.id != "USS-SEC-002"));
+        assert_eq!(e.statement(), "Compliant with USS 0.1.0 as of 2026-11-21.");
+        assert_eq!(e.score_line(), "Safety 100%, Features 0%.");
+    }
+
+    #[test]
+    fn recorded_decline_without_result_is_declined() {
+        let c = catalog();
+        let r = record(&format!("facts: {{}}\n{DECLINE_EXT}"));
+        let e = evaluate(&c, &r, &results(&[("USS-SEC-001", Outcome::Pass)])).unwrap();
+        let o = e.rules.iter().find(|o| o.rule.id == "USS-EXT-001").unwrap();
+        assert_eq!(o.outcome, Outcome::Declined);
+        assert_eq!(o.evidence, "declined in the record");
+        assert!(e.status.compliant);
+
+        let r = record(&format!("facts: {{}}\n{ADOPT_EXT}"));
+        let e = evaluate(&c, &r, &results(&[("USS-SEC-001", Outcome::Pass)])).unwrap();
+        let o = e.rules.iter().find(|o| o.rule.id == "USS-EXT-001").unwrap();
+        assert_eq!(o.outcome, Outcome::Unverified);
+        assert_eq!(o.evidence, "no result recorded");
     }
 
     #[test]
