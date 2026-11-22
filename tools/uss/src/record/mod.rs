@@ -255,6 +255,11 @@ mod tests {
                 "    date: 21/11/2026\n    review-by",
                 "/deviations/0/date",
             ),
+            (
+                "languages: [go, typescript]",
+                "languages: [Go, typescript]",
+                "/stack/languages/0",
+            ),
         ];
         for (i, (find, add, want)) in cases.iter().enumerate() {
             let text = if i == 0 {
