@@ -7,8 +7,21 @@ use std::process::{Command, ExitCode};
 const CARGO_DENY_VERSION: &str = "0.22.0";
 
 /// Returns a message when the active compiler is not the pinned rustup toolchain.
+///
+/// A sysroot comes from rustup when it has a `.rustup` path component (the
+/// default `RUSTUP_HOME`), or when its parent directory is named `toolchains`
+/// (rustup's `<RUSTUP_HOME>/toolchains/<name>` layout for any `RUSTUP_HOME`).
 fn toolchain_problem(channel: &str, release: &str, sysroot: &str) -> Option<String> {
-    let from_rustup = sysroot.split(['/', '\\']).any(|part| part == ".rustup");
+    let parts: Vec<&str> = sysroot
+        .trim_end_matches(['/', '\\'])
+        .split(['/', '\\'])
+        .collect();
+    let from_rustup = parts.contains(&".rustup")
+        || parts
+            .len()
+            .checked_sub(2)
+            .and_then(|parent| parts.get(parent))
+            .is_some_and(|parent| *parent == "toolchains");
     if release == channel && from_rustup {
         return None;
     }
@@ -203,6 +216,26 @@ mod tests {
                 "1.100.0",
                 "1.100.0",
                 "/home/runner/.rustup/toolchains/1.100.0-x86_64-unknown-linux-gnu"
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn toolchain_custom_rustup_home_is_ok() {
+        assert_eq!(
+            toolchain_problem(
+                "1.100.0",
+                "1.100.0",
+                "/usr/local/rustup/toolchains/1.100.0-x86_64-unknown-linux-gnu"
+            ),
+            None
+        );
+        assert_eq!(
+            toolchain_problem(
+                "1.100.0",
+                "1.100.0",
+                r"D:\rustup\toolchains\1.100.0-x86_64-pc-windows-msvc\"
             ),
             None
         );
