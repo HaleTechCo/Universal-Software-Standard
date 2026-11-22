@@ -3,10 +3,12 @@
 mod check;
 mod facts;
 mod project;
+mod score;
 
 pub use check::check_record;
 pub use facts::{applicable, resolve_facts};
 pub use project::{MemProject, ProjectFiles, SubProject};
+pub use score::{Evaluation, RuleOutcome, Score, Status, evaluate};
 
 #[cfg(test)]
 mod tests {
