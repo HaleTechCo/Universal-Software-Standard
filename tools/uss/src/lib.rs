@@ -6,6 +6,7 @@ pub mod cli;
 pub mod evaluate;
 pub mod expr;
 pub mod record;
+pub mod release;
 pub mod report;
 pub mod source;
 #[cfg(test)]

@@ -25,7 +25,7 @@ pub fn check_record(
 
 /// Normalises a path from a record: forward slashes only, with `.` and
 /// empty segments dropped.
-fn normalise(path: &str) -> String {
+pub(crate) fn normalise(path: &str) -> String {
     path.replace('\\', "/")
         .split('/')
         .filter(|s| !s.is_empty() && *s != ".")
@@ -53,7 +53,7 @@ fn is_drive(segment: &str) -> bool {
 
 /// Returns whether the raw record path `raw` is absolute, or has a segment
 /// that is `..` or starts with a drive prefix.
-fn leaves_project(raw: &str) -> bool {
+pub(crate) fn leaves_project(raw: &str) -> bool {
     let path = raw.replace('\\', "/");
     path.starts_with('/') || path.split('/').any(|s| s == ".." || is_drive(s))
 }

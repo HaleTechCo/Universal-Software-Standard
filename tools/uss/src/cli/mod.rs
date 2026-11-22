@@ -6,12 +6,14 @@ use std::path::{Path, PathBuf};
 use clap::{Parser, Subcommand};
 
 use crate::catalog::{Catalog, Rule, load, load_registry};
-use crate::evaluate::{applicable, check_record, evaluate};
-use crate::record::{Record, parse_results};
+use crate::evaluate::{applicable, check_record, evaluate, leaves_project, normalise};
+use crate::record::{Record, Results, parse_results};
+use crate::release::only_uss_changes;
 use crate::report::render;
 use crate::source::{Embedded, Source};
 
 mod files;
+mod git;
 
 pub use files::{DirSource, OsProject, project_root, read_record};
 
@@ -65,6 +67,18 @@ enum Command {
         out: Option<PathBuf>,
         /// The audit results file.
         results: PathBuf,
+    },
+    /// Check that the latest audits are for the release commit, and write the reports.
+    ReleaseCheck {
+        /// The project record.
+        #[arg(long, default_value = ".uss/record.yaml")]
+        record: PathBuf,
+        /// Where to write the reports.
+        #[arg(long, default_value = "uss-report.md")]
+        out: PathBuf,
+        /// Exit with 1 when any record is not compliant.
+        #[arg(long)]
+        require_compliant: bool,
     },
 }
 
@@ -242,6 +256,14 @@ fn default_report_path(results: &str) -> String {
     format!("{}.md", results.strip_suffix(".yaml").unwrap_or(results))
 }
 
+/// Reads and parses the audit results file at `path`.
+fn read_results(src: &dyn Source, path: &Path) -> Result<Results, String> {
+    let name = path.to_string_lossy().replace('\\', "/");
+    let data =
+        std::fs::read(path).map_err(|e| format!("{name}: cannot read the results file: {e}"))?;
+    parse_results(src, &name, &data).map_err(|e| e.to_string())
+}
+
 /// Evaluates the audit `results_path` against the record and writes the
 /// Markdown report to `out_path`, then prints the status and the scores.
 fn run_report(
@@ -257,14 +279,7 @@ fn run_report(
         Err(code) => return code,
     };
     let results_name = results_path.to_string_lossy().replace('\\', "/");
-    let data = match std::fs::read(results_path) {
-        Ok(data) => data,
-        Err(e) => {
-            let _ = writeln!(err, "{results_name}: cannot read the results file: {e}");
-            return 1;
-        }
-    };
-    let results = match parse_results(src, &results_name, &data) {
+    let results = match read_results(src, results_path) {
         Ok(results) => results,
         Err(e) => {
             let _ = writeln!(err, "{e}");
@@ -299,6 +314,183 @@ fn run_report(
     written.map_or(EXIT_USAGE, |()| 0)
 }
 
+/// What `release-check` keeps of one audited record.
+struct Audited {
+    report: String,
+    statement: String,
+    compliant: bool,
+}
+
+/// Returns `path` with forward slashes, for messages.
+fn shown(path: &Path) -> String {
+    path.to_string_lossy().replace('\\', "/")
+}
+
+/// Collects `record` and, depth first, the records of its components.
+/// Problems with a component or its record go to `problems`.
+fn collect_records(
+    src: &dyn Source,
+    path: &Path,
+    record: Record,
+    records: &mut Vec<(PathBuf, Record)>,
+    problems: &mut Vec<String>,
+) {
+    let name = shown(path);
+    let root = project_root(path);
+    let components = record.components.clone();
+    let version = record.standard.version.clone();
+    records.push((path.to_path_buf(), record));
+    for raw in &components {
+        if leaves_project(raw) {
+            problems.push(format!(
+                "{name}: component path \"{raw}\" leaves the project"
+            ));
+            continue;
+        }
+        let dir = normalise(raw);
+        if dir.is_empty() {
+            problems.push(format!(
+                "{name}: component path \"{raw}\" is the record's own directory"
+            ));
+            continue;
+        }
+        let child_path = root.join(dir).join(".uss").join("record.yaml");
+        match read_record(src, &child_path) {
+            Err(e) => problems.push(format!("{name}: {e}")),
+            Ok(child) if child.standard.version != version => problems.push(format!(
+                "{name}: component record \"{}\" pins USS {}; the root record pins USS {version}",
+                shown(&child_path),
+                child.standard.version
+            )),
+            Ok(child) => collect_records(src, &child_path, child, records, problems),
+        }
+    }
+}
+
+/// Checks that the audit commit `sha` is in the clone and an ancestor of
+/// `HEAD`, and that nothing outside `.uss/` changed since. Problems go to `problems`.
+fn check_commit(
+    repo: &Path,
+    name: &str,
+    sha: &str,
+    problems: &mut Vec<String>,
+) -> Result<(), String> {
+    if !git::commit_exists(repo, sha)? {
+        problems.push(if git::is_shallow(repo)? {
+            format!(
+                "{name}: audited commit {sha} is not in this clone; the clone is shallow. Fetch full history (actions/checkout: fetch-depth: 0)."
+            )
+        } else {
+            format!("{name}: audited commit {sha} not found")
+        });
+    } else if !git::is_ancestor(repo, sha)? {
+        problems.push(format!(
+            "{name}: audited commit {sha} is not an ancestor of HEAD"
+        ));
+    } else {
+        let offending = only_uss_changes(&git::changed_files(repo, sha)?);
+        if !offending.is_empty() {
+            let list = offending.join("\n  ");
+            problems.push(format!(
+                "{name}: changes since the audit outside .uss/:\n  {list}"
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Checks the latest audit of one record against the git history, then
+/// evaluates and renders it. Returns `None` when a problem stops it.
+fn audit_record(
+    src: &dyn Source,
+    catalog: &Catalog,
+    repo: &Path,
+    path: &Path,
+    record: &Record,
+    problems: &mut Vec<String>,
+) -> Result<Option<Audited>, String> {
+    let name = shown(path);
+    let Some(audit) = record.latest_audit() else {
+        problems.push(format!("{name}: no audit recorded in {name}"));
+        return Ok(None);
+    };
+    if leaves_project(&audit.results) {
+        problems.push(format!(
+            "{name}: audit results path \"{}\" leaves the project",
+            audit.results
+        ));
+        return Ok(None);
+    }
+    let results_path = project_root(path).join(normalise(&audit.results));
+    let results = match read_results(src, &results_path) {
+        Ok(results) => results,
+        Err(e) => {
+            problems.push(format!("{name}: {e}"));
+            return Ok(None);
+        }
+    };
+    check_commit(repo, &name, &results.commit, problems)?;
+    let evaluation = match evaluate(catalog, record, &results) {
+        Ok(evaluation) => evaluation,
+        Err(diagnostics) => {
+            problems.extend(diagnostics.iter().map(|d| format!("{name}: {}", d.message)));
+            return Ok(None);
+        }
+    };
+    Ok(Some(Audited {
+        report: render(src, &record.project.name, &evaluation)?,
+        statement: evaluation.statement(),
+        compliant: evaluation.status.compliant,
+    }))
+}
+
+/// Proves the latest audits are for the release commit, then writes the reports.
+fn run_release_check(
+    src: &dyn Source,
+    record_path: &Path,
+    out_path: &Path,
+    require_compliant: bool,
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+) -> i32 {
+    let (catalog, root) = match load_project(src, record_path, err) {
+        Ok(loaded) => loaded,
+        Err(code) => return code,
+    };
+    let mut problems = Vec::new();
+    let mut records = Vec::new();
+    collect_records(src, record_path, root, &mut records, &mut problems);
+    let repo = project_root(record_path);
+    let mut audited = Vec::new();
+    for (path, record) in &records {
+        match audit_record(src, &catalog, &repo, path, record, &mut problems) {
+            Ok(Some(a)) => audited.push(a),
+            Ok(None) => {}
+            Err(e) => {
+                let _ = writeln!(err, "{e}");
+                return 1;
+            }
+        }
+    }
+    if !problems.is_empty() {
+        let written = problems.iter().try_for_each(|p| writeln!(out, "{p}"));
+        return written.map_or(EXIT_USAGE, |()| 1);
+    }
+    let reports: Vec<&str> = audited.iter().map(|a| a.report.as_str()).collect();
+    if let Err(e) = std::fs::write(out_path, reports.join("\n---\n\n")) {
+        let _ = writeln!(err, "{}: cannot write the report: {e}", shown(out_path));
+        return 1;
+    }
+    if audited
+        .iter()
+        .try_for_each(|a| writeln!(out, "{}", a.statement))
+        .is_err()
+    {
+        return EXIT_USAGE;
+    }
+    i32::from(require_compliant && audited.iter().any(|a| !a.compliant))
+}
+
 /// Runs the `uss` CLI with `args` (including the program name).
 ///
 /// Returns the process exit code: `0` for success, `1` when problems were
@@ -323,6 +515,18 @@ pub fn run(args: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
                     &record,
                     &results,
                     out_path.as_deref(),
+                    out,
+                    err,
+                ),
+                Command::ReleaseCheck {
+                    record,
+                    out: out_path,
+                    require_compliant,
+                } => run_release_check(
+                    src.as_ref(),
+                    &record,
+                    &out_path,
+                    require_compliant,
                     out,
                     err,
                 ),
@@ -715,5 +919,328 @@ mod tests {
         let (code, _out, err) = run_capture(&["bogus"]);
         assert_eq!(code, 2);
         assert!(err.contains("bogus"), "stderr: {err}");
+    }
+
+    // ---- release-check ----
+
+    /// Runs git in `dir` with the user's global configuration kept out of the way.
+    fn git(dir: &Path, args: &[&str]) -> String {
+        let output = std::process::Command::new("git")
+            .arg("-C")
+            .arg(dir)
+            .args([
+                "-c",
+                "user.name=uss-test",
+                "-c",
+                "user.email=uss-test@example.invalid",
+                "-c",
+                "commit.gpgsign=false",
+                "-c",
+                "core.autocrlf=false",
+            ])
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "git {args:?}: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        String::from_utf8(output.stdout).unwrap().trim().to_string()
+    }
+
+    /// Returns a new git repository in a temp dir, or `None` when git is not installed.
+    fn new_repo() -> Option<tempfile::TempDir> {
+        if std::process::Command::new("git")
+            .arg("--version")
+            .output()
+            .is_err()
+        {
+            println!("git is not installed; skipping");
+            return None;
+        }
+        let dir = tempfile::TempDir::new().unwrap();
+        git(dir.path(), &["init", "-q"]);
+        Some(dir)
+    }
+
+    fn write_file(root: &Path, rel: &str, text: &str) {
+        let target = root.join(rel);
+        std::fs::create_dir_all(target.parent().unwrap()).unwrap();
+        std::fs::write(target, text).unwrap();
+    }
+
+    fn commit_all(root: &Path, message: &str) -> String {
+        git(root, &["add", "-A"]);
+        git(root, &["commit", "-q", "-m", message]);
+        git(root, &["rev-parse", "HEAD"])
+    }
+
+    const RECORD_HEAD: &str = "standard: { version: 0.1.0 }\nproject: { name: p }\nfacts: {}\n";
+    const AUDIT_ENTRY: &str = "audits:\n  - { date: 2026-11-21, results: .uss/audits/a.yaml, report: .uss/audits/a.md }\n";
+
+    fn audit_yaml(commit: &str, entries: &str) -> String {
+        format!(
+            "standard: {{ version: 0.1.0 }}\ncommit: {commit}\ndate: 2026-11-21\nauditor: t\nresults: {entries}\n"
+        )
+    }
+
+    /// Commits the source and a record with no audit; returns the commit.
+    fn first_commit(root: &Path, extra_record: &str) -> String {
+        write_file(root, "src/main.rs", "fn main() {}\n");
+        write_file(
+            root,
+            ".uss/record.yaml",
+            &format!("{RECORD_HEAD}{extra_record}"),
+        );
+        commit_all(root, "first")
+    }
+
+    /// Records an audit of `commit` in a second commit that touches only `.uss/`.
+    fn audit_commit(root: &Path, commit: &str, extra_record: &str) -> String {
+        write_file(root, ".uss/audits/a.yaml", &audit_yaml(commit, "{}"));
+        write_file(
+            root,
+            ".uss/record.yaml",
+            &format!("{RECORD_HEAD}{extra_record}{AUDIT_ENTRY}"),
+        );
+        commit_all(root, "audit")
+    }
+
+    fn release_check(root: &Path, extra: &[&str]) -> (i32, String, String, PathBuf) {
+        let record = root.join(".uss/record.yaml");
+        let out_file = root.join("uss-report.md");
+        let mut args = vec![
+            "release-check",
+            "--record",
+            record.to_str().unwrap(),
+            "--out",
+            out_file.to_str().unwrap(),
+        ];
+        args.extend_from_slice(extra);
+        let (code, out, err) = run_capture(&args);
+        (code, out, err, out_file)
+    }
+
+    #[test]
+    fn release_check_ok() {
+        let Some(repo) = new_repo() else { return };
+        let a = first_commit(repo.path(), "");
+        audit_commit(repo.path(), &a, "");
+        let (code, out, err, report) = release_check(repo.path(), &[]);
+        assert_eq!(code, 0, "stdout: {out} stderr: {err}");
+        assert_eq!(out.lines().count(), 1, "stdout: {out}");
+        assert!(out.starts_with("Compliant with USS 0.1.0"), "stdout: {out}");
+        assert!(report.is_file());
+    }
+
+    #[test]
+    fn release_check_changes_outside_uss() {
+        let Some(repo) = new_repo() else { return };
+        let a = first_commit(repo.path(), "");
+        write_file(repo.path(), "src/main.rs", "fn main() { /* changed */ }\n");
+        audit_commit(repo.path(), &a, "");
+        let (code, out, _err, report) = release_check(repo.path(), &[]);
+        assert_eq!(code, 1, "stdout: {out}");
+        assert!(
+            out.contains("changes since the audit outside .uss/:\n  src/main.rs\n"),
+            "stdout: {out}"
+        );
+        assert!(!report.exists());
+    }
+
+    #[test]
+    fn release_check_no_audit() {
+        let Some(repo) = new_repo() else { return };
+        first_commit(repo.path(), "");
+        let (code, out, _err, report) = release_check(repo.path(), &[]);
+        assert_eq!(code, 1);
+        assert!(
+            out.contains("record.yaml: no audit recorded in "),
+            "stdout: {out}"
+        );
+        assert!(!report.exists());
+    }
+
+    #[test]
+    fn release_check_missing_commit() {
+        let Some(repo) = new_repo() else { return };
+        first_commit(repo.path(), "");
+        let missing = "b".repeat(40);
+        audit_commit(repo.path(), &missing, "");
+        let (code, out, _err, _report) = release_check(repo.path(), &[]);
+        assert_eq!(code, 1);
+        assert!(
+            out.contains(&format!("audited commit {missing} not found")),
+            "stdout: {out}"
+        );
+    }
+
+    #[test]
+    fn release_check_not_an_ancestor() {
+        let Some(repo) = new_repo() else { return };
+        first_commit(repo.path(), "");
+        git(repo.path(), &["checkout", "-q", "-b", "other"]);
+        write_file(repo.path(), "src/other.rs", "\n");
+        let side = commit_all(repo.path(), "side");
+        git(repo.path(), &["checkout", "-q", "-"]);
+        audit_commit(repo.path(), &side, "");
+        let (code, out, _err, _report) = release_check(repo.path(), &[]);
+        assert_eq!(code, 1);
+        assert!(
+            out.contains(&format!("audited commit {side} is not an ancestor of HEAD")),
+            "stdout: {out}"
+        );
+    }
+
+    #[test]
+    fn release_check_shallow_clone() {
+        let Some(repo) = new_repo() else { return };
+        let a = first_commit(repo.path(), "");
+        audit_commit(repo.path(), &a, "");
+        write_file(repo.path(), "src/main.rs", "fn main() { /* later */ }\n");
+        commit_all(repo.path(), "later");
+
+        let path = repo.path().to_str().unwrap().replace('\\', "/");
+        let url = if path.starts_with('/') {
+            format!("file://{path}")
+        } else {
+            format!("file:///{path}")
+        };
+        let holder = tempfile::TempDir::new().unwrap();
+        let clone = holder.path().join("clone");
+        let output = std::process::Command::new("git")
+            .args(["-c", "core.autocrlf=false", "clone", "-q", "--depth", "1"])
+            .arg(&url)
+            .arg(&clone)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "clone: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let (code, out, _err, report) = release_check(&clone, &[]);
+        assert_eq!(code, 1, "stdout: {out}");
+        assert!(out.contains("fetch-depth: 0"), "stdout: {out}");
+        assert!(
+            out.contains(&format!(
+                "audited commit {a} is not in this clone; the clone is shallow."
+            )),
+            "stdout: {out}"
+        );
+        assert!(!report.exists());
+    }
+
+    #[test]
+    fn release_check_not_a_repository() {
+        if std::process::Command::new("git")
+            .arg("--version")
+            .output()
+            .is_err()
+        {
+            println!("git is not installed; skipping");
+            return;
+        }
+        let dir = tempfile::TempDir::new().unwrap();
+        write_file(
+            dir.path(),
+            ".uss/record.yaml",
+            &format!("{RECORD_HEAD}{AUDIT_ENTRY}"),
+        );
+        write_file(
+            dir.path(),
+            ".uss/audits/a.yaml",
+            &audit_yaml(&"c".repeat(40), "{}"),
+        );
+        let (code, out, err, _report) = release_check(dir.path(), &[]);
+        assert_eq!(code, 1, "stdout: {out}");
+        assert!(err.contains("git"), "stderr: {err}");
+    }
+
+    #[test]
+    fn release_check_components() {
+        let Some(repo) = new_repo() else { return };
+        write_file(repo.path(), "svc/.uss/record.yaml", RECORD_HEAD);
+        let a = first_commit(repo.path(), "components: [svc]\n");
+        write_file(
+            repo.path(),
+            "svc/.uss/record.yaml",
+            &format!("{RECORD_HEAD}{AUDIT_ENTRY}"),
+        );
+        write_file(repo.path(), "svc/.uss/audits/a.yaml", &audit_yaml(&a, "{}"));
+        audit_commit(repo.path(), &a, "components: [svc]\n");
+        let (code, out, err, report) = release_check(repo.path(), &[]);
+        assert_eq!(code, 0, "stdout: {out} stderr: {err}");
+        assert_eq!(out.lines().count(), 2, "stdout: {out}");
+        let text = std::fs::read_to_string(report).unwrap();
+        assert_eq!(text.matches("\n---\n\n").count(), 1);
+    }
+
+    #[test]
+    fn release_check_component_problems_are_all_reported() {
+        let Some(repo) = new_repo() else { return };
+        write_file(repo.path(), "svc/.uss/record.yaml", RECORD_HEAD);
+        let a = first_commit(repo.path(), "components: [svc, ../x]\n");
+        audit_commit(repo.path(), &a, "components: [svc, ../x]\n");
+        let (code, out, _err, report) = release_check(repo.path(), &[]);
+        assert_eq!(code, 1);
+        assert!(
+            out.contains("component path \"../x\" leaves the project"),
+            "stdout: {out}"
+        );
+        assert!(
+            out.contains("svc/.uss/record.yaml: no audit recorded in "),
+            "stdout: {out}"
+        );
+        assert!(!report.exists());
+    }
+
+    #[test]
+    fn release_check_require_compliant() {
+        let Some(repo) = new_repo() else { return };
+        let std_root = fixture_root();
+        let std_arg = std_root.path().to_str().unwrap();
+        let record = concat!(
+            "standard: { version: 0.1.0 }\n",
+            "project: { name: p }\n",
+            "facts: { has-ui: false, has-web-ui: false, uses-database: false }\n",
+            "decisions: { USS-EXT-001: { adopt: false } }\n",
+        );
+        write_file(repo.path(), "src/main.rs", "\n");
+        write_file(repo.path(), ".uss/record.yaml", record);
+        let a = commit_all(repo.path(), "first");
+        let entries = "{ USS-SEC-001: { result: fail, evidence: missing } }";
+        write_file(repo.path(), ".uss/audits/a.yaml", &audit_yaml(&a, entries));
+        write_file(
+            repo.path(),
+            ".uss/record.yaml",
+            &format!("{record}{AUDIT_ENTRY}"),
+        );
+        commit_all(repo.path(), "audit");
+
+        let record_path = repo.path().join(".uss/record.yaml");
+        let out_file = repo.path().join("uss-report.md");
+        let base = [
+            "--standard-root",
+            std_arg,
+            "release-check",
+            "--record",
+            record_path.to_str().unwrap(),
+            "--out",
+            out_file.to_str().unwrap(),
+        ];
+        let (code, out, err) = run_capture(&base);
+        assert_eq!(code, 0, "stdout: {out} stderr: {err}");
+        assert!(out.starts_with("Not compliant"), "stdout: {out}");
+        assert!(out_file.is_file());
+        std::fs::remove_file(&out_file).unwrap();
+
+        let mut strict = base.to_vec();
+        strict.push("--require-compliant");
+        let (code, out, _err) = run_capture(&strict);
+        assert_eq!(code, 1);
+        assert!(out.starts_with("Not compliant"), "stdout: {out}");
+        assert!(out_file.is_file());
     }
 }
