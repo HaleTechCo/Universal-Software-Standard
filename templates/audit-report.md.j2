@@ -45,7 +45,7 @@
 | File | Line | Rule | Reason |
 | --- | --- | --- | --- |
 {% for s in suppressions %}
-| {{ s.file | cell }} | {{ s.line }} | {{ s.rule }} | {{ s.reason | cell }} |
+| {{ s.file | cell }} | {{ s.line }} | {{ s.rule | cell }} | {{ s.reason | cell }} |
 {% endfor %}
 
 {% endif %}

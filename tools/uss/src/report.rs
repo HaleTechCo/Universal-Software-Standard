@@ -162,9 +162,14 @@ fn percent(value: Option<u32>) -> String {
     value.map_or_else(|| "n/a".to_string(), |p| format!("{p}%"))
 }
 
-/// Template filter: makes text safe inside a Markdown table cell.
+/// Template filter: makes text safe inside a Markdown table cell. `&`, `<`
+/// and `>` become entities, so text such as `Option<u32>` is not read as
+/// HTML; `|` is escaped, and a line break becomes `<br>`.
 fn cell(value: &str) -> String {
     value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
         .replace('|', "\\|")
         .replace("\r\n", "<br>")
         .replace(['\n', '\r'], "<br>")
@@ -248,10 +253,24 @@ mod tests {
         let c = catalog();
         let r = record("facts: {}\ndecisions: { USS-EXT-001: { adopt: false } }\n");
         let mut res = results(&[("USS-SEC-001", Outcome::Fail)]);
-        res.results.get_mut("USS-SEC-001").unwrap().evidence = "a|b\nc".to_string();
+        res.results.get_mut("USS-SEC-001").unwrap().evidence =
+            "a|b\nc returns Option<u32> & more".to_string();
+        res.suppressions.push(Suppression {
+            file: "src/a.rs".to_string(),
+            line: None,
+            rule: "lint|<T>&".to_string(),
+            reason: "r".to_string(),
+        });
         let ev = evaluate(&c, &r, &res).unwrap();
         let text = render(&Embedded, "p", &ev).unwrap();
-        assert!(text.contains("| a\\|b<br>c |"), "{text}");
+        assert!(
+            text.contains("| a\\|b<br>c returns Option&lt;u32&gt; &amp; more |"),
+            "{text}"
+        );
+        assert!(
+            text.contains("| src/a.rs |  | lint\\|&lt;T&gt;&amp; | r |"),
+            "{text}"
+        );
     }
 
     #[test]
