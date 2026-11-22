@@ -3,6 +3,7 @@
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 
+use crate::evaluate::ProjectFiles;
 use crate::record::{Record, parse_record};
 use crate::source::Source;
 
@@ -58,6 +59,31 @@ impl Source for DirSource {
         collect(&self.resolve(dir), dir, &mut out);
         out.sort();
         out
+    }
+}
+
+/// An adopting project's files on disk, under `root`.
+#[derive(Debug, Clone)]
+pub struct OsProject {
+    /// The project root.
+    pub root: PathBuf,
+}
+
+impl OsProject {
+    fn resolve(&self, rel: &str) -> PathBuf {
+        rel.split('/')
+            .filter(|p| !p.is_empty())
+            .fold(self.root.clone(), |acc, part| acc.join(part))
+    }
+}
+
+impl ProjectFiles for OsProject {
+    fn exists(&self, rel: &str) -> bool {
+        self.resolve(rel).exists()
+    }
+
+    fn read(&self, rel: &str) -> Option<Vec<u8>> {
+        std::fs::read(self.resolve(rel)).ok()
     }
 }
 
@@ -123,6 +149,19 @@ mod tests {
             ]
         );
         assert_eq!(src.list("nothing"), Vec::<String>::new());
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn os_project_reads_and_checks() {
+        let root = temp_dir("osproject");
+        std::fs::create_dir_all(root.join("docs")).unwrap();
+        std::fs::write(root.join("docs/a.md"), b"a").unwrap();
+        let p = OsProject { root: root.clone() };
+        assert!(p.exists("docs/a.md"));
+        assert!(!p.exists("docs/b.md"));
+        assert_eq!(p.read("docs/a.md"), Some(b"a".to_vec()));
+        assert_eq!(p.read("docs/b.md"), None);
         std::fs::remove_dir_all(&root).unwrap();
     }
 

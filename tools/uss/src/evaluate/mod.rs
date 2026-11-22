@@ -1,8 +1,12 @@
 //! Evaluating a project record against the catalog.
 
+mod check;
 mod facts;
+mod project;
 
+pub use check::check_record;
 pub use facts::{applicable, resolve_facts};
+pub use project::{MemProject, ProjectFiles, SubProject};
 
 #[cfg(test)]
 mod tests {

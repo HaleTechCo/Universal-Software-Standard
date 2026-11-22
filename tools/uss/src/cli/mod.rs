@@ -6,13 +6,13 @@ use std::path::{Path, PathBuf};
 use clap::{Parser, Subcommand};
 
 use crate::catalog::{Catalog, Rule, load, load_registry};
-use crate::evaluate::applicable;
+use crate::evaluate::{applicable, check_record};
 use crate::record::Record;
 use crate::source::{Embedded, Source};
 
 mod files;
 
-pub use files::{DirSource, project_root, read_record};
+pub use files::{DirSource, OsProject, project_root, read_record};
 
 /// Exit code for a usage error.
 const EXIT_USAGE: i32 = 2;
@@ -46,6 +46,11 @@ enum Command {
         /// Print a JSON array instead of tab-separated lines.
         #[arg(long)]
         json: bool,
+        /// The project record (`.uss/record.yaml`).
+        record: PathBuf,
+    },
+    /// Check a project's record against the standard and the project's files.
+    Check {
         /// The project record (`.uss/record.yaml`).
         record: PathBuf,
     },
@@ -190,6 +195,36 @@ fn run_applicable(
     0
 }
 
+/// Checks the record and prints each problem, then a summary line, to `out`.
+fn run_check(
+    src: &dyn Source,
+    record_path: &Path,
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+) -> i32 {
+    let (catalog, record) = match load_project(src, record_path, err) {
+        Ok(loaded) => loaded,
+        Err(code) => return code,
+    };
+    let project = OsProject {
+        root: project_root(record_path),
+    };
+    let diagnostics = check_record(src, &catalog, &record, &project);
+    let n = diagnostics.len();
+    let noun = if n == 1 { "problem" } else { "problems" };
+    let written = diagnostics
+        .iter()
+        .try_for_each(|d| writeln!(out, "{d}"))
+        .and_then(|()| {
+            if n == 0 {
+                writeln!(out, "uss check: ok").map(|()| 0)
+            } else {
+                writeln!(out, "uss check: {n} {noun}").map(|()| 1)
+            }
+        });
+    written.unwrap_or(EXIT_USAGE)
+}
+
 /// Runs the `uss` CLI with `args` (including the program name).
 ///
 /// Returns the process exit code: `0` for success, `1` when problems were
@@ -204,6 +239,7 @@ pub fn run(args: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
                 Command::Applicable { json, record } => {
                     run_applicable(src.as_ref(), &record, json, out, err)
                 }
+                Command::Check { record } => run_check(src.as_ref(), &record, out, err),
             }
         }
         Err(e) => {
@@ -399,6 +435,63 @@ mod tests {
         ]);
         assert_eq!(code, 1);
         assert!(err.contains("nope.yaml"), "stderr: {err}");
+    }
+
+    /// Writes a project (`.uss/record.yaml` plus `files`) and returns the record path.
+    fn write_project(dir: &Path, deviation_doc: &str, files: &[&str]) -> String {
+        std::fs::create_dir_all(dir.join(".uss")).unwrap();
+        let text = format!(
+            concat!(
+                "standard: {{ version: 0.1.0 }}\n",
+                "project: {{ name: p }}\n",
+                "facts: {{ has-ui: false, has-web-ui: false, uses-database: true }}\n",
+                "decisions: {{ USS-EXT-001: {{ adopt: false }} }}\n",
+                "deviations:\n",
+                "  - {{ rule: USS-SEC-002, document: '{}', approved-by: z, date: 2026-01-01 }}\n",
+            ),
+            deviation_doc
+        );
+        let record = dir.join(".uss").join("record.yaml");
+        std::fs::write(&record, text).unwrap();
+        for f in files {
+            let target = dir.join(f);
+            std::fs::create_dir_all(target.parent().unwrap()).unwrap();
+            std::fs::write(target, "doc").unwrap();
+        }
+        record.to_str().unwrap().to_string()
+    }
+
+    #[test]
+    fn check_ok_and_problems_cli() {
+        let std_root = fixture_root();
+        let std_arg = std_root.path().to_str().unwrap();
+        let proj = tempfile::TempDir::new().unwrap();
+        let rec = write_project(proj.path(), "docs/d.md", &["docs/d.md"]);
+        let (code, out, err) = run_capture(&["--standard-root", std_arg, "check", &rec]);
+        assert_eq!(
+            (code, out.as_str(), err.as_str()),
+            (0, "uss check: ok\n", "")
+        );
+
+        std::fs::remove_file(proj.path().join("docs/d.md")).unwrap();
+        let (code, out, _err) = run_capture(&["--standard-root", std_arg, "check", &rec]);
+        assert_eq!(code, 1);
+        assert!(
+            out.contains("deviation document \"docs/d.md\" not found"),
+            "stdout: {out}"
+        );
+        assert!(out.ends_with("uss check: 1 problem\n"), "stdout: {out}");
+    }
+
+    #[test]
+    fn check_backslash_path_cli() {
+        let std_root = fixture_root();
+        let std_arg = std_root.path().to_str().unwrap();
+        let proj = tempfile::TempDir::new().unwrap();
+        let rec = write_project(proj.path(), "docs\\d.md", &["docs/d.md"]);
+        let (code, out, err) = run_capture(&["--standard-root", std_arg, "check", &rec]);
+        assert_eq!(code, 0, "stdout: {out} stderr: {err}");
+        assert_eq!(out, "uss check: ok\n");
     }
 
     #[test]
