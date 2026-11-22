@@ -299,6 +299,7 @@ fn read_results(src: &dyn Source, path: &Path) -> Result<Results, String> {
 
 /// Evaluates the audit `results_path` against the record and writes the
 /// Markdown report to `out_path`, then prints the status and the scores.
+/// A record that `uss check` rejects stops it: the problems go to `out`.
 fn run_report(
     src: &dyn Source,
     record_path: &Path,
@@ -311,6 +312,14 @@ fn run_report(
         Ok(loaded) => loaded,
         Err(code) => return code,
     };
+    let project = OsProject {
+        root: project_root(record_path),
+    };
+    let diagnostics = check_record(src, &catalog, &record, &project);
+    if !diagnostics.is_empty() {
+        let written = diagnostics.iter().try_for_each(|d| writeln!(out, "{d}"));
+        return written.map_or(EXIT_USAGE, |()| 1);
+    }
     let results_name = results_path.to_string_lossy().replace('\\', "/");
     let results = match read_results(src, results_path) {
         Ok(results) => results,
@@ -478,6 +487,7 @@ fn audit_record(
 }
 
 /// Proves the latest audits are for the release commit, then writes the reports.
+/// Every problem that `uss check` finds in the records is a problem here too.
 fn run_release_check(
     src: &dyn Source,
     record_path: &Path,
@@ -490,7 +500,13 @@ fn run_release_check(
         Ok(loaded) => loaded,
         Err(code) => return code,
     };
-    let mut problems = Vec::new();
+    let project = OsProject {
+        root: project_root(record_path),
+    };
+    let mut problems: Vec<String> = check_record(src, &catalog, &root, &project)
+        .iter()
+        .map(ToString::to_string)
+        .collect();
     let mut records = Vec::new();
     collect_records(src, record_path, root, &mut records, &mut problems);
     let repo = project_root(record_path);
@@ -506,6 +522,9 @@ fn run_release_check(
         }
     }
     if !problems.is_empty() {
+        // `check_record` and `collect_records` both report a bad component path.
+        let mut seen = std::collections::BTreeSet::new();
+        problems.retain(|p| seen.insert(p.clone()));
         let written = problems.iter().try_for_each(|p| writeln!(out, "{p}"));
         return written.map_or(EXIT_USAGE, |()| 1);
     }
@@ -901,6 +920,40 @@ mod tests {
     }
 
     #[test]
+    fn run_report_rejects_invalid_record() {
+        let std_root = fixture_root();
+        let std_arg = std_root.path().to_str().unwrap();
+        let proj = tempfile::TempDir::new().unwrap();
+        // A misspelled fact leaves `uses-database` false, so USS-SEC-002 drops out.
+        let typo = RECORD_HEAD.replace("uses-database", "uses-databse");
+        write_file(proj.path(), ".uss/record.yaml", &typo);
+        let rec = proj.path().join(".uss/record.yaml");
+        let res = write_results(
+            proj.path(),
+            "  USS-SEC-001: { result: pass, evidence: checked }\n",
+        );
+        let (code, out, err) = run_capture(&[
+            "--standard-root",
+            std_arg,
+            "report",
+            "--record",
+            rec.to_str().unwrap(),
+            &res,
+        ]);
+        assert_eq!(code, 1, "stdout: {out} stderr: {err}");
+        assert!(
+            out.contains("record.yaml: unknown fact \"uses-databse\""),
+            "stdout: {out}"
+        );
+        assert!(
+            out.contains("record.yaml: fact \"uses-database\" is not answered"),
+            "stdout: {out}"
+        );
+        assert!(!out.contains("Compliant"), "stdout: {out}");
+        assert!(!proj.path().join("audit.md").exists());
+    }
+
+    #[test]
     fn run_report_missing_and_invalid_results() {
         let std_root = fixture_root();
         let std_arg = std_root.path().to_str().unwrap();
@@ -1098,6 +1151,31 @@ mod tests {
     }
 
     #[test]
+    fn release_check_rejects_invalid_record() {
+        let Some(repo) = new_repo() else { return };
+        // A misspelled fact leaves `uses-database` false, so USS-SEC-002 drops out.
+        let typo = RECORD_HEAD.replace("uses-database", "uses-databse");
+        write_file(repo.path(), "src/main.rs", "fn main() {}\n");
+        write_file(repo.path(), ".uss/record.yaml", &typo);
+        let a = commit_all(repo.path(), "first");
+        write_file(repo.path(), ".uss/audits/a.yaml", &audit_yaml(&a, PASS));
+        write_file(
+            repo.path(),
+            ".uss/record.yaml",
+            &format!("{typo}{AUDIT_ENTRY}"),
+        );
+        commit_all(repo.path(), "audit");
+        let (code, out, err, report) = release_check(repo.path(), &["--require-compliant"]);
+        assert_eq!(code, 1, "stdout: {out} stderr: {err}");
+        assert!(
+            out.contains("record.yaml: unknown fact \"uses-databse\""),
+            "stdout: {out}"
+        );
+        assert!(!out.contains("Compliant"), "stdout: {out}");
+        assert!(!report.exists());
+    }
+
+    #[test]
     fn release_check_changes_outside_uss() {
         let Some(repo) = new_repo() else { return };
         let a = first_commit(repo.path(), "");
@@ -1262,8 +1340,10 @@ mod tests {
         audit_commit(repo.path(), &a, "components: [svc, ../x]\n");
         let (code, out, _err, report) = release_check(repo.path(), &[]);
         assert_eq!(code, 1);
-        assert!(
-            out.contains("component path \"../x\" leaves the project"),
+        assert_eq!(
+            out.matches("component path \"../x\" leaves the project")
+                .count(),
+            1,
             "stdout: {out}"
         );
         assert!(
