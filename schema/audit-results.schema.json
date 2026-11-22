@@ -34,7 +34,7 @@
         "properties": {
           "file": { "type": "string", "minLength": 1 },
           "line": { "type": "integer", "minimum": 1 },
-          "rule": { "type": "string", "pattern": "^USS-[A-Z][A-Z0-9]{1,7}-\\d{3}$" },
+          "rule": { "type": "string", "minLength": 1 },
           "reason": { "type": "string", "minLength": 1 }
         }
       }

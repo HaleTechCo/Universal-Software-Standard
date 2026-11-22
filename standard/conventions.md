@@ -590,7 +590,7 @@ the audit date. `schema/audit-results.schema.json` defines the format.
 | `date` | always | The audit date, `YYYY-MM-DD`. |
 | `auditor` | when known | Who or what ran the audit. |
 | `results` | always | `<rule-id>: { result: <outcome>, evidence: <text> }` for each rule (section 8). |
-| `suppressions` | when found | Every suppression in the project's checks: `file`, `line` (when known), `rule` (a USS rule ID) and `reason`. |
+| `suppressions` | when found | Every suppression in the project's checks: `file`, `line` (when known), `rule` (the suppressed check's own rule, such as `E501` or `clippy::unwrap_used`, not a USS rule ID) and `reason`. |
 
 ```yaml
 standard:

@@ -60,7 +60,7 @@ pub struct Suppression {
     pub file: String,
     /// The line, counted from 1.
     pub line: Option<u32>,
-    /// The rule ID.
+    /// The suppressed check's own rule, such as `E501` (not a USS rule ID).
     pub rule: String,
     /// Why the finding is suppressed.
     pub reason: String,

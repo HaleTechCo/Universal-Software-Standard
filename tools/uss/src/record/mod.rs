@@ -326,6 +326,24 @@ mod tests {
     }
 
     #[test]
+    fn results_suppression_rule_is_the_tools_own() {
+        let find = "rule: USS-SEC-001";
+        assert!(RESULTS.contains(find), "test data lacks {find:?}");
+        let tool = RESULTS.replace(find, "rule: clippy::unwrap_used");
+        let r = parse_results(&Embedded, "x.yaml", tool.as_bytes()).unwrap();
+        assert_eq!(r.suppressions[0].rule, "clippy::unwrap_used");
+
+        let empty = RESULTS.replace(find, "rule: \"\"");
+        let err = parse_results(&Embedded, "x.yaml", empty.as_bytes()).unwrap_err();
+        assert!(
+            err.problems
+                .iter()
+                .any(|p| p.contains("/suppressions/0/rule")),
+            "{err}"
+        );
+    }
+
+    #[test]
     fn record_template_matches_standard() {
         use std::collections::BTreeSet;
 
