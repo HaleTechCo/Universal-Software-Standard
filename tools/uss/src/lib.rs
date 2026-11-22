@@ -3,6 +3,7 @@
 pub mod catalog;
 #[cfg(feature = "cli")]
 pub mod cli;
+pub mod evaluate;
 pub mod expr;
 pub mod record;
 pub mod source;

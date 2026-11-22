@@ -3,6 +3,7 @@
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 
+use crate::record::{Record, parse_record};
 use crate::source::Source;
 
 /// A [`Source`] over a USS checkout directory on disk.
@@ -60,6 +61,38 @@ impl Source for DirSource {
     }
 }
 
+/// Returns the root of the project that holds the record at `record_path`:
+/// the parent of the `.uss` directory the record is in, or the record's own
+/// directory.
+#[must_use]
+pub fn project_root(record_path: &Path) -> PathBuf {
+    let dir = record_path.parent().unwrap_or_else(|| Path::new(""));
+    let root = if dir.file_name().is_some_and(|n| n == ".uss") {
+        dir.parent().unwrap_or(dir)
+    } else {
+        dir
+    };
+    if root.as_os_str().is_empty() {
+        PathBuf::from(".")
+    } else {
+        root.to_path_buf()
+    }
+}
+
+/// Reads and parses the record at `path`, validating it against the schema in `src`.
+///
+/// The record's `path` is `path` with forward slashes.
+///
+/// # Errors
+///
+/// Returns a message naming the path when the file cannot be read or the
+/// record is invalid.
+pub fn read_record(src: &dyn Source, path: &Path) -> Result<Record, String> {
+    let shown = path.to_string_lossy().replace('\\', "/");
+    let data = std::fs::read(path).map_err(|e| format!("{shown}: cannot read the record: {e}"))?;
+    parse_record(src, &shown, &data).map_err(|e| e.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -90,6 +123,40 @@ mod tests {
             ]
         );
         assert_eq!(src.list("nothing"), Vec::<String>::new());
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn project_root_cases() {
+        let tmp = Path::new("tmp-base");
+        assert_eq!(
+            project_root(&tmp.join("proj/.uss/record.yaml")),
+            tmp.join("proj")
+        );
+        assert_eq!(project_root(&tmp.join("x/record.yaml")), tmp.join("x"));
+        assert_eq!(project_root(Path::new("record.yaml")), PathBuf::from("."));
+    }
+
+    #[test]
+    fn read_record_errors_name_the_path() {
+        let root = temp_dir("readrecord");
+        let missing = root.join("missing.yaml");
+        let err = read_record(&crate::source::Embedded, &missing).unwrap_err();
+        assert!(err.contains("missing.yaml"), "error: {err}");
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn read_record_sets_forward_slash_path() {
+        let root = temp_dir("readrecord-ok");
+        let file = root.join("record.yaml");
+        std::fs::write(
+            &file,
+            "standard: { version: 0.1.0 }\nproject: { name: p }\nfacts: {}\n",
+        )
+        .unwrap();
+        let r = read_record(&crate::source::Embedded, &file).unwrap();
+        assert_eq!(r.path, file.to_str().unwrap().replace('\\', "/"));
         std::fs::remove_dir_all(&root).unwrap();
     }
 }
