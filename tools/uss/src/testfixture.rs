@@ -1,6 +1,49 @@
 //! A mini-standard used by the tests of every module.
 
-use crate::source::MemSource;
+use crate::catalog::{Catalog, load};
+use crate::record::{Entry, Outcome, Record, Results, StandardRef, parse_record};
+use crate::source::{Embedded, MemSource};
+
+/// A record deviating from `USS-SEC-001`, to append to a record's YAML.
+pub(crate) const DEVIATION: &str =
+    "deviations:\n  - { rule: USS-SEC-001, document: d.md, approved-by: a, date: 2026-11-01 }\n";
+
+/// The catalog of the mini-standard.
+pub(crate) fn catalog() -> Catalog {
+    load(&standard()).unwrap()
+}
+
+/// A record for project `p` with `extra` YAML appended.
+pub(crate) fn record(extra: &str) -> Record {
+    let yaml = format!("standard: {{ version: 0.1.0 }}\nproject: {{ name: p }}\n{extra}");
+    parse_record(&Embedded, "r.yaml", yaml.as_bytes()).unwrap()
+}
+
+/// Results with evidence `e` for each of `entries`.
+pub(crate) fn results(entries: &[(&str, Outcome)]) -> Results {
+    Results {
+        standard: StandardRef {
+            version: "0.1.0".to_string(),
+        },
+        commit: "a".repeat(40),
+        date: "2026-11-21".to_string(),
+        auditor: "tester".to_string(),
+        results: entries
+            .iter()
+            .map(|(id, result)| {
+                (
+                    (*id).to_string(),
+                    Entry {
+                        result: *result,
+                        evidence: "e".to_string(),
+                    },
+                )
+            })
+            .collect(),
+        suppressions: Vec::new(),
+        path: "res.yaml".to_string(),
+    }
+}
 
 const REGISTRY: &str = "version: 0.1.0
 categories:

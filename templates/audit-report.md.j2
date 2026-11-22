@@ -1,0 +1,51 @@
+# USS audit report: {{ project | cell }}
+
+{{ statement }}
+
+**Audited commit:** `{{ commit }}` · **Date:** {{ date }} · **Auditor:** {{ auditor | cell }}
+
+{# Each block below ends with one blank line; render() trims the end. #}
+{% if scores %}
+## Scores
+
+| Category | Score | Passed | Applicable |
+| --- | --- | --- | --- |
+{% for s in scores %}
+| {{ s.category | cell }} | {{ s.percent | percent }} | {{ s.pass }} | {{ s.applicable }} |
+{% endfor %}
+
+{% endif %}
+{% if sections %}
+## Results
+
+{% for section in sections %}
+### {{ section.heading }}
+
+| Rule | Level | Category | Title | Evidence |
+| --- | --- | --- | --- | --- |
+{% for r in section.rows %}
+| {{ r.id }} | {{ r.level }} | {{ r.category | cell }} | {{ r.title | cell }} | {{ r.evidence | cell }} |
+{% endfor %}
+
+{% endfor %}
+{% endif %}
+{% if deviations %}
+## Standard Deviations
+
+| Rule | Document | Approved by | Date | Review by |
+| --- | --- | --- | --- | --- |
+{% for d in deviations %}
+| {{ d.rule }} | {{ d.document | cell }} | {{ d.approved_by | cell }} | {{ d.date }} | {{ d.review_by }} |
+{% endfor %}
+
+{% endif %}
+{% if suppressions %}
+## Suppressions
+
+| File | Line | Rule | Reason |
+| --- | --- | --- | --- |
+{% for s in suppressions %}
+| {{ s.file | cell }} | {{ s.line }} | {{ s.rule }} | {{ s.reason | cell }} |
+{% endfor %}
+
+{% endif %}

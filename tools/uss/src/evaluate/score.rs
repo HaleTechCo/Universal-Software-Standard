@@ -308,48 +308,10 @@ impl Evaluation<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::catalog::load;
-    use crate::record::{Entry, StandardRef, parse_record};
-    use crate::source::Embedded;
-    use crate::testfixture::standard;
-
-    fn catalog() -> Catalog {
-        load(&standard()).unwrap()
-    }
-
-    fn record(extra: &str) -> Record {
-        let yaml = format!("standard: {{ version: 0.1.0 }}\nproject: {{ name: p }}\n{extra}");
-        parse_record(&Embedded, "r.yaml", yaml.as_bytes()).unwrap()
-    }
-
-    fn results(entries: &[(&str, Outcome)]) -> Results {
-        Results {
-            standard: StandardRef {
-                version: "0.1.0".to_string(),
-            },
-            commit: "a".repeat(40),
-            date: "2026-11-21".to_string(),
-            auditor: "tester".to_string(),
-            results: entries
-                .iter()
-                .map(|(id, result)| {
-                    (
-                        (*id).to_string(),
-                        Entry {
-                            result: *result,
-                            evidence: "e".to_string(),
-                        },
-                    )
-                })
-                .collect(),
-            suppressions: Vec::new(),
-            path: "res.yaml".to_string(),
-        }
-    }
+    use crate::testfixture::{DEVIATION, catalog, record, results};
 
     const DECLINE_EXT: &str = "decisions: { USS-EXT-001: { adopt: false } }\n";
     const ADOPT_EXT: &str = "decisions: { USS-EXT-001: { adopt: true } }\n";
-    const DEVIATION: &str = "deviations:\n  - { rule: USS-SEC-001, document: d.md, approved-by: a, date: 2026-11-01 }\n";
 
     #[test]
     fn compliant_with_declined_may() {

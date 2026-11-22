@@ -6,8 +6,9 @@ use std::path::{Path, PathBuf};
 use clap::{Parser, Subcommand};
 
 use crate::catalog::{Catalog, Rule, load, load_registry};
-use crate::evaluate::{applicable, check_record};
-use crate::record::Record;
+use crate::evaluate::{applicable, check_record, evaluate};
+use crate::record::{Record, parse_results};
+use crate::report::render;
 use crate::source::{Embedded, Source};
 
 mod files;
@@ -53,6 +54,17 @@ enum Command {
     Check {
         /// The project record (`.uss/record.yaml`).
         record: PathBuf,
+    },
+    /// Write the Markdown audit report for an audit's results.
+    Report {
+        /// The project record.
+        #[arg(long, default_value = ".uss/record.yaml")]
+        record: PathBuf,
+        /// Where to write the report (default: RESULTS with `.yaml` replaced by `.md`).
+        #[arg(long)]
+        out: Option<PathBuf>,
+        /// The audit results file.
+        results: PathBuf,
     },
 }
 
@@ -225,6 +237,68 @@ fn run_check(
     written.unwrap_or(EXIT_USAGE)
 }
 
+/// The report path next to `results`: `.yaml` replaced by `.md`, or `.md` appended.
+fn default_report_path(results: &str) -> String {
+    format!("{}.md", results.strip_suffix(".yaml").unwrap_or(results))
+}
+
+/// Evaluates the audit `results_path` against the record and writes the
+/// Markdown report to `out_path`, then prints the status and the scores.
+fn run_report(
+    src: &dyn Source,
+    record_path: &Path,
+    results_path: &Path,
+    out_path: Option<&Path>,
+    out: &mut dyn Write,
+    err: &mut dyn Write,
+) -> i32 {
+    let (catalog, record) = match load_project(src, record_path, err) {
+        Ok(loaded) => loaded,
+        Err(code) => return code,
+    };
+    let results_name = results_path.to_string_lossy().replace('\\', "/");
+    let data = match std::fs::read(results_path) {
+        Ok(data) => data,
+        Err(e) => {
+            let _ = writeln!(err, "{results_name}: cannot read the results file: {e}");
+            return 1;
+        }
+    };
+    let results = match parse_results(src, &results_name, &data) {
+        Ok(results) => results,
+        Err(e) => {
+            let _ = writeln!(err, "{e}");
+            return 1;
+        }
+    };
+    let evaluation = match evaluate(&catalog, &record, &results) {
+        Ok(evaluation) => evaluation,
+        Err(diagnostics) => {
+            let written = diagnostics.iter().try_for_each(|d| writeln!(out, "{d}"));
+            return written.map_or(EXIT_USAGE, |()| 1);
+        }
+    };
+    let report = match render(src, &record.project.name, &evaluation) {
+        Ok(report) => report,
+        Err(e) => {
+            let _ = writeln!(err, "{e}");
+            return 1;
+        }
+    };
+    let target = out_path.map_or_else(
+        || PathBuf::from(default_report_path(&results_name)),
+        Path::to_path_buf,
+    );
+    if let Err(e) = std::fs::write(&target, report) {
+        let name = target.to_string_lossy().replace('\\', "/");
+        let _ = writeln!(err, "{name}: cannot write the report: {e}");
+        return 1;
+    }
+    let written = writeln!(out, "{}", evaluation.statement())
+        .and_then(|()| writeln!(out, "{}", evaluation.score_line()));
+    written.map_or(EXIT_USAGE, |()| 0)
+}
+
 /// Runs the `uss` CLI with `args` (including the program name).
 ///
 /// Returns the process exit code: `0` for success, `1` when problems were
@@ -240,6 +314,18 @@ pub fn run(args: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
                     run_applicable(src.as_ref(), &record, json, out, err)
                 }
                 Command::Check { record } => run_check(src.as_ref(), &record, out, err),
+                Command::Report {
+                    record,
+                    out: out_path,
+                    results,
+                } => run_report(
+                    src.as_ref(),
+                    &record,
+                    &results,
+                    out_path.as_deref(),
+                    out,
+                    err,
+                ),
             }
         }
         Err(e) => {
@@ -339,17 +425,16 @@ mod tests {
         assert!(out.ends_with("uss lint: 1 problem\n"), "stdout: {out}");
     }
 
-    /// Writes the fixture standard and the record schema to a temp dir.
+    /// Writes the fixture standard, the schemas and the report template to a temp dir.
     fn fixture_root() -> tempfile::TempDir {
         let dir = tempfile::TempDir::new().unwrap();
-        let schema = Embedded
-            .read("schema/record.schema.json")
-            .unwrap()
-            .into_owned();
-        let files = crate::testfixture::standard()
-            .0
-            .into_iter()
-            .chain([("schema/record.schema.json".to_string(), schema)]);
+        let shipped = [
+            "schema/record.schema.json",
+            "schema/audit-results.schema.json",
+            "templates/audit-report.md.j2",
+        ]
+        .map(|path| (path.to_string(), Embedded.read(path).unwrap().into_owned()));
+        let files = crate::testfixture::standard().0.into_iter().chain(shipped);
         for (path, bytes) in files {
             let target = dir.path().join(path);
             std::fs::create_dir_all(target.parent().unwrap()).unwrap();
@@ -492,6 +577,129 @@ mod tests {
         let (code, out, err) = run_capture(&["--standard-root", std_arg, "check", &rec]);
         assert_eq!(code, 0, "stdout: {out} stderr: {err}");
         assert_eq!(out, "uss check: ok\n");
+    }
+
+    /// Writes an audit results file with `entries` into `dir`; returns its path.
+    fn write_results(dir: &Path, entries: &str) -> String {
+        let path = dir.join("audit.yaml");
+        let text = format!(
+            "standard: {{ version: 0.1.0 }}\ncommit: {}\ndate: 2026-11-21\nauditor: tester\nresults:\n{entries}",
+            "a".repeat(40)
+        );
+        std::fs::write(&path, text).unwrap();
+        path.to_str().unwrap().to_string()
+    }
+
+    const GOOD_RESULTS: &str = concat!(
+        "  USS-SEC-001: { result: pass, evidence: checked }\n",
+        "  USS-SEC-002: { result: deviation, evidence: approved }\n",
+    );
+
+    #[test]
+    fn run_report_writes_file() {
+        let std_root = fixture_root();
+        let std_arg = std_root.path().to_str().unwrap();
+        let proj = tempfile::TempDir::new().unwrap();
+        let rec = write_project(proj.path(), "docs/d.md", &["docs/d.md"]);
+        let res = write_results(proj.path(), GOOD_RESULTS);
+        let (code, out, err) =
+            run_capture(&["--standard-root", std_arg, "report", "--record", &rec, &res]);
+        assert_eq!(code, 0, "stderr: {err}");
+        assert!(out.starts_with("Compliant with USS 0.1.0"), "stdout: {out}");
+        assert!(out.ends_with("Safety 50%, Features 0%.\n"), "stdout: {out}");
+        let report = std::fs::read_to_string(proj.path().join("audit.md")).unwrap();
+        assert!(report.starts_with("# USS audit report: p\n"), "{report}");
+        assert!(report.contains("| USS-SEC-002 | SHOULD |"), "{report}");
+    }
+
+    #[test]
+    fn run_report_out_flag_and_not_compliant() {
+        let std_root = fixture_root();
+        let std_arg = std_root.path().to_str().unwrap();
+        let proj = tempfile::TempDir::new().unwrap();
+        let rec = write_project(proj.path(), "docs/d.md", &["docs/d.md"]);
+        let res = write_results(
+            proj.path(),
+            "  USS-SEC-001: { result: fail, evidence: nope }\n",
+        );
+        let target = proj.path().join("custom.txt");
+        let (code, out, err) = run_capture(&[
+            "--standard-root",
+            std_arg,
+            "report",
+            "--record",
+            &rec,
+            "--out",
+            target.to_str().unwrap(),
+            &res,
+        ]);
+        assert_eq!(code, 0, "stderr: {err}");
+        assert!(
+            out.starts_with("Not compliant with USS 0.1.0"),
+            "stdout: {out}"
+        );
+        assert!(target.is_file());
+        assert!(!proj.path().join("audit.md").exists());
+    }
+
+    #[test]
+    fn run_report_consistency_error() {
+        let std_root = fixture_root();
+        let std_arg = std_root.path().to_str().unwrap();
+        let proj = tempfile::TempDir::new().unwrap();
+        let rec = write_project(proj.path(), "docs/d.md", &["docs/d.md"]);
+        let res = write_results(
+            proj.path(),
+            "  USS-SEC-001: { result: pass, evidence: ok }\n  USS-NOPE-001: { result: pass, evidence: ok }\n",
+        );
+        let (code, out, _err) =
+            run_capture(&["--standard-root", std_arg, "report", "--record", &rec, &res]);
+        assert_eq!(code, 1);
+        assert!(
+            out.contains("audit.yaml: USS-NOPE-001: unknown rule"),
+            "stdout: {out}"
+        );
+        assert!(!proj.path().join("audit.md").exists());
+    }
+
+    #[test]
+    fn run_report_missing_and_invalid_results() {
+        let std_root = fixture_root();
+        let std_arg = std_root.path().to_str().unwrap();
+        let proj = tempfile::TempDir::new().unwrap();
+        let rec = write_project(proj.path(), "docs/d.md", &["docs/d.md"]);
+        let missing = proj.path().join("nope.yaml");
+        let (code, out, err) = run_capture(&[
+            "--standard-root",
+            std_arg,
+            "report",
+            "--record",
+            &rec,
+            missing.to_str().unwrap(),
+        ]);
+        assert_eq!((code, out.as_str()), (1, ""));
+        assert!(err.contains("nope.yaml"), "stderr: {err}");
+
+        let bad = proj.path().join("bad.yaml");
+        std::fs::write(&bad, "standard: 1\n").unwrap();
+        let (code, out, err) = run_capture(&[
+            "--standard-root",
+            std_arg,
+            "report",
+            "--record",
+            &rec,
+            bad.to_str().unwrap(),
+        ]);
+        assert_eq!((code, out.as_str()), (1, ""));
+        assert!(err.contains("bad.yaml"), "stderr: {err}");
+        assert!(!proj.path().join("bad.md").exists());
+    }
+
+    #[test]
+    fn default_report_path_swaps_extension() {
+        assert_eq!(default_report_path("a/2026.yaml"), "a/2026.md");
+        assert_eq!(default_report_path("a/2026.yml"), "a/2026.yml.md");
+        assert_eq!(default_report_path("a/2026"), "a/2026.md");
     }
 
     #[test]
