@@ -118,7 +118,12 @@ fn check_own(c: &Catalog, r: &Record, project: &dyn ProjectFiles, out: &mut Vec<
         } else if !seen.insert(id) {
             add(format!("more than one deviation for {id}"));
         }
-        if !project.exists(&normalise(&d.document)) {
+        if leaves_project(&d.document) {
+            add(format!(
+                "deviation document \"{}\" leaves the project",
+                d.document
+            ));
+        } else if !project.exists(&normalise(&d.document)) {
             add(format!("deviation document \"{}\" not found", d.document));
         }
         if d.review_by
@@ -130,8 +135,16 @@ fn check_own(c: &Catalog, r: &Record, project: &dyn ProjectFiles, out: &mut Vec<
     }
 
     for a in &r.audits {
-        if !project.exists(&normalise(&a.results)) {
+        if leaves_project(&a.results) {
+            add(format!(
+                "audit results \"{}\" leaves the project",
+                a.results
+            ));
+        } else if !project.exists(&normalise(&a.results)) {
             add(format!("audit results \"{}\" not found", a.results));
+        }
+        if leaves_project(&a.report) {
+            add(format!("audit report \"{}\" leaves the project", a.report));
         }
     }
 }
@@ -231,6 +244,8 @@ mod tests {
         " approved-by: zac, date: 2026-01-01, review-by: 2027-01-01 }\n",
     );
     const DOC: &str = "docs/deviations/USS-SEC-002.md";
+    const AUDIT_RESULTS: &str = ".uss/audits/a.yaml";
+    const AUDIT_REPORT: &str = ".uss/audits/a.md";
 
     fn catalog() -> Catalog {
         load(&standard()).unwrap()
@@ -346,6 +361,24 @@ mod tests {
             ),
             (
                 format!(
+                    "{FACTS}{DECISIONS}deviations:\n  - {{ rule: USS-SEC-002, document: '/x.md', approved-by: z, date: 2026-01-01 }}\n"
+                ),
+                "deviation document \"/x.md\" leaves the project",
+            ),
+            (
+                format!(
+                    "{FACTS}{DECISIONS}deviations:\n  - {{ rule: USS-SEC-002, document: 'C:\\x.md', approved-by: z, date: 2026-01-01 }}\n"
+                ),
+                "deviation document \"C:\\x.md\" leaves the project",
+            ),
+            (
+                format!(
+                    "{FACTS}{DECISIONS}deviations:\n  - {{ rule: USS-SEC-002, document: '../x.md', approved-by: z, date: 2026-01-01 }}\n"
+                ),
+                "deviation document \"../x.md\" leaves the project",
+            ),
+            (
+                format!(
                     "{FACTS}{DECISIONS}deviations:\n  - {{ rule: USS-SEC-002, document: {DOC}, approved-by: z, date: 2026-02-01, review-by: 2026-01-01 }}\n"
                 ),
                 "review-by is before date for USS-SEC-002",
@@ -356,6 +389,20 @@ mod tests {
                     valid_body()
                 ),
                 "audit results \"audits/r.yaml\" not found",
+            ),
+            (
+                format!(
+                    "{}audits:\n  - {{ date: 2026-01-01, results: '../r.yaml', report: {AUDIT_REPORT} }}\n",
+                    valid_body()
+                ),
+                "audit results \"../r.yaml\" leaves the project",
+            ),
+            (
+                format!(
+                    "{}audits:\n  - {{ date: 2026-01-01, results: {AUDIT_RESULTS}, report: '/r.md' }}\n",
+                    valid_body()
+                ),
+                "audit report \"/r.md\" leaves the project",
             ),
             (
                 format!("{}components: [\"../x\"]\n", valid_body()),
@@ -379,9 +426,10 @@ mod tests {
             ),
         ];
         let c = catalog();
+        let files = project(&[(DOC, "doc"), (AUDIT_RESULTS, "results")]);
         for (body, want) in cases {
             let r = record(&body);
-            let got = messages(&c, &r, &project(&[(DOC, "doc")]));
+            let got = messages(&c, &r, &files);
             assert_eq!(got, [want], "body: {body}");
         }
     }
@@ -416,10 +464,10 @@ mod tests {
     }
 
     #[test]
-    fn check_escaping_document_is_not_found() {
+    fn check_escaping_document_leaves_the_project() {
         let body = valid_body().replace(DOC, "../x.md");
         let got = messages(&catalog(), &record(&body), &project(&[(DOC, "doc")]));
-        assert_eq!(got, ["deviation document \"../x.md\" not found"]);
+        assert_eq!(got, ["deviation document \"../x.md\" leaves the project"]);
     }
 
     fn component_body(components: &str) -> String {
