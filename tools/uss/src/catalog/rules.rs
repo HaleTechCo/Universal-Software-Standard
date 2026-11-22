@@ -421,7 +421,9 @@ fn scan_keywords(s: &Section, level: Level, at: At<'_>, diags: &mut Vec<Diagnost
     let own = level.to_string();
     let mut seen: Vec<&str> = Vec::new();
     let mut found_own = false;
-    for m in KEYWORD_RE.find_iter(&s.prose) {
+    // Hard-wrapped text may split "MUST NOT" across lines.
+    let text = s.prose.split_whitespace().collect::<Vec<_>>().join(" ");
+    for m in KEYWORD_RE.find_iter(&text) {
         let kw = m.as_str();
         if kw == own {
             found_own = true;
@@ -624,6 +626,24 @@ mod tests {
             let (_, text) = run(src);
             assert!(text.contains(want), "case {i}: want {want:?} in {text:?}");
         }
+    }
+
+    #[test]
+    fn rule_file_wrapped_keywords() {
+        let must_not = FIELDS.replace("MUST", "MUST NOT");
+        let (_, text) = run(&rule("area", &must_not, "It MUST\nNOT fail."));
+        assert_eq!(text, "");
+        let (_, text) = run(&rule("area", FIELDS, "It MUST hold, not MUST\nNOT fail."));
+        assert!(
+            text.contains("keyword \"MUST NOT\" in a MUST rule"),
+            "{text}"
+        );
+        let should = FIELDS.replace("MUST", "SHOULD");
+        let (_, text) = run(&rule("area", &should, "It SHOULD hold, not SHOULD\n  NOT."));
+        assert!(
+            text.contains("keyword \"SHOULD NOT\" in a SHOULD rule"),
+            "{text}"
+        );
     }
 
     #[test]
