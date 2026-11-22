@@ -33,7 +33,7 @@ Which YAML crate should the validator use? The crate is called from one place,
 
 | Criterion | serde-saphyr 2.2.0 | serde_norway 0.9.42 |
 | --- | --- | --- |
-| Latest release | 2026-11-18, with regular releases since 2026-09 (https://crates.io/api/v1/crates/serde-saphyr) | 2024-12-21, almost 12 months ago (https://crates.io/api/v1/crates/serde_norway) |
+| Latest release | 2026-11-18; releases since 2025-09, with 1.0.0 on 2026-07-31 and 2.0.0 on 2026-10-13 (https://crates.io/api/v1/crates/serde-saphyr) | 2024-12-21, about 23 months ago, so it fails criterion 1 (https://crates.io/api/v1/crates/serde_norway) |
 | RustSec advisory | None (no entry at https://rustsec.org/packages/serde-saphyr.html; no `crates/serde-saphyr` directory in https://github.com/rustsec/advisory-db) | None (no entry at https://rustsec.org/packages/serde_norway.html) |
 | Implementation | Pure Rust; `#![forbid(unsafe_code)]` in the crate and in its parser, `granit-parser` | Wraps a Rust port of libyaml; contains `unsafe` code in `src/libyaml/` |
 | Strict structs and `serde_json::Value` | Yes, proven by the tests `strict_struct_rejects_unknown_fields` and `parses_into_json_value` in `tools/uss/src/yaml.rs` | Not tested (rejected on the first two criteria) |
@@ -55,7 +55,7 @@ the 3.0 release candidate) and `Cargo.lock` records the exact version.
 ### Consequences
 
 * The crate is young, so `cargo deny` and the lock file stay the guard against
-  surprises. It has a 2.x release line only since 2026-10.
+  surprises. It has had a 2.x release line only since 2026-10-13.
 * `uss::yaml::from_slice` strips a UTF-8 BOM and converts CRLF to LF before it
   calls the crate, so the choice of crate does not change how input is read.
 * Replacing the crate means editing `tools/uss/src/yaml.rs` only.
