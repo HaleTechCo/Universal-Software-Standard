@@ -21,13 +21,14 @@ pub(crate) const STACK_KINDS: [&str; 4] = ["lang", "framework", "platform", "too
     clippy::expect_used,
     reason = "the patterns are constants, so a failure is a bug caught by the tests"
 )]
-fn constant_regex(pattern: &str) -> Regex {
+pub(crate) fn constant_regex(pattern: &str) -> Regex {
     Regex::new(pattern).expect("constant regex is valid")
 }
 
 static VERSION_RE: LazyLock<Regex> =
     LazyLock::new(|| constant_regex(r"^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$"));
-static ID_RE: LazyLock<Regex> = LazyLock::new(|| constant_regex(r"^[a-z0-9]+(-[a-z0-9]+)*$"));
+pub(crate) static ID_RE: LazyLock<Regex> =
+    LazyLock::new(|| constant_regex(r"^[a-z0-9]+(-[a-z0-9]+)*$"));
 
 /// A score category.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
