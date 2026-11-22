@@ -25,7 +25,7 @@ pub(crate) fn constant_regex(pattern: &str) -> Regex {
     Regex::new(pattern).expect("constant regex is valid")
 }
 
-static VERSION_RE: LazyLock<Regex> =
+pub(crate) static VERSION_RE: LazyLock<Regex> =
     LazyLock::new(|| constant_regex(r"^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$"));
 pub(crate) static ID_RE: LazyLock<Regex> =
     LazyLock::new(|| constant_regex(r"^[a-z0-9]+(-[a-z0-9]+)*$"));
