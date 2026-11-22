@@ -75,7 +75,7 @@ pub fn is_ancestor(repo: &Path, sha: &str) -> Result<bool, String> {
 ///
 /// Returns a message when git cannot run or fails.
 pub fn changed_files(repo: &Path, sha: &str) -> Result<Vec<String>, String> {
-    let args = ["diff", "--name-only", "-z", sha, "HEAD"];
+    let args = ["diff", "--name-only", "--no-renames", "-z", sha, "HEAD"];
     let output = run(repo, &args)?;
     if !output.status.success() {
         return Err(failed(&args, &output));

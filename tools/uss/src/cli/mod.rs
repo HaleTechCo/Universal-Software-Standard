@@ -976,7 +976,17 @@ mod tests {
         git(root, &["rev-parse", "HEAD"])
     }
 
-    const RECORD_HEAD: &str = "standard: { version: 0.1.0 }\nproject: { name: p }\nfacts: {}\n";
+    const RECORD_HEAD: &str = concat!(
+        "standard: { version: 0.1.0 }
+",
+        "project: { name: p }
+",
+        "facts: { has-ui: false, has-web-ui: false, uses-database: false }
+",
+        "decisions: { USS-EXT-001: { adopt: false } }
+",
+    );
+    const PASS: &str = "{ USS-SEC-001: { result: pass, evidence: checked } }";
     const AUDIT_ENTRY: &str = "audits:\n  - { date: 2026-11-21, results: .uss/audits/a.yaml, report: .uss/audits/a.md }\n";
 
     fn audit_yaml(commit: &str, entries: &str) -> String {
@@ -998,7 +1008,7 @@ mod tests {
 
     /// Records an audit of `commit` in a second commit that touches only `.uss/`.
     fn audit_commit(root: &Path, commit: &str, extra_record: &str) -> String {
-        write_file(root, ".uss/audits/a.yaml", &audit_yaml(commit, "{}"));
+        write_file(root, ".uss/audits/a.yaml", &audit_yaml(commit, PASS));
         write_file(
             root,
             ".uss/record.yaml",
@@ -1010,7 +1020,10 @@ mod tests {
     fn release_check(root: &Path, extra: &[&str]) -> (i32, String, String, PathBuf) {
         let record = root.join(".uss/record.yaml");
         let out_file = root.join("uss-report.md");
+        let standard = fixture_root();
         let mut args = vec![
+            "--standard-root",
+            standard.path().to_str().unwrap(),
             "release-check",
             "--record",
             record.to_str().unwrap(),
@@ -1046,6 +1059,20 @@ mod tests {
             out.contains("changes since the audit outside .uss/:\n  src/main.rs\n"),
             "stdout: {out}"
         );
+        assert!(!report.exists());
+    }
+
+    #[test]
+    fn release_check_rename_into_uss_is_a_change() {
+        let Some(repo) = new_repo() else { return };
+        let a = first_commit(repo.path(), "");
+        git(repo.path(), &["mv", "src/main.rs", "src/moved.rs"]);
+        std::fs::create_dir_all(repo.path().join(".uss/src")).unwrap();
+        git(repo.path(), &["mv", "src/moved.rs", ".uss/src/main.rs"]);
+        audit_commit(repo.path(), &a, "");
+        let (code, out, _err, report) = release_check(repo.path(), &[]);
+        assert_eq!(code, 1, "stdout: {out}");
+        assert!(out.contains("\n  src/main.rs"), "stdout: {out}");
         assert!(!report.exists());
     }
 
@@ -1151,7 +1178,7 @@ mod tests {
         write_file(
             dir.path(),
             ".uss/audits/a.yaml",
-            &audit_yaml(&"c".repeat(40), "{}"),
+            &audit_yaml(&"c".repeat(40), PASS),
         );
         let (code, out, err, _report) = release_check(dir.path(), &[]);
         assert_eq!(code, 1, "stdout: {out}");
@@ -1168,7 +1195,7 @@ mod tests {
             "svc/.uss/record.yaml",
             &format!("{RECORD_HEAD}{AUDIT_ENTRY}"),
         );
-        write_file(repo.path(), "svc/.uss/audits/a.yaml", &audit_yaml(&a, "{}"));
+        write_file(repo.path(), "svc/.uss/audits/a.yaml", &audit_yaml(&a, PASS));
         audit_commit(repo.path(), &a, "components: [svc]\n");
         let (code, out, err, report) = release_check(repo.path(), &[]);
         assert_eq!(code, 0, "stdout: {out} stderr: {err}");
