@@ -183,6 +183,10 @@ pub fn render(src: &dyn Source, project: &str, ev: &Evaluation) -> Result<String
         .ok_or_else(|| format!("{TEMPLATE}: template not found"))?;
     let text = String::from_utf8(bytes.into_owned())
         .map_err(|_| format!("{TEMPLATE}: template is not valid UTF-8"))?;
+    let text = text
+        .strip_prefix('\u{feff}')
+        .unwrap_or(&text)
+        .replace("\r\n", "\n");
 
     let syntax = minijinja::syntax::SyntaxConfig::builder()
         .trim_blocks(true)
@@ -268,6 +272,26 @@ mod tests {
         assert!(at("USS-SEC-003") < at("USS-SEC-002"), "{text}");
         assert!(text.ends_with("|\n") && !text.ends_with("\n\n"), "{text}");
         assert!(!text.contains('\r'));
+    }
+
+    #[test]
+    fn render_template_crlf_and_bom() {
+        let c = catalog();
+        let r = record(&format!("facts: {{ uses-database: true }}\n{DEVIATION}"));
+        let ev = evaluate(&c, &r, &results(&[("USS-SEC-001", Outcome::Deviation)])).unwrap();
+        let lf = render(&Embedded, "p", &ev).unwrap();
+
+        let template = Embedded.read(TEMPLATE).unwrap();
+        let template = String::from_utf8(template.into_owned()).unwrap();
+        let crlf = format!("\u{feff}{}", template.replace('\n', "\r\n"));
+        let mut src = MemSource::default();
+        src.0.insert(TEMPLATE.to_string(), crlf.into_bytes());
+        let text = render(&src, "p", &ev).unwrap();
+        assert!(
+            !text.contains('\r') && !text.contains('\u{feff}'),
+            "{text:?}"
+        );
+        assert_eq!(text, lf);
     }
 
     #[test]
