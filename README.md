@@ -13,3 +13,9 @@ codebase toward compliance.
 Status: 0.x, in development; rules not yet published.
 
 See the [design spec](docs/superpowers/specs/2026-11-21-universal-software-standard-design.md).
+
+## Development
+
+Install rustup. Run `cargo xtask check` to do all checks. Run
+`cargo run -p uss -- lint` to check the standard files. Rustup installs the
+toolchain from `rust-toolchain.toml` automatically.

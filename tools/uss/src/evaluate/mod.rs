@@ -6,6 +6,7 @@ mod project;
 mod score;
 
 pub use check::check_record;
+#[cfg(feature = "cli")]
 pub(crate) use check::{leaves_project, normalise};
 pub use facts::{applicable, resolve_facts};
 pub use project::{MemProject, ProjectFiles, SubProject};
