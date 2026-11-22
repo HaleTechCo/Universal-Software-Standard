@@ -627,7 +627,8 @@ mod tests {
     fn run_version() {
         let (code, out, _err) = run_capture(&["version"]);
         assert_eq!(code, 0);
-        assert_eq!(out, "uss 0.1.0\n");
+        // The standard's version and the crate's version stay equal.
+        assert_eq!(out, format!("uss {}\n", env!("CARGO_PKG_VERSION")));
     }
 
     #[test]
@@ -1007,7 +1008,7 @@ mod tests {
         assert_eq!(code, 0, "stderr: {err}");
         assert!(out.ends_with("}\n"), "stdout: {out}");
         let v: serde_json::Value = serde_json::from_str(&out).unwrap();
-        assert_eq!(v["version"], "0.1.0");
+        assert_eq!(v["version"], env!("CARGO_PKG_VERSION"));
     }
 
     #[test]

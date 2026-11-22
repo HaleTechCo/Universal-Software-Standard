@@ -249,6 +249,8 @@ mod tests {
         assert!(text.contains("duplicate fact \"a\""), "{text}");
     }
 
+    /// Pins the asked facts only: facts that a MAY rule enables are added
+    /// with their rule and must not break this test.
     #[test]
     fn applicability_file_is_valid() {
         let data = Embedded.read("standard/applicability.md").unwrap();
@@ -284,7 +286,11 @@ mod tests {
             "processes-eu-personal-data",
         ];
         assert_eq!(want.len(), 27);
-        let mut got: Vec<&str> = facts.keys().map(String::as_str).collect();
+        let mut got: Vec<&str> = facts
+            .values()
+            .filter(|f| matches!(f.source, FactSource::Question(_)))
+            .map(|f| f.id.as_str())
+            .collect();
         let mut want_sorted = want.to_vec();
         got.sort_unstable();
         want_sorted.sort_unstable();
