@@ -11,12 +11,14 @@ use rules::parse_rule_file;
 const FACTS_PATH: &str = "standard/applicability.md";
 
 mod diag;
+mod export;
 mod facts;
 pub(crate) mod markdown;
 pub(crate) mod registry;
 mod rules;
 
 pub use diag::Diagnostic;
+pub use export::{Export, ExportCategory, ExportFact, ExportRule};
 pub use facts::{Fact, FactSource};
 pub use registry::{Category, Registry, load_registry};
 pub use rules::{Active, FileKind, Level, Rule, RuleFile, RuleState};

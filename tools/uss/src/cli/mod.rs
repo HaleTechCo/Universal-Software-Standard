@@ -52,6 +52,12 @@ enum Command {
         /// The project record (`.uss/record.yaml`).
         record: PathBuf,
     },
+    /// Export the rule catalog for other tools.
+    Export {
+        /// Print the catalog as JSON.
+        #[arg(long)]
+        json: bool,
+    },
     /// Check a project's record against the standard and the project's files.
     Check {
         /// The project record (`.uss/record.yaml`).
@@ -175,6 +181,33 @@ pub fn load_project(
         return Err(1);
     }
     Ok((catalog, record))
+}
+
+/// Prints the whole catalog as indented JSON.
+fn run_export(src: &dyn Source, json: bool, out: &mut dyn Write, err: &mut dyn Write) -> i32 {
+    if !json {
+        let _ = writeln!(err, "export: only --json is supported");
+        return EXIT_USAGE;
+    }
+    let catalog = match load(src) {
+        Ok(catalog) => catalog,
+        Err(diagnostics) => {
+            for d in diagnostics {
+                if writeln!(err, "{d}").is_err() {
+                    break;
+                }
+            }
+            return 1;
+        }
+    };
+    let text = match serde_json::to_string_pretty(&catalog.export()) {
+        Ok(text) => text,
+        Err(e) => {
+            let _ = writeln!(err, "export: {e}");
+            return 1;
+        }
+    };
+    writeln!(out, "{text}").map_or(EXIT_USAGE, |()| 0)
 }
 
 /// Prints the rules that apply to the record, as lines or as JSON.
@@ -505,6 +538,7 @@ pub fn run(args: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
                 Command::Applicable { json, record } => {
                     run_applicable(src.as_ref(), &record, json, out, err)
                 }
+                Command::Export { json } => run_export(src.as_ref(), json, out, err),
                 Command::Check { record } => run_check(src.as_ref(), &record, out, err),
                 Command::Report {
                     record,
@@ -912,6 +946,22 @@ mod tests {
             version_error("1.2.3", "0.1.0"),
             "record pins USS 1.2.3; this uss carries USS 0.1.0. Use uss 1.2.3: download it from the v1.2.3 release, or run: cargo install --locked --git https://github.com/HaleTechCo/Universal-Software-Standard --tag v1.2.3 uss"
         );
+    }
+
+    #[test]
+    fn run_export_json() {
+        let (code, out, err) = run_capture(&["export", "--json"]);
+        assert_eq!(code, 0, "stderr: {err}");
+        assert!(out.ends_with("}\n"), "stdout: {out}");
+        let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(v["version"], "0.1.0");
+    }
+
+    #[test]
+    fn run_export_no_format() {
+        let (code, out, err) = run_capture(&["export"]);
+        assert_eq!((code, out.as_str()), (2, ""));
+        assert_eq!(err, "export: only --json is supported\n");
     }
 
     #[test]
