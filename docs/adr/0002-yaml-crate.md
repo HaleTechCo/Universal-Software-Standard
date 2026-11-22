@@ -5,8 +5,10 @@
 
 ## Context and Problem Statement
 
-USS reads YAML (`standard/registry.yaml` now; rule front matter, records and
-configuration later). ADR 0001 notes that Rust has a weaker YAML ecosystem.
+USS reads YAML: the registry (`standard/registry.yaml`), project records
+(`.uss/record.yaml`) and audit results (`.uss/audits/<date>.yaml`). Rule
+files are Markdown and have no YAML front matter. ADR 0001 notes that Rust
+has a weaker YAML ecosystem.
 Which YAML crate should the validator use? The crate is called from one place,
 `uss::yaml::from_slice`, so it can be replaced later.
 
