@@ -23,9 +23,14 @@ pub fn check_record(
     check_in(src, c, r, project, "")
 }
 
-/// Normalises a path from a record: forward slashes only.
+/// Normalises a path from a record: forward slashes only, with `.` and
+/// empty segments dropped.
 fn normalise(path: &str) -> String {
     path.replace('\\', "/")
+        .split('/')
+        .filter(|s| !s.is_empty() && *s != ".")
+        .collect::<Vec<_>>()
+        .join("/")
 }
 
 /// Joins two forward-slash paths, skipping an empty `base`.
@@ -37,14 +42,20 @@ fn join(base: &str, rel: &str) -> String {
     }
 }
 
-/// Returns whether `path` is absolute, has a drive prefix, or has a `..` segment.
-fn leaves_project(path: &str) -> bool {
-    let mut chars = path.chars();
-    let drive = matches!(
+/// Returns whether a path segment starts with a drive prefix such as `C:`.
+fn is_drive(segment: &str) -> bool {
+    let mut chars = segment.chars();
+    matches!(
         (chars.next(), chars.next()),
         (Some(a), Some(':')) if a.is_ascii_alphabetic()
-    );
-    path.starts_with('/') || drive || path.split('/').any(|s| s == "..")
+    )
+}
+
+/// Returns whether the raw record path `raw` is absolute, or has a segment
+/// that is `..` or starts with a drive prefix.
+fn leaves_project(raw: &str) -> bool {
+    let path = raw.replace('\\', "/");
+    path.starts_with('/') || path.split('/').any(|s| s == ".." || is_drive(s))
 }
 
 /// Checks facts, decisions, deviations and audits of `r`.
@@ -137,26 +148,21 @@ fn check_components(
 ) {
     let file = r.path.as_str();
     for raw in &r.components {
-        let path = normalise(raw);
-        if leaves_project(&path) {
+        if leaves_project(raw) {
             out.push(Diagnostic::new(
                 file,
                 format!("component path \"{raw}\" leaves the project"),
             ));
             continue;
         }
-        let parts: Vec<&str> = path
-            .split('/')
-            .filter(|s| !s.is_empty() && *s != ".")
-            .collect();
-        if parts.is_empty() {
+        let dir = normalise(raw);
+        if dir.is_empty() {
             out.push(Diagnostic::new(
                 file,
                 format!("component path \"{raw}\" is the record's own directory"),
             ));
             continue;
         }
-        let dir = parts.join("/");
         let rel = format!("{dir}/.uss/record.yaml");
         let named = join(prefix, &rel);
         let Some(data) = project.read(&rel) else {
@@ -364,6 +370,10 @@ mod tests {
                 "component path \"C:\\x\" leaves the project",
             ),
             (
+                format!("{}components: [\"svc/C:x\"]\n", valid_body()),
+                "component path \"svc/C:x\" leaves the project",
+            ),
+            (
                 format!("{}components: [svc]\n", valid_body()),
                 "component record \"svc/.uss/record.yaml\" not found",
             ),
@@ -395,6 +405,21 @@ mod tests {
         assert!(r.deviations[0].document.contains('\\'));
         let found = check_record(&Embedded, &catalog(), &r, &project(&[(DOC, "doc")]));
         assert_eq!(found, Vec::<Diagnostic>::new());
+    }
+
+    #[test]
+    fn check_dot_and_empty_segments() {
+        let body = valid_body().replace(DOC, "./docs//deviations/USS-SEC-002.md");
+        let r = record(&body);
+        let found = check_record(&Embedded, &catalog(), &r, &project(&[(DOC, "doc")]));
+        assert_eq!(found, Vec::<Diagnostic>::new());
+    }
+
+    #[test]
+    fn check_escaping_document_is_not_found() {
+        let body = valid_body().replace(DOC, "../x.md");
+        let got = messages(&catalog(), &record(&body), &project(&[(DOC, "doc")]));
+        assert_eq!(got, ["deviation document \"../x.md\" not found"]);
     }
 
     fn component_body(components: &str) -> String {

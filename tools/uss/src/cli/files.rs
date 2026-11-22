@@ -1,7 +1,7 @@
 //! File-system access for the CLI (the only place the library touches disk).
 
 use std::borrow::Cow;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 use crate::evaluate::ProjectFiles;
 use crate::record::{Record, parse_record};
@@ -70,20 +70,28 @@ pub struct OsProject {
 }
 
 impl OsProject {
-    fn resolve(&self, rel: &str) -> PathBuf {
-        rel.split('/')
-            .filter(|p| !p.is_empty())
-            .fold(self.root.clone(), |acc, part| acc.join(part))
+    /// Joins `rel` onto the root. Returns `None` when any part is not a plain
+    /// name (`..`, a drive prefix such as `C:`, a root), so a path never leaves the root.
+    fn resolve(&self, rel: &str) -> Option<PathBuf> {
+        let mut path = self.root.clone();
+        for part in rel.split('/').filter(|p| !p.is_empty() && *p != ".") {
+            let mut components = Path::new(part).components();
+            match (components.next(), components.next()) {
+                (Some(Component::Normal(name)), None) => path.push(name),
+                _ => return None,
+            }
+        }
+        Some(path)
     }
 }
 
 impl ProjectFiles for OsProject {
     fn exists(&self, rel: &str) -> bool {
-        self.resolve(rel).exists()
+        self.resolve(rel).is_some_and(|p| p.exists())
     }
 
     fn read(&self, rel: &str) -> Option<Vec<u8>> {
-        std::fs::read(self.resolve(rel)).ok()
+        std::fs::read(self.resolve(rel)?).ok()
     }
 }
 
@@ -162,6 +170,10 @@ mod tests {
         assert!(!p.exists("docs/b.md"));
         assert_eq!(p.read("docs/a.md"), Some(b"a".to_vec()));
         assert_eq!(p.read("docs/b.md"), None);
+        assert!(!p.exists("../x"));
+        assert!(!p.exists(".."));
+        assert!(!p.exists("docs/../docs/a.md"));
+        assert_eq!(p.read("a/C:x"), None);
         std::fs::remove_dir_all(&root).unwrap();
     }
 
