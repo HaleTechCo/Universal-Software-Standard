@@ -29,7 +29,8 @@ pub(crate) struct Section {
     pub line: usize,
     /// The section's field block.
     pub fields: BTreeMap<String, Field>,
-    /// Every line after the heading, fenced blocks included.
+    /// The text after the field block, fenced blocks included, with the blank
+    /// lines at both ends trimmed. The field block is not part of it.
     pub body: String,
     /// `body` with fenced blocks removed.
     pub prose: String,
@@ -79,6 +80,7 @@ pub(crate) fn parse_doc(file: &str, data: &[u8]) -> (Doc, Vec<Diagnostic>) {
     };
     let mut diags = Vec::new();
     let mut fence: Option<&str> = None;
+    let mut fence_line = 0;
     let mut target = Target::None;
     let mut block = Block::Closed;
     let mut have_title = false;
@@ -96,6 +98,7 @@ pub(crate) fn parse_doc(file: &str, data: &[u8]) -> (Doc, Vec<Diagnostic>) {
         }
         if let Some(marker) = ["```", "~~~"].into_iter().find(|m| line.starts_with(m)) {
             fence = Some(marker);
+            fence_line = n;
             block = Block::Closed;
             lines.push((line, true));
             continue;
@@ -132,19 +135,27 @@ pub(crate) fn parse_doc(file: &str, data: &[u8]) -> (Doc, Vec<Diagnostic>) {
         if block == Block::Waiting && !line.trim().is_empty() {
             block = Block::Open(None);
         }
+        let mut consumed = false;
         if let Block::Open(last) = &mut block {
             let fields = match target {
                 Target::Header => Some(&mut doc.header),
                 Target::Section => doc.sections.last_mut().map(|s| &mut s.fields),
                 Target::None => None,
             };
-            let consumed =
+            consumed =
                 fields.is_some_and(|fields| read_field(fields, last, (line, n), file, &mut diags));
             if !consumed {
                 block = Block::Closed;
             }
         }
-        lines.push((line, false));
+        if !consumed {
+            lines.push((line, false));
+        }
+    }
+    if fence.is_some() {
+        let mut d = Diagnostic::new(file, "unclosed code fence");
+        d.line = fence_line;
+        diags.push(d);
     }
     finish(&mut doc, target, &mut lines);
     (doc, diags)
@@ -188,11 +199,19 @@ fn read_field(
     }
 }
 
-/// Moves the collected lines into the last section's `body` and `prose`.
+/// Moves the collected lines into the last section's `body` and `prose`,
+/// without the blank lines at either end.
 fn finish(doc: &mut Doc, target: Target, lines: &mut Vec<(&str, bool)>) {
     if target == Target::Section
         && let Some(s) = doc.sections.last_mut()
     {
+        let blank = |l: &(&str, bool)| l.0.trim().is_empty();
+        let start = lines.iter().position(|l| !blank(l)).unwrap_or(lines.len());
+        let end = lines
+            .iter()
+            .rposition(|l| !blank(l))
+            .map_or(start, |i| i + 1);
+        let lines = &lines[start..end];
         s.body = lines.iter().map(|(l, _)| *l).collect::<Vec<_>>().join("\n");
         s.prose = lines
             .iter()
@@ -231,7 +250,8 @@ mod tests {
         assert_eq!(s.heading, "USS-A-001: one");
         assert_eq!(s.line, 8);
         assert_eq!(s.fields["Level"], field("MUST", 10));
-        assert!(s.body.contains("Body one."));
+        assert_eq!(s.body, "Body one.");
+        assert!(!s.prose.contains("Level"));
         assert!(!s.body.contains("Body two."));
         assert_eq!(doc.sections[1].heading, "USS-A-002: two");
         assert!(doc.sections[1].fields.is_empty());
@@ -254,6 +274,16 @@ mod tests {
             assert!(!s.prose.contains("MAY"));
             assert!(s.prose.contains("Text.") && s.prose.contains("After."));
         }
+    }
+
+    #[test]
+    fn parse_doc_unclosed_fence() {
+        let src = "# T\n\n### a\n\nText.\n\n```\ncode\n\n### b\n\n- **Question:** Q?\n";
+        let (doc, diags) = parse_doc("a.md", src.as_bytes());
+        assert_eq!(diags.len(), 1, "{diags:?}");
+        assert_eq!(diags[0].message, "unclosed code fence");
+        assert_eq!(diags[0].line, 7);
+        assert_eq!(doc.sections.len(), 1);
     }
 
     #[test]
