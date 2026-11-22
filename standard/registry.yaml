@@ -1,0 +1,16 @@
+version: 0.1.0
+categories:
+  - { id: safety, name: Safety }
+  - { id: reliability, name: Reliability }
+  - { id: efficiency, name: Efficiency }
+  - { id: maintainability, name: Maintainability }
+  - { id: contributability, name: Contributability }
+  - { id: compatibility, name: Compatibility }
+  - { id: fairness, name: Fairness }
+  - { id: accessibility-usability, name: Accessibility & Usability }
+  - { id: features, name: Features }
+stack:
+  lang: [go, rust, typescript, javascript, python, java]
+  framework: [react]
+  platform: [docker-compose, kubernetes, helm, postgresql, sqlite, mariadb, mysql]
+  tool: [maven]
