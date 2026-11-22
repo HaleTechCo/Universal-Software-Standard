@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/HaleTechCo/Universal-Software-Standard/schema/audit-results.schema.json",
+  "title": "USS audit results",
+  "description": "The result and evidence for each rule of one audit: .uss/audits/<date>.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["standard", "commit", "date", "results"],
+  "properties": {
+    "standard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version"],
+      "properties": {
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$" }
+      }
+    },
+    "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "auditor": { "type": "string" },
+    "results": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^USS-[A-Z][A-Z0-9]{1,7}-\\d{3}$": { "$ref": "#/$defs/entry" }
+      }
+    },
+    "suppressions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["file", "rule", "reason"],
+        "properties": {
+          "file": { "type": "string", "minLength": 1 },
+          "line": { "type": "integer", "minimum": 1 },
+          "rule": { "type": "string", "pattern": "^USS-[A-Z][A-Z0-9]{1,7}-\\d{3}$" },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["result"],
+      "properties": {
+        "result": {
+          "enum": ["pass", "fail", "deviation", "declined", "unverified", "not-applicable"]
+        },
+        "evidence": { "type": "string" }
+      },
+      "if": {
+        "properties": { "result": { "enum": ["pass", "fail", "deviation"] } },
+        "required": ["result"]
+      },
+      "then": {
+        "required": ["evidence"],
+        "properties": { "evidence": { "minLength": 1 } }
+      }
+    }
+  }
+}

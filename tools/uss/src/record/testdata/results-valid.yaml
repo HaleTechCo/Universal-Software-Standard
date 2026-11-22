@@ -1,0 +1,19 @@
+standard:
+  version: 1.0.0
+commit: 0123456789abcdef0123456789abcdef01234567
+date: 2026-11-21
+auditor: claude
+results:
+  USS-SEC-001:
+    result: pass
+    evidence: src/main.rs:12
+  USS-SEC-002:
+    result: not-applicable
+  USS-SUP-009:
+    result: deviation
+    evidence: docs/standard-deviations/USS-SUP-009.md
+suppressions:
+  - file: src/main.rs
+    line: 12
+    rule: USS-SEC-001
+    reason: false positive

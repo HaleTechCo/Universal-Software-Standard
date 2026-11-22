@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/HaleTechCo/Universal-Software-Standard/schema/record.schema.json",
+  "title": "USS project record",
+  "description": "The inputs to compliance for one independently released unit: .uss/record.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["standard", "project", "facts"],
+  "properties": {
+    "standard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version"],
+      "properties": {
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$" }
+      }
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 }
+      }
+    },
+    "stack": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "languages": { "$ref": "#/$defs/uniqueStrings" },
+        "frameworks": { "$ref": "#/$defs/uniqueStrings" },
+        "platforms": { "$ref": "#/$defs/uniqueStrings" },
+        "tools": { "$ref": "#/$defs/uniqueStrings" }
+      }
+    },
+    "facts": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[a-z0-9]+(-[a-z0-9]+)*$": { "type": "boolean" }
+      }
+    },
+    "decisions": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^USS-[A-Z][A-Z0-9]{1,7}-\\d{3}$": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["adopt"],
+          "properties": {
+            "adopt": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "deviations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule", "document", "approved-by", "date"],
+        "properties": {
+          "rule": { "$ref": "#/$defs/ruleId" },
+          "document": { "type": "string", "minLength": 1 },
+          "approved-by": { "type": "string", "minLength": 1 },
+          "date": { "$ref": "#/$defs/date" },
+          "review-by": { "$ref": "#/$defs/date" }
+        }
+      }
+    },
+    "audits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["date", "results", "report"],
+        "properties": {
+          "date": { "$ref": "#/$defs/date" },
+          "results": { "type": "string", "minLength": 1 },
+          "report": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "components": { "$ref": "#/$defs/uniqueStrings" }
+  },
+  "$defs": {
+    "ruleId": { "type": "string", "pattern": "^USS-[A-Z][A-Z0-9]{1,7}-\\d{3}$" },
+    "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "uniqueStrings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

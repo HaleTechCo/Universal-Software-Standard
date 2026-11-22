@@ -1,0 +1,27 @@
+standard:
+  version: 1.0.0
+project:
+  name: example-service
+stack:
+  languages: [go, typescript]
+  frameworks: [react]
+  platforms: [postgresql, docker-compose]
+  tools: []
+facts:
+  has-web-ui: true
+  stores-user-data: true
+  requires-fips: false
+decisions: # one per applicable MAY
+  USS-EXT-001: { adopt: false }
+  USS-DST-004: { adopt: true }
+deviations:
+  - rule: USS-SUP-009
+    document: docs/standard-deviations/USS-SUP-009.md
+    approved-by: "Jane Doe, CTO"
+    date: 2026-11-21
+    review-by: 2027-05-21
+audits:
+  - date: 2026-11-21
+    results: .uss/audits/2026-11-21.yaml
+    report: .uss/audits/2026-11-21.md
+components: [libs/core, cli]
