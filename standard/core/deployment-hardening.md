@@ -182,20 +182,19 @@ policy limits what an attacker can reach from a pod that is compromised.
 - **Category:** Safety
 - **Verify:** Render each chart with its default values and take the manifests
   that the project publishes. For each workload, search the code and the
-  documentation for calls to the Kubernetes API (a Kubernetes client library,
-  or a call to the API server). A workload that makes none sets
-  `automountServiceAccountToken: false`, on the pod or on its service account.
-  A workload that makes calls mounts the token, and each Role or ClusterRole
-  that its service account is bound to lists the resources and verbs by name,
-  with no `*`, and each of them matches a call that the workload makes. A
-  workload that mounts a token without calling the API, or whose role grants a
-  permission that it does not use, fails.
+  documentation for calls to the Kubernetes API (a Kubernetes client library, or
+  a call to the API server). A workload that makes none sets
+  `automountServiceAccountToken: false`, on the pod or on its service account. A
+  workload that makes calls can mount the token; the permissions of the roles
+  that its service account is bound to are judged by USS-SEC-007, not here. A
+  workload that mounts a token without calling the API fails.
 - **References:** Kubernetes documentation, Role Based Access Control Good
   Practices (read 2026-11-24)
 
-A workload MUST mount a service-account token only when it calls the
-Kubernetes API, and then its role MUST grant only the permissions it needs.
+A workload MUST mount a service-account token only when it calls the Kubernetes
+API. The permissions of the role behind the token are scoped by USS-SEC-007.
 
 **Rationale:** A token in a pod is a credential that an attacker who takes the
-pod can use against the cluster. Not mounting it, and keeping the role small,
-limit what that costs.
+pod can use against the cluster. Not mounting it takes that credential away from
+each workload that has no use for it, and the scoped role of USS-SEC-007 limits
+what the others cost.

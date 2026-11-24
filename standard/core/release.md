@@ -24,11 +24,13 @@ holds the security policy and its advisories (USS-SEC-031).
   interface, the commands and options of a command-line interface, the
   configuration keys, the format of stored data). Take the releases since the
   last audit, or the last 12 months when there is none, and compare each with
-  the one before it. Each version has the form MAJOR.MINOR.PATCH. A release with
-  an incompatible change to the public API raises MAJOR (or MINOR while MAJOR is
-  0), a release with only added features raises MINOR, and a release with only
-  fixes raises PATCH. A release that does not follow this fails.
-- **References:** Semantic Versioning 2.0.0, item 1
+  the one before it. Each version has the form MAJOR.MINOR.PATCH. While MAJOR is
+  0, SemVer item 4 applies and this rule adds nothing to it. From 1.0.0 on, a
+  release with an incompatible change to the public API, as SemVer defines it,
+  raises MAJOR, a release with only added backward-compatible features raises
+  MINOR, and a release with only backward-compatible fixes raises PATCH. A
+  release that does not follow this fails.
+- **References:** Semantic Versioning 2.0.0, items 1, 4, 6, 7 and 8
 
 Releases MUST follow Semantic Versioning 2.0.0, and the documentation MUST
 define the public API, including any command-line interface, configuration and

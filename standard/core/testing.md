@@ -19,11 +19,10 @@ Accessibility (ACC) area holds accessibility testing.
 - **Category:** Reliability
 - **Verify:** The CI configuration has a job that runs the whole automated test
   suite (each kind of test that the repository holds) on each pull request and
-  each push to the default branch. A failing test fails the job, and the
-  branch protection or merge rules require the job, where the host allows
-  that. Without access to those settings, the auditor records `unverified`
-  for the second part. A recent run on the default branch passes, and a test
-  suite that the CI does not run, or whose failures the job ignores, fails.
+  each push to the default branch, and a failing test fails the job. That the
+  job must pass before a change merges is judged by USS-SUP-008, not here. A
+  recent run on the default branch passes, and a test suite that the CI does
+  not run, or whose failures the job ignores, fails.
 - **References:** NIST SP 800-218 (SSDF 1.1) PW.8.2
 
 CI MUST run the whole automated test suite on every change, and a failing test

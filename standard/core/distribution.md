@@ -199,13 +199,16 @@ data and services behind.
 - **Verify:** Install the previous release on a clean machine and give it
   configuration and data. Install the latest release over it, as the
   documentation says, with no uninstall first. The installation detects the
-  existing one and upgrades it: the version is the new one, and the
-  configuration and the data are as they were. An upgrade that needs an
-  uninstall first, or that loses either, fails.
+  existing one and upgrades it: the version is the new one, and it runs from the
+  existing installation, not from a second copy or a fresh set of files. An
+  upgrade that needs an uninstall first, or that sets up a second installation
+  next to the first, fails. Whether the configuration and the data are kept is
+  judged by USS-DST-011 and USS-DAT-002, not here.
 - **References:** none
 
-Installing a new version over an existing install MUST detect it and upgrade
-it in place, keeping its configuration and data.
+Installing a new version over an existing install MUST detect it and upgrade it
+in place, with no uninstall first. Keeping its configuration is USS-DST-011, and
+keeping its data is USS-DAT-002.
 
 **Rationale:** Users upgrade often. An upgrade that asks them to remove the
 old version first, or that starts from empty, is one they put off.
@@ -296,12 +299,13 @@ release without it leaves those users to build the software themselves.
 - **Level:** SHOULD
 - **Applies when:** distributed-as-package or ships-container-image
 - **Category:** Compatibility
-- **Verify:** List the kinds of release artifact (each package, archive,
-  binary and image of the latest release). The release documentation (the
-  README, the release notes or an install page) says, for each, how to verify
-  its signature: the command to run (such as `cosign verify`) and the key or
-  signer identity to check against. A kind of artifact without such
-  instructions fails, an unsigned one included.
+- **Verify:** List the kinds of release artifact that carry a signature (each
+  signed package, archive, binary and image of the latest release). The release
+  documentation (the README, the release notes or an install page) says, for
+  each, how to verify its signature: the command to run (such as `cosign
+  verify`) and the key or signer identity to check against. A signed kind of
+  artifact without such instructions fails. Whether each artifact is signed is
+  judged by USS-SUP-014, not here.
 - **References:** Sigstore documentation, Verifying signatures (read
   2026-11-24), as an example
 

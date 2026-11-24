@@ -43,20 +43,20 @@ fits or reverses it and repeats the mistake that it avoided.
   ships-container-image
 - **Category:** Maintainability
 - **Verify:** List the settings that differ between deployments: addresses,
-  credentials, limits and feature switches. Each one is read from the
-  environment or from a configuration file at start-up, and the code holds
-  no value for it other than a default that suits a local run. A search of
-  the code for host names, ports, URLs and credentials of a deployment finds
-  none. The same build artifact runs in each deployment without a rebuild.
+  limits and feature switches. Each one is read from the environment or from a
+  configuration file at start-up, and the code holds no value for it other than
+  a default that suits a local run. A search of the code for host names, ports
+  and URLs of a deployment finds none. The same build artifact runs in each
+  deployment without a rebuild. Secrets are judged by USS-SEC-006, not here.
 - **References:** The Twelve-Factor App, III Config (read 2026-11-24)
 
-Every setting that differs between deployments (such as addresses,
-credentials, limits and feature switches) MUST be read from the environment
-or a configuration file, not set in code.
+Every setting that differs between deployments (such as addresses, limits and
+feature switches) MUST be read from the environment or a configuration file, not
+set in code. Secrets are loaded as USS-SEC-006 says.
 
-**Rationale:** If a deployment's settings are in the code, each deployment
-needs its own build, and a credential in the code is also in every copy of
-the repository. Secrets handling is the subject of the Security (SEC) area.
+**Rationale:** If a deployment's settings are in the code, each deployment needs
+its own build. A secret in the code is also in every copy of the repository,
+which is why the Security area holds secrets (USS-SEC-006).
 
 ### USS-ARC-003: Keep service instances stateless
 

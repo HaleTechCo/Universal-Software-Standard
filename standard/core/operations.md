@@ -45,30 +45,32 @@ policy turns a spent budget into a decision that was made in advance.
 - **Level:** SHOULD
 - **Applies when:** always
 - **Category:** Reliability
-- **Verify:** List the paging alerts in the monitoring configuration: the
-  rules that wake or interrupt a person (routed to a pager, a phone call or an
-  on-call rotation), leaving out the alerts that USS-BAK-010 and USS-AUD-008
-  require. Read the condition of each. It fires on a symptom that
-  users feel: the burn rate of an error budget, the error rate, the latency,
-  or the availability of a user-facing service, measured at the point where
-  users reach the service. A paging alert whose condition is only a cause
-  (such as processor use, memory use, disk use or a restart count) fails. An
-  alert that goes to a ticket queue or a chat channel is not a paging alert.
+- **Verify:** List the paging alerts in the monitoring configuration: the rules
+  that wake or interrupt a person (routed to a pager, a phone call or an on-call
+  rotation), leaving out each alert that another rule of this standard requires
+  for a named condition (such as USS-BAK-010, USS-AUD-008 and USS-AI-007). Read
+  the condition of each. It fires on a symptom that users feel: the burn rate of
+  an error budget, the error rate, the latency, or the availability of a
+  user-facing service, measured at the point where users reach the service. A
+  paging alert whose condition is only a cause (such as processor use, memory
+  use, disk use or a restart count) fails. An alert that goes to a ticket queue
+  or a chat channel is not a paging alert.
 - **References:** Google, Site Reliability Engineering (2016), chapter 6,
   "Symptoms Versus Causes"; Google, The Site Reliability Workbook (2018),
   chapter 5
 
-Paging alerts SHOULD fire on symptoms that users feel (such as the
-error-budget burn rate, the error rate or latency), not on causes alone. This
-covers the alerts on the health of the service. An alert that another USS rule
-requires for a named condition (USS-BAK-010 and USS-AUD-008) is outside it.
+Paging alerts SHOULD fire on symptoms that users feel (such as the error-budget
+burn rate, the error rate or latency), not on causes alone. This covers the
+alerts on the health of the service. Each alert that another rule of this
+standard requires for a named condition (such as USS-BAK-010, USS-AUD-008 and
+USS-AI-007) is outside it.
 
 **Rationale:** A cause does not always hurt users, and a harm to users does not
 always have a cause that was foreseen. A symptom alert fires for both. Cause
 alerts remain useful as tickets and as aids to diagnosis. The service metrics
-(USS-OBS-004) hold the inputs. The alerts for a failed backup and for a failed
-audit write are required by their own rules, and a pager is a fit channel for
-them.
+(USS-OBS-004) hold the inputs. An alert that another rule requires for a named
+condition, such as a failed backup, a failed audit write or a reached AI cost
+limit, is required by that rule, and a pager is a fit channel for it.
 
 ### USS-OPS-003: Link a runbook from every alert
 

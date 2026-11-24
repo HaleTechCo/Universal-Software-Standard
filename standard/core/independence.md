@@ -68,22 +68,26 @@ into a lesser product, and pushes users toward the hosted one.
 - **Category:** Compatibility
 - **Verify:** List each feature that does not inherently need the internet (a
   feature that needs it by its nature, such as fetching a remote web page or
-  sending email to an outside address, is not on the list). Run the software
-  in a test environment with all outbound traffic blocked, after its install
-  from local media (USS-DST-013 covers that install): it starts, and each
-  feature on the list works. Read the logs and the traffic: no feature on the
-  list waits for an outside host, or fails because of one (such as an update
-  check, a font or script from a CDN, a licence check or telemetry). A listed
-  feature that fails or hangs without internet access fails.
+  sending email to an outside address, is not on the list). A required
+  connection to a service that the project or a vendor runs (such as a licence
+  server or a phone-home call) is judged by USS-IND-001, not here, so the test
+  lets the software reach that service. Run the software in a test environment
+  with all other outbound traffic blocked, after its install from local media
+  (USS-DST-013 covers that install): it starts, and each feature on the list
+  works. Read the logs and the traffic: no feature on the list waits for an
+  outside host, or fails because of one (such as an update check, or a font or
+  script from a CDN). A listed feature that fails or hangs without internet
+  access fails.
 - **References:** none
 
-Every feature of the software that does not inherently need the internet
-SHOULD work where outbound traffic is restricted, or where there is no
-internet access.
+Every feature of the software that does not inherently need the internet SHOULD
+work where outbound traffic is restricted, or where there is no internet access.
+A required connection to a service that the project or a vendor runs is
+USS-IND-001's.
 
 **Rationale:** Many sites restrict outbound traffic, or have none at all. A
-feature that quietly reaches out for a font, an update check or a licence
-fails there, often in a way that is hard to find.
+feature that quietly reaches out for a font, a script or an update check fails
+there, often in a way that is hard to find.
 
 ## Open dependencies
 

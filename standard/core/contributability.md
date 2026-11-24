@@ -40,10 +40,10 @@ can fail, and most who fail do not ask for help.
 - **Category:** Contributability
 - **Verify:** The setup command (USS-CTB-001) and the guides install each
   compiler, runtime and build tool for the project only: through a version
-  manager, a wrapper script, a project-local directory or a dev container.
-  They do not tell the contributor to install a tool for the whole system
-  with a system package manager or with administrator rights, and no setup
-  script does so.
+  manager, a wrapper script, a project-local directory or a dev container. They
+  do not tell the contributor to install a tool for the whole system with a
+  system package manager or with administrator rights. A setup script that
+  installs system-wide is judged by USS-SUP-002, not here.
 - **References:** none
 
 Toolchains and build tools SHOULD be installed for the project only (such as
@@ -115,11 +115,12 @@ stated time also shows when the checks have become too slow.
 - **Level:** MUST
 - **Applies when:** always
 - **Category:** Contributability
-- **Verify:** The repository has a `CONTRIBUTING.md` file (or a guide that
-  the README links to). It covers the setup, the workflow for a change (such
-  as branch, commit, pull request), how to run the checks, and what makes a
-  change acceptable (such as tests, documentation and the Definition of
-  Done). A guide that omits one of these four fails.
+- **Verify:** The repository has a `CONTRIBUTING.md` file (or a guide that the
+  README links to). It covers the setup, the workflow for a change (such as
+  branch, commit, pull request), how to run the checks, and what makes a change
+  acceptable (such as tests and documentation; a pointer to the Definition of
+  Done that USS-CON-002 holds is enough). A guide that omits one of these four
+  fails.
 - **References:** OpenSSF Best Practices Badge criteria (read 2026-11-24),
   contribution and contribution_requirements
 

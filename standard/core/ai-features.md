@@ -40,9 +40,11 @@ input.
 
 **Rationale:** A model repeats and transforms what it reads, so an attacker who
 shapes its input shapes its output. Output that goes straight into an
-interpreter is then an injection path, however trusted the model is. The
-general rules for untrusted input already say how to check and encode; this
-rule only says that model output is in their scope.
+interpreter is then an injection path, however trusted the model is. The general
+rules for untrusted input already say how to check and encode; this rule only
+says that model output is in their scope. It therefore overlaps USS-SEC-009,
+USS-SEC-010, USS-SEC-013 and USS-SEC-014 where model output reaches them, and
+the overlap is accepted, so that the scope is stated once for model output.
 
 ### USS-AI-002: Document prompt-injection defences
 
@@ -166,13 +168,14 @@ the evaluation that the next rule asks for.
 - **Verify:** The repository holds an evaluation suite, with test cases and a
   pass threshold for each metric (a score, a rate or a count). The CI
   configuration runs it for each change that touches a model identifier, a
-  prompt, or a model setting (such as temperature or a token limit), and the
-  change cannot merge when the suite fails. Take the changes of those kinds
-  merged since the last audit, or the last 12 months when there is none: the CI
-  run of each one ran the suite. In a test branch, worsen a prompt until a case
-  fails: the check fails. A change of those kinds that merged with no suite run,
-  a suite with no threshold, or a failing run that did not block the merge
-  fails.
+  prompt, or a model setting (such as temperature or a token limit), and a
+  result below a threshold fails the job. Take the changes of those kinds merged
+  since the last audit, or the last 12 months when there is none: the CI run of
+  each one ran the suite before it merged. In a test branch, worsen a prompt
+  until a case fails: the job fails. That a failed job blocks the merge is
+  judged by USS-SUP-008, not here. A change of those kinds that merged with no
+  suite run, a suite with no threshold, or a regression that does not fail the
+  job, fails.
 - **References:** NIST AI 100-1 (AI RMF 1.0, January 2023), 5.3 Measure
 
 An evaluation suite with pass thresholds MUST run in CI before each change of

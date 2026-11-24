@@ -53,11 +53,11 @@ follow apply once the interface exists.
   form MAJOR.MINOR.PATCH). It also states the compatibility guarantees: which
   kinds of change keep a plugin that was written for an earlier version working,
   and which kinds do not. In the contract's change history since the last audit,
-  or the last 12 months when there is none, each change that removes or alters
-  something that the contract documented raises the MAJOR version. A contract
-  with no version, no stated guarantees, or such a change under a lower
-  increment fails.
-- **References:** Semantic Versioning 2.0.0, items 1, 3 and 8
+  or the last 12 months when there is none, each incompatible change, as SemVer
+  defines it, raises the MAJOR version; while MAJOR is 0, SemVer item 4 applies
+  and this rule adds nothing to it. A contract with no version, no stated
+  guarantees, or an incompatible change under a lower increment fails.
+- **References:** Semantic Versioning 2.0.0, items 1, 3, 4 and 8
 
 The plugin contract MUST be documented and versioned under Semantic
 Versioning, with stated compatibility guarantees.

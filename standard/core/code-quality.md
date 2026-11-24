@@ -256,11 +256,12 @@ is noise at best, and at worst it hides a new problem.
 - **Applies when:** always
 - **Category:** Maintainability
 - **Verify:** Search the tests for each skipped or disabled test (such as
-  `skip`, `xfail`, `@Disabled`, `#[ignore]`, `t.Skip`, `xit`, a commented-out
-  test). Each one names a tracked issue, by its ID or link, in its reason or
-  on its line, and that issue exists in the project's tracker. A skip that
-  depends on the platform (such as a Windows-only test that is skipped on
-  Linux) is a condition, not a disabled test, and passes.
+  `skip`, `xfail`, `@Disabled`, `#[ignore]`, `t.Skip` or `xit`). Each one names
+  a tracked issue, by its ID or link, in its reason or on its line, and that
+  issue exists in the project's tracker. A skip that depends on the platform
+  (such as a Windows-only test that is skipped on Linux) is a condition, not a
+  disabled test, and passes. A commented-out test is not judged here: it is dead
+  code, which USS-QLT-004 forbids.
 - **References:** none
 
 Each skipped or disabled test MUST name a tracked issue.

@@ -39,12 +39,11 @@ users feel the sum of the steps.
 - **Category:** Efficiency
 - **Verify:** Take the measures that the project has budgeted. The CI
   configuration has a job, for each of them, that runs a benchmark or a
-  measurement on the change (or on a schedule, for a benchmark that takes
-  too long for each change). The job states a threshold (an absolute limit or
-  a percentage against a baseline), and the job fails the build when the
-  result is beyond it; the failure blocks the merge or the release as a
-  failed required check does. A job that only records the numbers, or a
-  measure with no job, fails.
+  measurement on the change (or on a schedule, for a benchmark that takes too
+  long for each change). The job states a threshold (an absolute limit or a
+  percentage against a baseline), and the job fails the build when the result is
+  beyond it. That a failed job blocks the merge is judged by USS-SUP-008, not
+  here. A job that only records the numbers, or a measure with no job, fails.
 - **References:** web.dev, Incorporate performance budgets into your build
   process (read 2026-11-24)
 

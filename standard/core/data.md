@@ -88,12 +88,12 @@ is in it. Generated documentation cannot fall behind the schema.
 - **Applies when:** handles-sensitive-data
 - **Category:** Safety
 - **Verify:** For each store that holds sensitive data (a database, files, a
-  cache, a backup), the documentation, the deployment configuration or the
-  code shows encryption of the stored data: by the storage layer (such as
-  disk, volume or database encryption) or by the software (such as encrypted
-  fields). Without access to the hosting settings, the auditor records
-  `unverified` for storage that the project does not configure itself.
-  Traffic over the network is a separate rule (USS-SEC-022).
+  cache), the documentation, the deployment configuration or the code shows
+  encryption of the stored data: by the storage layer (such as disk, volume or
+  database encryption) or by the software (such as encrypted fields). Without
+  access to the hosting settings, the auditor records `unverified` for storage
+  that the project does not configure itself. Traffic over the network is a
+  separate rule (USS-SEC-022), and so are backups (USS-BAK-008).
 - **References:** CWE-311; CWE-312; OWASP ASVS 5.0, V14 (Data Protection);
   NIST SP 800-111 (2007-11)
 
