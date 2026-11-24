@@ -107,7 +107,7 @@ access, so it is no longer a secret.
 CI MUST run a secret scanner on every change, and a finding MUST fail that CI
 check until the secret is removed or the finding is suppressed with a reason.
 Every change means each pull request and each push to the default branch.
-Suppressions follow the standard's check-integrity rules.
+Suppressions follow the check-integrity rules USS-QLT-006 to USS-QLT-014.
 
 **Rationale:** A failing check blocks the merge (USS-SUP-008), so a secret
 caught by the scan never reaches the history, and it does not have to be
@@ -553,7 +553,8 @@ modules in approved mode meet it.
 CI MUST run a static application security testing (SAST) tool on every change,
 and a finding MUST fail that CI check until it is fixed or suppressed with a
 reason. Every change means each pull request and each push to the default
-branch. Suppressions follow the standard's check-integrity rules.
+branch. Suppressions follow the check-integrity rules USS-QLT-006 to
+USS-QLT-014.
 
 **Rationale:** Static analysis finds many classes of flaw before they ship, and
 a finding that does not fail the check is easy to ignore.
