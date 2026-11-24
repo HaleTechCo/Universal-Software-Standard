@@ -63,8 +63,7 @@ source (such as the client address) and the outcome.
 
 **Rationale:** A record that says only that something happened cannot say whom
 to ask. The six fields are what turn an entry into evidence. The actor is the
-identity that the Privacy area leaves to this area, so it is recorded here and
-kept out of the other logs.
+identity that the Privacy area leaves to this area.
 
 ### USS-AUD-003: Keep audit records apart from other logs
 
@@ -96,15 +95,21 @@ its own retention and its own protection.
   the audit store (such as database grants, file modes or object-store
   policies): they allow adding records and do not allow changing or deleting
   them. Then, in a test copy of the trail, change one record and remove
-  another, and run the project's check for it (such as a hash chain, a
-  signature, or a write-once store with its report): the check reports both.
-  A trail that the software can rewrite, or a change that no check finds,
-  fails.
+  another whose retention period (USS-AUD-007) has not ended, and run the
+  project's check for it (such as a hash chain, a signature, or a write-once
+  store with its report): the check reports both. Where records are removed at
+  the end of their retention period, the step that removes them runs outside
+  the software's own role (such as a storage lifecycle rule or a separate
+  retention process), removes only records past that period, and the check
+  reports the removal as expiry and not as tampering. A trail that the
+  software can rewrite, or a change that no check finds, fails.
 - **References:** NIST SP 800-53 Rev. 5 (release 5.2.0), AU-9; OWASP ASVS
   5.0.0, V16.4.2
 
 The audit trail MUST be append-only for the software, and a change to a record,
-or its removal, MUST be detectable.
+or its removal, MUST be detectable. The one removal that is allowed is that of
+records whose retention period (USS-AUD-007) has ended, by a step outside the
+software's own role, and it is recognisable as expiry and not as tampering.
 
 **Rationale:** A person who breaks in, or who abuses their rights, first wants
 to remove what shows it. A trail that shows its own damage keeps its value
@@ -144,21 +149,25 @@ records the same way.
 - **Verify:** The documentation or the code names the role or permission that
   grants access to the audit trail, and lists who holds it. Try to read the
   trail (through the UI, the API, the command line and the store) as a user
-  without that permission: each is refused. Then list the operations of the
-  software that write to the trail's store, and read the routes, commands and
-  screens of the most privileged role: none changes or deletes an audit
-  record. A way to read the trail that needs no audit permission, or one to
-  change or delete a record through the software, fails.
+  without that permission: each is refused. Then read the routes, commands
+  and screens of the software, for every role including the most privileged:
+  none changes or deletes an audit record, except that records whose
+  retention period (USS-AUD-007) has ended may be removed by a step outside
+  the software's own role (such as a storage lifecycle rule or a separate
+  retention process). A way to read the trail that needs no audit permission,
+  or one to change or delete any other record through the software, fails.
 - **References:** NIST SP 800-53 Rev. 5 (release 5.2.0), AU-9; OWASP ASVS
   5.0.0, V16.4.2
 
 The software MUST let only roles granted audit access read the audit trail, and
-MUST give no role a way to change or delete records through the software.
+MUST give no role a way to change or delete records through the software. The
+one exception is the removal of records whose retention period (USS-AUD-007)
+has ended, by a step outside the software's own role.
 
 **Rationale:** The trail names people and what they did, so reading it is a
 power of its own, and the most powerful role is the one whose actions it must
-be able to show. Removal of records that have reached the end of their
-retention is done by a job that no role controls, as USS-AUD-007 sets.
+be able to show. A trail cannot grow for ever, so expiry is the one removal
+that is left, and no role steers it.
 
 ### USS-AUD-007: Make audit retention configurable
 
@@ -200,7 +209,9 @@ theirs to set, from a default that is already lawful.
   fails.
 - **References:** NIST SP 800-53 Rev. 5 (release 5.2.0), AU-5; CWE-778
 
-A failure to write audit records MUST raise an alert to an operator.
+A failure to write audit records MUST raise an alert to an operator. This alert
+is required for that named condition and is outside the symptom rule for paging
+alerts (USS-OPS-002).
 
 **Rationale:** When writing stops, the trail has a hole that nobody knows
 about, and the events in it are lost. The alert tells the operator while the

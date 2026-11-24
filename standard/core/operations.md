@@ -47,7 +47,8 @@ policy turns a spent budget into a decision that was made in advance.
 - **Category:** Reliability
 - **Verify:** List the paging alerts in the monitoring configuration: the
   rules that wake or interrupt a person (routed to a pager, a phone call or an
-  on-call rotation). Read the condition of each. It fires on a symptom that
+  on-call rotation), leaving out the alerts that USS-BAK-010 and USS-AUD-008
+  require. Read the condition of each. It fires on a symptom that
   users feel: the burn rate of an error budget, the error rate, the latency,
   or the availability of a user-facing service, measured at the point where
   users reach the service. A paging alert whose condition is only a cause
@@ -58,12 +59,16 @@ policy turns a spent budget into a decision that was made in advance.
   chapter 5
 
 Paging alerts SHOULD fire on symptoms that users feel (such as the
-error-budget burn rate, the error rate or latency), not on causes alone.
+error-budget burn rate, the error rate or latency), not on causes alone. This
+covers the alerts on the health of the service. An alert that another USS rule
+requires for a named condition (USS-BAK-010 and USS-AUD-008) is outside it.
 
 **Rationale:** A cause does not always hurt users, and a harm to users does not
 always have a cause that was foreseen. A symptom alert fires for both. Cause
 alerts remain useful as tickets and as aids to diagnosis. The service metrics
-(USS-OBS-004) hold the inputs.
+(USS-OBS-004) hold the inputs. The alerts for a failed backup and for a failed
+audit write are required by their own rules, and a pager is a fit channel for
+them.
 
 ### USS-OPS-003: Link a runbook from every alert
 
@@ -122,10 +127,10 @@ changing the system at once.
   service or lost data. Each has a postmortem that gives the timeline, the
   impact, the causes and the follow-up actions. The causes are about
   systems and processes: the text blames no person or team by name. Each
-  follow-up action is an entry in the project's tracker, with an owner and a
-  status that the tracker updates until the action is closed. A major incident
-  with no postmortem, an action that is not in the tracker, or a postmortem
-  that blames a person fails.
+  follow-up action is an entry in the project's tracker, with a status that
+  the tracker updates until the action is closed. A major incident with no
+  postmortem, an action that is not in the tracker, or a postmortem that
+  blames a person fails.
 - **References:** Google, Site Reliability Engineering (2016), chapter 15
 
 Each major incident SHOULD get a blameless postmortem, and its follow-up
@@ -133,7 +138,8 @@ actions SHOULD be tracked to completion.
 
 **Rationale:** People who fear blame hide what happened, and the fault stays.
 A postmortem is worth the follow-up that it gets: an action that nobody tracks
-is a lesson that is learned again at the next incident.
+is a lesson that is learned again at the next incident. An owner for each
+action is good practice, because an action that is everyone's is no one's.
 
 ### USS-OPS-006: Roll out changes progressively
 
@@ -167,13 +173,12 @@ harm at once without waiting for a person to see it.
 - **Category:** Reliability
 - **Verify:** The documentation gives the address of a status page or
   channel (such as a status site, a feed or a pinned channel) that users can
-  read. For each incident of the
-  last 12 months, or since the last audit when that is shorter, in which
-  users felt the failure (the service was down, slow or wrong for them), the
-  page or channel has an entry that names what was affected and gives the
-  time of its latest update. Where there was no such incident, the page or
-  channel exists and its entries have both fields. An incident that users felt
-  and that has no entry fails.
+  read. For each incident of the last 12 months, or since the last audit when
+  that is shorter, in which users felt the failure (the service was down,
+  slow or wrong for them), the page or channel has an entry that names what
+  was affected and gives the time of its latest update. Where there was no
+  such incident, the page or channel exists and its entries have both
+  fields. An incident that users felt and that has no entry fails.
 - **References:** NIST SP 800-61 Rev. 3 (April 2025), RC.CO-04; Google, The
   Site Reliability Workbook (2018), chapter 9
 
