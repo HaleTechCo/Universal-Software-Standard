@@ -109,8 +109,7 @@ names one image, so the build gets the image that was reviewed.
 - **Verify:** Each download in build scripts and CI configuration that does
   not go through a package manager's lockfile (an installer, a script or a
   binary) names a fixed version, and the same step checks the file against a
-  checksum or signature that is recorded in the repository or published by the
-  supplier.
+  checksum or signature.
 - **References:** NIST SP 800-218 (SSDF 1.1) PW.4.4 (notional example on
   confirming integrity through digital signatures or other mechanisms)
 
