@@ -6,8 +6,9 @@
 
 This area covers the third-party code that a project declares, resolves,
 checks and updates: packages from registries, libraries from other
-repositories and vendored code. Its rules count toward Safety by default.
-Language modules and vendor profiles name each ecosystem's syntax and tools;
+repositories and vendored code. The project's own packages (workspace
+members, and path dependencies inside the repository) are not dependencies for
+this area. Its rules count toward Safety by default. Language modules and vendor profiles name each ecosystem's syntax and tools;
 the tools named here are examples only. Toolchains, CI components, container
 images and SBOMs are in the Supply chain area (SUP).
 
@@ -49,8 +50,10 @@ project expects.
 - **Category:** Safety
 - **Verify:** The repository holds a lockfile (or each lockfile that the
   ecosystem needs) in version control, and it records an integrity hash for
-  every package that it resolves. Read the lockfile: an entry without a hash is
-  a failure. Examples of such files are `package-lock.json` (an `integrity`
+  every package that it resolves. Read the lockfile: an entry for a package
+  fetched from a registry or an archive that has no integrity hash is a
+  failure. A git dependency pinned to a full commit hash counts as
+  integrity-pinned. Examples of such files are `package-lock.json` (an `integrity`
   field per package) and Go's `go.sum` (a hash per module).
 - **References:** npm Docs, package-lock.json (v10, docs read 2026-11-23); Go
   Modules Reference, go.sum files (docs read 2026-11-23)
@@ -118,13 +121,11 @@ and the project does not see it happen.
 - **Verify:** Each manifest declares runtime, build and development
   dependencies in separate groups (such as `dependencies`, `devDependencies`
   and build requirements). A dependency that only tests, linters or build
-  tools use is not in the runtime group. The step that builds a shipped
-  artifact installs the runtime group only, or the artifact's contents show
-  no build or development dependency.
+  tools use is not in the runtime group.
 - **References:** none
 
-Runtime, build and development dependencies MUST be declared separately, so
-that shipped artifacts carry only runtime ones. A runtime dependency is one
+Runtime, build and development dependencies MUST be declared separately, in
+order that shipped artifacts carry only runtime ones. A runtime dependency is one
 that the program needs while it runs. A build dependency is one that is needed
 only to build it, and a development dependency is one that only tests, linters
 and other tools use.
@@ -137,10 +138,11 @@ attack and to keep updated, and it brings its own vulnerabilities.
 - **Level:** MUST NOT
 - **Applies when:** always
 - **Category:** Safety
-- **Verify:** For each dependency version in the lockfile, the supplier's
-  support policy, release history or registry notice (such as a deprecation or
-  archive notice) shows that the version still receives security fixes at the
-  audit date. Where none of these shows it, the auditor records
+- **Verify:** For the release line of each dependency in the lockfile (the
+  major or minor series that the supplier's support policy defines), the
+  supplier's support policy, release history or registry notice (such as a
+  deprecation or archive notice) shows that the line still receives security
+  fixes at the audit date. Where none of these shows it, the auditor records
   `unverified`. A scan that flags end-of-life or unmaintained packages is
   partial evidence.
 - **References:** CWE-1104, Use of Unmaintained Third Party Components (CWE
@@ -149,9 +151,10 @@ attack and to keep updated, and it brings its own vulnerabilities.
   of life)
 
 A project MUST NOT use a dependency at a version that no longer receives
-security fixes. A version is end-of-life when its supplier no longer publishes security fixes
-for it, as the supplier's support policy, release history or deprecation
-notice shows.
+security fixes. A version is end-of-life when the release line that it belongs
+to (the major or minor series, as the supplier's support policy defines it) no
+longer receives security fixes from its supplier, as the support policy,
+release history or deprecation notice shows.
 
 **Rationale:** A flaw found in a version that is not fixed stays in every
 project that uses it.
@@ -193,8 +196,8 @@ misses them.
   not cover), or the scanner reads a recorded assessment for it (such as an
   ignore entry or a VEX statement in the file that the scanner is configured
   to read) that says why the product is not affected. A recorded assessment
-  without a reason is a failure, and so is one past its expiry date where the
-  tool supports an expiry date. A finding that is neither fixed nor assessed is
+  without a reason is a failure. Where the tool supports an expiry date, so is
+  one with no expiry date, and so is one past its expiry date. A finding that is neither fixed nor assessed is
   a failure.
 - **References:** NIST SP 800-218 (SSDF 1.1) RV.2.1, RV.2.2; OSV schema 1.9.2
   (a format for vulnerability data that scanners read)
@@ -218,8 +221,9 @@ assessment with no reason cannot be checked or reviewed.
 - **Verify:** For each private package that the project uses, the package
   manager configuration binds its name to the private registry (for example an
   npm scope that is mapped to the private registry), or the private registry
-  is the only source that is configured, or the registry blocks public
-  versions of a name it holds (for example Azure Artifacts with external
+  is the only source that is configured and does not serve public versions of
+  that name (a private registry that proxies a public one does not meet this),
+  or the registry blocks public versions of a name it holds (for example Azure Artifacts with external
   versions not allowed for that package). A private package name that the
   package manager can also resolve from a public registry is a failure.
 - **References:** Alex Birsan, Dependency Confusion: How I Hacked Into Apple,
@@ -265,7 +269,8 @@ without these records it is scanned and updated by nobody.
 - **Category:** Safety
 - **Verify:** Each direct dependency has its purpose written down, in a comment
   in the manifest or in a dependency list in the repository. For a dependency
-  that was added recently, the change that added it carries that record.
+  that was added since the last recorded audit (or in the last 12 months when
+  there is no earlier audit), the change that added it carries that record.
 - **References:** none
 
 The purpose of each direct dependency SHOULD be recorded, in the manifest or a
@@ -279,13 +284,12 @@ needed, or can be replaced, if its purpose is written down.
 - **Level:** SHOULD
 - **Applies when:** always
 - **Category:** Safety
-- **Verify:** For dependencies added recently, the pull request, the commit or
-  the dependency list shows that the dependency was checked for the stated
-  properties before it was added, and each direct dependency has those
-  properties on its registry and repository pages. Where a standard library
-  feature covers the need that a dependency meets, the project uses the
-  standard library. Where no record shows the check, the auditor records
-  `unverified`.
+- **Verify:** For each dependency added since the last recorded audit (or in
+  the last 12 months when there is no earlier audit), the pull request, the
+  commit or the dependency list shows that the dependency was checked for the
+  stated properties before it was added, and that the standard library was
+  preferred where it was enough. Where no record shows the check, the auditor
+  records `unverified`.
 - **References:** none
 
 Before a dependency is added, it SHOULD be checked to be maintained, not
@@ -324,13 +328,14 @@ adds attack surface, and it gives nothing back.
 - **Category:** Safety
 - **Verify:** The repository holds the configuration of an update tool (such
   as `renovate.json` or `.github/dependabot.yml`) that covers every manifest.
-  Recently merged update pull requests were opened by the tool, and the CI
-  checks on each ran and passed before it merged.
+  The dependency updates merged since the last recorded audit (or in the last
+  12 months when there is no earlier audit) were opened as pull requests by the
+  tool.
 - **References:** Renovate Docs, Configuration options (docs read 2026-11-23);
   GitHub Docs, Dependabot options reference (docs read 2026-11-23)
 
 Dependency updates SHOULD arrive as automated pull requests (such as from
-Renovate or Dependabot) that pass CI before merge.
+Renovate or Dependabot).
 
 **Rationale:** Small updates that arrive often are easier to review and test
 than a large update after a long gap, and security fixes reach the project
@@ -341,10 +346,12 @@ sooner.
 - **Level:** SHOULD
 - **Applies when:** always
 - **Category:** Safety
-- **Verify:** The update tool's configuration sets a minimum age for new
+- **Verify:** The configuration of the update tool sets a minimum age for new
   releases of at least three days: for example Renovate `minimumReleaseAge`,
   or Dependabot `cooldown` (`default-days`), or a resolver setting such as uv
-  `exclude-newer` given as a duration. Where the project has no update tool,
+  `exclude-newer` given as a duration. Dependabot `cooldown` does not apply to
+  security updates, so it is partial evidence: the auditor checks the
+  security-update pull requests directly. Where no tool sets a minimum age,
   the auditor records `fail`.
 - **References:** Renovate Docs, minimumReleaseAge (docs read 2026-11-23);
   GitHub Docs, Dependabot options reference (cooldown, docs read 2026-11-23);
@@ -352,6 +359,8 @@ sooner.
 
 A newly published dependency release SHOULD be adopted only after a minimum age
 of a few days, set in the update tool. A few days means at least three days.
+The update tool is the tool that picks new versions: an update bot, or the
+package manager's resolver.
 
 **Rationale:** A malicious or broken release is usually found and withdrawn
 within days of publication, so a delay keeps the project clear of most of
@@ -364,11 +373,11 @@ them.
 - **Level:** SHOULD
 - **Applies when:** is-library
 - **Category:** Safety
-- **Verify:** For each dependency of the library, the declared range matches
-  the range of versions that CI installs and tests: it reaches from the lowest
-  version tested to the newest version tested, within the bound of DEP-001. A
-  declared range that is narrower than the tested range, or wider than it, is
-  a failure.
+- **Verify:** For each dependency of the library, the lower bound of the
+  declared range is the lowest version that CI installs and tests (the lowest
+  version of DEP-017). A lower bound above or below that version is a failure.
+  The upper bound follows DEP-001: it is the bound that DEP-001 sets, and the
+  auditor does not require it to equal the newest version tested.
 - **References:** none
 
 A library SHOULD declare the widest range of each dependency that it is tested
