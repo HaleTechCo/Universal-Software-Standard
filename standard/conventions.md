@@ -609,22 +609,24 @@ results:
 ### The report
 
 `uss report` generates the readable report `.uss/audits/<date>.md` from the
-results, with the layout in `templates/audit-report.md.j2`. The report shows
-the compliance statement and the category scores first. Then it shows every
-applicable rule with its outcome and evidence, grouped by outcome in the
-order fail, unverified, deviation, declined and pass. In each group, the rules
-are sorted by level, from MUST to MAY, then by ID. Then it lists the
+results, with the layout in `templates/audit-report.md.j2`. `uss report` and
+`uss release-check` first run the checks of `uss check` on the record, and
+refuse a record that fails them. The report shows the compliance statement
+and the category scores first. Then it shows every applicable rule with its
+outcome and evidence, grouped by outcome in the order fail, unverified,
+deviation, declined and pass. In each group, the rules are sorted by level,
+from MUST to MAY, then by ID. Then it lists the
 deviations and the suppressions. Scores and reports MUST NOT be computed or
 written by hand.
 
 To record an audit:
 
 1. Write the results to `.uss/audits/<date>.yaml`.
-2. Go to the project root.
-3. Run `uss report .uss/audits/<date>.yaml`. It writes
+2. Add the audit to `audits` in `.uss/record.yaml`.
+3. Go to the project root.
+4. Run `uss check .uss/record.yaml`. Correct each problem that it reports.
+5. Run `uss report .uss/audits/<date>.yaml`. It writes
    `.uss/audits/<date>.md`, then prints the statement and the score line.
-4. Add the audit to `audits` in `.uss/record.yaml`.
-5. Run `uss check .uss/record.yaml`.
 6. Commit the record, the results and the report together.
 
 ### Components

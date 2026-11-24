@@ -925,7 +925,8 @@ mod tests {
         let std_root = fixture_root();
         let std_arg = std_root.path().to_str().unwrap();
         let proj = tempfile::TempDir::new().unwrap();
-        // A misspelled fact leaves `uses-database` false, so USS-SEC-002 drops out.
+        // A misspelled fact is an unknown fact, and the fact it was meant to
+        // answer is left unanswered, so the record checks reject the record.
         let typo = RECORD_HEAD.replace("uses-database", "uses-databse");
         write_file(proj.path(), ".uss/record.yaml", &typo);
         let rec = proj.path().join(".uss/record.yaml");
@@ -1165,7 +1166,8 @@ mod tests {
     #[test]
     fn release_check_rejects_invalid_record() {
         let Some(repo) = new_repo() else { return };
-        // A misspelled fact leaves `uses-database` false, so USS-SEC-002 drops out.
+        // A misspelled fact is an unknown fact, and the fact it was meant to
+        // answer is left unanswered, so the record checks reject the record.
         let typo = RECORD_HEAD.replace("uses-database", "uses-databse");
         write_file(repo.path(), "src/main.rs", "fn main() {}\n");
         write_file(repo.path(), ".uss/record.yaml", &typo);

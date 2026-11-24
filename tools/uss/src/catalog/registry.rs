@@ -148,7 +148,7 @@ mod tests {
         let mut m = MemSource::default();
         m.0.insert(REGISTRY_PATH.to_string(), REAL.to_vec());
         let r = load_registry(&m).unwrap();
-        assert_eq!(r.version, "0.1.0");
+        assert_eq!(r.version, env!("CARGO_PKG_VERSION"));
         assert_eq!(r.categories.len(), 9);
         assert_eq!(r.categories[7].name, "Accessibility & Usability");
         assert!(r.has_stack("lang", "go"));
