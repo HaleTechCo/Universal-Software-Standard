@@ -24,14 +24,15 @@ service for another.
 - **Verify:** Find the self-hosting guide in the documentation. It lists
   everything that a self-hosted installation needs, and each item is something
   that the operator runs or controls (the software's own components, a
-  database, a proxy). Follow the guide on infrastructure that you control,
-  with outbound network traffic limited to the package and image sources that
-  the guide names: the software runs and its documented features work. Search
-  the code and the configuration for connections to services that the project
-  or a vendor runs (a licence server, a phone-home call, a required sign-in
-  to a hosted service): each is optional and off by default, or the guide
-  names it as an optional integration. A required connection to a service
-  outside the operator's control, or a missing guide, fails.
+  database, a proxy). Install the software by the guide on infrastructure
+  that you control. Then run it with no connection to a service that the
+  project or a vendor runs (registries used only to install are out of
+  scope, because the rule is about running): it starts and does its main job
+  as the guide describes. Search the code and the configuration for such
+  connections (a licence server, a phone-home call, a required sign-in to a
+  hosted service): each is optional and off by default, or the guide names it
+  as an optional integration. A required connection to a service outside the
+  operator's control while running, or a missing guide, fails.
 - **References:** none
 
 The software SHOULD run entirely on the user's own infrastructure, with a
@@ -49,13 +50,14 @@ ability: software that only the maker knows how to run is not self-hostable.
 - **Verify:** The project runs a hosted edition. Compare the feature list of
   the hosted edition (its documentation, pricing page or settings) with that of
   the self-hosted edition. Every feature of the hosted edition is in the
-  self-hosted edition, in the same release. A hosted feature that is not in
+  self-hosted edition. A hosted feature that is not in
   the self-hosted edition fails. The comparison is of what the software does;
   the operator's own capacity, support and the hosting itself are not
   features.
 - **References:** none
 
-The self-hosted edition SHOULD NOT lack features that the hosted edition has.
+The self-hosted edition SHOULD NOT lack features of the software that the
+hosted edition has.
 
 **Rationale:** A self-hosted edition with fewer features turns self-hosting
 into a lesser product, and pushes users toward the hosted one.

@@ -322,21 +322,22 @@ after a revocation.
 - **Applies when:** has-plugin-marketplace
 - **Category:** Safety
 - **Verify:** Find the revocation process in the documentation: how a version
-  or a publisher is marked as revoked, and how hosts learn of it. In a test
+  is marked as revoked, and how hosts learn of it. In a test
   instance, revoke a version of a test plugin that is installed: the
   marketplace stops offering it, and the host, at its next check, disables
   it. A marketplace with no way to revoke, or a host that keeps running a
   revoked version, fails.
-- **References:** The Update Framework Specification 1.0.37 (read 2026-11-24),
-  section 6.1 (Key management and migration) and section 1.5.2 (Goals to
-  protect against specific attacks)
+- **References:** none
 
 The marketplace MUST be able to revoke a plugin version, and hosts MUST then
 disable it.
 
 **Rationale:** A plugin found to be malicious or badly broken is already
 installed on users' systems. Removing it from the listing does not remove it
-from them; only a signal that the hosts act on does.
+from them; only a signal that the hosts act on does. The Update Framework
+revokes keys and delegations, not single target files, so a marketplace that
+uses it still needs its own signal for a version; revoking a publisher's key
+is guidance, not this rule's test.
 
 ### USS-EXT-015: Show each plugin's licence
 
