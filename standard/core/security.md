@@ -24,8 +24,9 @@ built by concatenation, therefore fails both that rule and the ASVS rule.
   names the assets, the trust boundaries, the threats and the control for each
   threat, and matches the current architecture: no component it names is
   missing from the code, and no major component of the code is missing from
-  it. Length and format are free: a short document that answers the four
-  questions of the Threat Modeling Manifesto passes.
+  it. Length and format are free: a short document passes when it names
+  those elements, for example by answering the four questions of the Threat
+  Modeling Manifesto for each trust boundary.
 - **References:** NIST SP 800-218 (SSDF 1.1) PW.1.1; OWASP Threat Modeling
   Cheat Sheet (read 2026-11-23); Threat Modeling Manifesto (read 2026-11-24)
 
@@ -147,8 +148,8 @@ artifact and cannot be rotated without a new build.
 Each permission that the repository grants to a credential the software uses
 MUST be one that the software needs. The repository grants a permission when
 its configuration, infrastructure code or deployment manifests (such as RBAC
-roles or Helm charts) set it. USS-SEC-008 covers credentials that operators
-create.
+roles or Helm charts) set it. USS-SEC-008 covers documenting the permissions
+of each credential.
 
 **Rationale:** When a credential leaks, its permissions set the damage.
 
@@ -158,10 +159,9 @@ create.
 - **Applies when:** uses-secrets
 - **Category:** Safety
 - **Verify:** The documentation names, for each credential the software needs,
-  the smallest set of permissions or scopes that the software works with (for
-  example "a token with `contents: read` on the repository"). A credential
-  with no such entry is a failure, and so is one whose documented permissions
-  include administrator or wildcard rights without a stated need.
+  the permissions or scopes that it needs (for example "a token with
+  `contents: read` on the repository"), and the named set is no larger than
+  what the software calls. A credential with no such entry is a failure.
 - **References:** NIST SP 800-53 Rev. 5 (Release 5.2.0) AC-6 (Least
   Privilege)
 
@@ -446,9 +446,9 @@ path.
   setting). The one exception is a user opt-out, such as an `--insecure` flag,
   that is off by default, applies only to the run that sets it and prints a
   warning when used, in software that also lets the user trust one specific
-  certificate or certificate authority. Trusting one self-signed certificate
-  does not turn validation off. A test that uses only local fakes is outside
-  this check.
+  certificate or certificate authority. A test setup that reaches a real host
+  does not use the opt-out. Trusting one self-signed certificate does not turn
+  validation off. A test that uses only local fakes is outside this check.
 - **References:** CWE-295
 
 Certificate and host-name validation MUST NOT be turned off, except through a
@@ -459,9 +459,10 @@ exception.
 
 **Rationale:** Without validation, encryption protects against nobody, because
 a man in the middle can present any certificate. Code written for a test tends
-to reach production. A user who meets a private certificate authority needs a
-way through; one that trusts that authority alone keeps the rest of the
-validation, and a per-run, noisy opt-out is hard to leave on by accident.
+to reach production. Users whose servers have certificates from a private
+certificate authority need a way to connect. Trusting that one authority keeps
+the rest of the validation, and an opt-out that lasts one run and prints a
+warning is hard to leave on by accident.
 
 ### USS-SEC-024: Use vetted cryptography
 
@@ -475,7 +476,7 @@ validation, and a per-run, noisy opt-out is hard to leave on by accident.
 
 The project MUST NOT implement its own cryptographic primitives or protocols,
 or use any that do not come from a maintained, widely reviewed library. A
-project whose purpose is to implement cryptography for other software
+project whose main purpose is to provide cryptography to other software
 (`implements-cryptography`) is outside this rule; USS-SEC-025 covers it.
 
 **Rationale:** Cryptography fails through small implementation errors that only
@@ -602,8 +603,8 @@ project can be held to them.
   advisory (such as a repository security advisory, a database entry or a
   release note) names the affected and fixed versions and a CVE or other
   public ID.
-- **References:** OSV schema 1.9.2; CSAF 2.0; CVE Program, CVE Record Format
-  (read 2026-11-24); CISA Secure by Design Pledge (read 2026-11-23),
+- **References:** OSV schema 1.9.2; CSAF 2.0; CVE Program, CVE JSON Record
+  Format 5.2.0; CISA Secure by Design Pledge (read 2026-11-23),
   vulnerability reporting transparency goal; Regulation (EU) 2024/2847 (Cyber
   Resilience Act), Annex I Part II(4)
 

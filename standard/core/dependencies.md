@@ -78,10 +78,9 @@ project expects.
   --generate-hashes` writes it).
 - **References:** npm Docs v10, package-lock.json (read 2026-11-23); Go
   Modules Reference (read 2026-11-23), go.sum files; Gradle User Manual 9.9.2,
-  Locking Versions; Gradle User Manual, Dependency verification (read
-  2026-11-24); Apache Maven Resolver 2.0.26, Expected Checksums; pip
-  documentation v26.3, Secure installs; pip-tools documentation v7.7.0, Using
-  hashes; PEP 751
+  Locking Versions and Securing Dependencies; Apache Maven Resolver 2.0.26,
+  Expected Checksums; pip documentation v26.3, Secure installs; pip-tools
+  documentation v7.7.0, Using hashes; PEP 751
 
 A lockfile with an integrity hash for every resolved package MUST be
 committed.
@@ -109,9 +108,9 @@ that the code installed is the code that was resolved.
   (read 2026-11-23); pip documentation v26.3, Secure installs; Apache Maven
   Resolver 2.0.26, Expected Checksums
 
-Builds and CI MUST install strictly from the lockfile, and MUST fail when it is
-out of date. Examples of commands that do this are `cargo build --locked`,
-`npm ci` and `uv sync --locked`.
+Builds and CI MUST install strictly from the lockfile, and CI MUST fail when
+the lockfile is out of date with the manifest. Examples of commands that do
+this are `cargo build --locked`, `npm ci` and `uv sync --locked`.
 
 **Rationale:** An install that can update the lockfile silently takes in new
 versions, so the lockfile no longer describes what was built and tested.
@@ -229,12 +228,12 @@ misses them.
   audited commit (the latest CI run, or a run of the scanner), every finding
   is fixed (the dependency is at a version that the finding does not cover),
   or the scanner reads a recorded assessment for it (such as an ignore entry
-  or a VEX statement in the file that the scanner is configured to read). The
-  assessment says why the product is not affected, or it says that the
-  product is affected and no fix can be applied yet (in VEX, status `affected`
-  with an action statement), links an issue that tracks the fix and expires at
-  most 30 days after it was recorded. A recorded assessment without a reason
-  is a failure. Where the tool supports an expiry date, so is one with no
+  or a VEX statement in the file that the scanner is configured to read). An
+  assessment either says why the product is not affected, or says that the
+  product is affected and no fix can be applied yet. An assessment of the
+  second kind links an issue that tracks the fix and expires at most 30 days
+  after it was recorded. A recorded assessment without a reason is a
+  failure. Where the tool supports an expiry date, so is one with no
   expiry date, and so is one past its expiry date; where it does not, an
   "affected" assessment states its expiry date in its text. A finding that is
   neither fixed nor assessed is a failure.
@@ -291,8 +290,10 @@ attack.
 - **Verify:** For each directory or file of third-party code in the
   repository, a machine-readable record that the scanner of USS-DEP-007 reads
   (such as a manifest entry, or a component in an SPDX or CycloneDX file in the
-  repository) names its source, its upstream version and its licence. A
-  record that only people read, such as a note in a README, is a failure.
+  repository) names its source, its upstream version and its licence. Where
+  the project has an update tool (USS-DEP-014), that tool reads the record
+  too. A record that only people read, such as a note in a README, is a
+  failure.
 - **References:** SPDX 3.0.1; CycloneDX 1.7
 
 The source, upstream version and licence of each piece of vendored code MUST
@@ -326,20 +327,22 @@ needed, or can be replaced, if its purpose is written down.
 - **Level:** SHOULD
 - **Applies when:** always
 - **Category:** Safety
-- **Verify:** Each dependency added since the last recorded audit (or in the
-  last 12 months when there is no earlier audit) has a record of the check, in
-  the pull request, the commit or a dependency list, that covers whether it is
-  maintained, whether it is deprecated or archived, whether it has more than
-  one maintainer, and whether the standard library is enough instead. A
-  dependency with no such record is a failure.
+- **Verify:** For each dependency added since the last recorded audit (or in
+  the last 12 months when there is no earlier audit), the change that added it
+  carries a record of the check that covers whether it is maintained, whether
+  it is deprecated or archived, whether it has more than one maintainer, and
+  whether the standard library is enough instead. Each point that the
+  dependency fails has a reason in the record. A dependency with no such
+  record is a failure.
 - **References:** OpenSSF, Concise Guide for Evaluating Open Source Software
   (2025-03-28)
 
 Before a dependency is added, its health SHOULD be checked and the result
 recorded in the change that adds it. The check covers whether the dependency
 is maintained, whether it is deprecated or archived, whether it has more than
-one maintainer, and whether the standard library is enough instead. Licence
-compatibility is a Licensing (LIC) rule.
+one maintainer, and whether the standard library is enough instead. A
+dependency that fails a point can still be added when the record gives the
+reason. Licence compatibility is a Licensing (LIC) rule.
 
 **Rationale:** A dependency that nobody maintains, or that one person
 maintains, is a risk that the project takes on with every release it ships.

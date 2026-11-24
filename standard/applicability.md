@@ -59,7 +59,7 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 ### exposes-web-api
 
 - **Question:** Does it accept HTTP-based requests from other software?
-- **Definition:** Yes when other programs can send it requests over HTTP or a protocol carried over HTTP, such as REST, GraphQL, gRPC or WebSocket.
+- **Definition:** Yes when other programs can send it requests over HTTP or a protocol carried over HTTP, such as REST, GraphQL, gRPC or WebSocket. Endpoints only for operating it (such as health checks and metrics), and listeners bound only to the loopback interface (such as a command-line tool's sign-in callback), do not count.
 - **Implies:** exposes-network-api
 
 ### is-network-service
@@ -100,8 +100,8 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 
 ### implements-cryptography
 
-- **Question:** Is implementing cryptography for other software a purpose of the project?
-- **Definition:** Yes when the project provides cryptographic primitives or protocols for other software to use, such as a cryptography library or a TLS implementation. Code that only calls a cryptography library does not count.
+- **Question:** Is providing cryptography to other software the main purpose of the project?
+- **Definition:** Yes when the project's main product is a library or component whose public interface is cryptographic primitives or protocols, such as a cryptography library or a TLS implementation. Code that only calls a cryptography library does not count, and neither does an application that also exposes cryptographic helpers of its own.
 - **Implies:** uses-cryptography
 
 ### requires-fips
@@ -140,7 +140,7 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 ### has-dependencies
 
 - **Question:** Does it use third-party code?
-- **Definition:** Yes when it declares a third-party package in a manifest, including a tool such as `typescript` in `devDependencies`, or when it vendors third-party code. The language's standard library and runtime, and toolchains and CI components installed outside a manifest, do not count; the Supply chain area covers them.
+- **Definition:** Yes when it uses code that it does not maintain itself: a third-party package declared in a manifest (including a tool such as `typescript` in `devDependencies`), a library that a package manager installs outside a manifest for the software to use (such as `pip install` in a Dockerfile), a library from another repository (such as a git submodule), or vendored code. The language's standard library and runtime, and toolchains and CI components installed outside a manifest, do not count; the Supply chain area covers them.
 
 ### uses-private-packages
 
@@ -162,7 +162,7 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 ### has-multiple-maintainers
 
 - **Question:** Can more than one person approve and merge changes?
-- **Definition:** Yes when two or more people have the right to approve and merge changes into its default branch. Bots and automation accounts do not count.
+- **Definition:** Yes when two or more people regularly review and merge changes into its default branch. A backup administrator who takes no part in reviews does not count, and neither do bots and automation accounts.
 
 ### uses-ai-models
 

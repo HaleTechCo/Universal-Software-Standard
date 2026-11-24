@@ -79,7 +79,7 @@ facts:
   # Does it use cryptography?
   # Answer this. false is not a default.
   uses-cryptography: false
-  # Is implementing cryptography for other software a purpose of the project?
+  # Is providing cryptography to other software the main purpose of the project?
   # Answer this. false is not a default.
   implements-cryptography: false
   # Must it run in a FIPS 140-3 validated configuration?

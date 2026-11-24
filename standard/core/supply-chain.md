@@ -67,10 +67,11 @@ the system itself, and it makes the result depend on the state of the machine.
   is pinned to a full commit SHA or a content digest, either in its reference
   or in a lockfile that the CI host uses to run the locked commit (such as
   GitHub's `.github/workflows/actions.lock`, which also covers the actions that
-  other actions use). The lockfile has an entry for every component that the
-  configuration uses. A component that the lockfile does not cover (on GitHub,
-  a reusable workflow) has the SHA in its reference. A tag or branch reference
-  with neither is a failure, also when the tag belongs to an immutable release.
+  other actions use). The lockfile has an entry for every component of the
+  configuration that it can cover. A component that the lockfile does not
+  cover (on GitHub, a reusable workflow) has the SHA in its reference. A tag
+  or branch reference with neither is a failure, also when the tag belongs to
+  an immutable release.
 - **References:** GitHub Docs, Secure use reference (read 2026-11-23), Pin
   actions to a full-length commit SHA; GitHub Docs, Workflow dependency
   lockfiles (read 2026-11-24); OpenSSF Scorecard v5.7.0 (Pinned-Dependencies)

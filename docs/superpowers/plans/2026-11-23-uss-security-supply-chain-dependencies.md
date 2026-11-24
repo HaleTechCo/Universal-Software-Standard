@@ -7,6 +7,13 @@ Supply chain [SUP] and Dependencies [DEP], as rule files that pass `uss lint`.
 Then stop, so the user can calibrate levels and tone before any other area is
 written (spec §13 step 2).
 
+> **Calibrated 2026-11-24.** The user's calibration renumbered the drafted IDs
+> before release, so the IDs below are the draft's. New rules: USS-SEC-008
+> and USS-SEC-025. Draft SEC-008 to SEC-023 are now SEC-009 to SEC-024, and
+> draft SEC-024 to SEC-031 are now SEC-026 to SEC-033. Draft SUP-002 moved to
+> Contributability; draft SUP-003 to SUP-017 are now SUP-002 to SUP-016. DEP
+> IDs are unchanged. `standard/core/` is the current text.
+
 **Architecture:** Mostly content. Each area is one rule file under
 `standard/core/`, in the format that `standard/conventions.md` defines and
 `uss lint` enforces. Six new asked facts go into `standard/applicability.md`

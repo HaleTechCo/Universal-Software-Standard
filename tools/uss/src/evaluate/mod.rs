@@ -99,11 +99,16 @@ mod tests {
         let path = "templates/record.yaml";
         let data = Embedded.read(path).unwrap();
         let r = parse_record(&Embedded, path, &data).unwrap();
-        let active = c
+        let is_core = |rule: &Rule| rule.file.starts_with("standard/core/");
+        let core = c
             .rules
             .iter()
-            .filter(|rule| rule.active().is_some())
+            .filter(|rule| is_core(rule) && rule.active().is_some())
             .count();
-        assert_eq!((applicable(&c, &r).len(), active), (21, 66));
+        let floor = applicable(&c, &r)
+            .into_iter()
+            .filter(|rule| is_core(rule))
+            .count();
+        assert_eq!((floor, core), (21, 66));
     }
 }

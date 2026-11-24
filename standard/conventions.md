@@ -93,7 +93,7 @@ Each rule is a `###` heading, a field block and a body. The body holds the
 normative text, then the rationale where the reason is not self-evident:
 
 ```markdown
-### USS-SEC-012: Use parameterized queries
+### USS-SEC-013: Use parameterized queries
 
 - **Level:** MUST
 - **Applies when:** uses-database
@@ -605,7 +605,7 @@ commit: 0123456789abcdef0123456789abcdef01234567
 date: 2026-11-21
 auditor: claude
 results:
-  USS-SEC-012:
+  USS-SEC-013:
     result: pass
     evidence: src/db/query.go:42
 ```
