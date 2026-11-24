@@ -146,17 +146,19 @@ person is away. A schedule that fits the RPO is what keeps the RPO true.
 - **Category:** Reliability
 - **Verify:** The documentation or the backup configuration shows, for each
   production data store, three copies of the data (the production data counts
-  as one), on two kinds of storage (such as disk and object storage, or
-  object storage and tape), with one copy in another location than production
-  (another site, region or provider account). One copy is immutable (such as
-  object lock or WORM storage with a retention period) or offline (such as
-  detached media). Without access to the storage settings, the auditor records
-  `unverified`.
-- **References:** CISA #StopRansomware Guide (2023-09); CIS Critical Security
-  Controls v8.1, safeguard 11.4
+  as one, as the body says), on two kinds of storage (such as disk and object
+  storage, or object storage and tape), with one copy in another location
+  than production (another site, region or provider account). One copy is
+  immutable (such as object lock or WORM storage with a retention period) or
+  offline (such as detached media). Without access to the storage settings,
+  the auditor records `unverified`.
+- **References:** CISA, Back Up Business Data (read 2026-11-24), the 3-2-1
+  rule; CISA #StopRansomware Guide (2023-09); CIS Critical Security Controls
+  v8.1, safeguard 11.4
 
-Backups MUST follow the 3-2-1 rule (three copies, on two kinds of storage, one
-off-site), and one copy MUST be immutable or offline.
+Backups MUST follow the 3-2-1 rule (three copies, counting the production
+data, on two kinds of storage, one off-site), and one copy MUST be immutable or
+offline.
 
 **Rationale:** Attackers who reach production look for the backups and delete
 or encrypt them. A copy that nobody can change, wherever the attacker is,
@@ -193,11 +195,10 @@ practice, because a key stored next to the data protects nothing.
   production workloads run as have no such right. Reading the policies of the
   hosting account needs access, and without it the auditor records
   `unverified`.
-- **References:** CISA #StopRansomware Guide (2023-09); CIS Critical Security
-  Controls v8.1, safeguard 11.3
+- **References:** CIS Critical Security Controls v8.1, safeguard 11.3
 
-The credentials that can change or delete backups MUST stay out of reach of the
-production systems.
+The credentials that can change or delete backups MUST be kept unavailable to
+the production systems.
 
 **Rationale:** Anyone who takes over a production system gets what that system
 can do. If it can delete the backups, the same attack destroys the data and its
@@ -216,7 +217,7 @@ copies.
   record of a failed or missed backup in the last 12 months or since the last
   audit, the alert that it raised is on record. Settings in a console that the
   auditor cannot open are `unverified`.
-- **References:** CIS Critical Security Controls v8.1, safeguard 11.2
+- **References:** none
 
 A failed or missed backup MUST raise an alert to a person.
 
@@ -250,12 +251,16 @@ assets.
 - **Applies when:** operates-service and stores-persistent-data and
   handles-personal-data
 - **Category:** Reliability
-- **Verify:** The documentation states how long backups are kept (a retention
-  period). The retention setting of the backup tool or the storage (an expiry
-  rule, a lifecycle rule or a pruning policy) is no longer than that period.
-  List the stored backups: the oldest is no older than the period. Personal
-  data that is deleted from production (USS-PRV-003) is therefore out of every
-  backup within that period. Settings in a console that the auditor cannot open
+- **Verify:** Take each kind of personal data in the inventory (USS-PRV-001)
+  that lists a backup among the places where it is stored. The inventory, or
+  the documentation that it points to, gives the period within which deleted
+  data leaves the backups (the retention that USS-PRV-003 sets for it, plus
+  the longest time that a backup is kept). The retention setting of the backup
+  tool or the storage (an expiry rule, a lifecycle rule or a pruning policy)
+  is no longer than that period, and in the list of stored backups the oldest
+  is no older than it. A kind of data with no period for backups, or a backup
+  retention (such as 10 years) that is longer than the period that the
+  inventory gives, fails. Settings in a console that the auditor cannot open
   are `unverified`.
 - **References:** none
 
