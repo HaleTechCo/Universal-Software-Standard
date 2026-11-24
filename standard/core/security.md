@@ -39,8 +39,9 @@ risk is, and a stale model hides it.
 - **Verify:** In the default configuration, every security feature is enabled
   (look at default values in code, configuration files and installers).
   Documentation names each setting that turns a security feature off.
-- **References:** CISA Secure by Design (Shifting the Balance of Cybersecurity
-  Risk, revised 2023-10-25)
+- **References:** CISA, Shifting the Balance of Cybersecurity Risk: Principles
+  and Approaches for Secure by Design Software (revised 2023-10-25), Secure by
+  Default
 
 Every security feature of the software MUST be on in the default
 configuration, and turning one off MUST be an explicit, documented setting.
@@ -89,8 +90,8 @@ commit does not make it safe; it has to be revoked.
   before merge (see the host's branch protection or ruleset settings, or the
   OpenSSF Scorecard Branch-Protection check as evidence; without access, record
   `unverified`). Each suppression has a recorded reason.
-- **References:** OpenSSF Concise Guide for Developing More Secure Software
-  (2023-06-14), item 9
+- **References:** OWASP Secrets Management Cheat Sheet (8 Detection); OpenSSF
+  Concise Guide for Developing More Secure Software (2023-06-14), item 9
 
 CI MUST run a secret scanner on every change, and a finding MUST block the
 merge until it is removed or suppressed with a reason. Suppressions follow the
@@ -124,7 +125,7 @@ artifact and cannot be rotated without a new build.
   accounts, database users), the granted permissions in configuration or
   infrastructure code match what the software calls. No credential has
   administrator or wildcard rights without a documented need.
-- **References:** NIST SP 800-53 Rev. 5 AC-6 (Least Privilege)
+- **References:** NIST SP 800-53 Rev. 5.2.0 AC-6 (Least Privilege)
 
 Each credential the software uses MUST grant only the permissions it needs.
 
@@ -258,8 +259,9 @@ attacked for years; a new scheme has not.
 - **Verify:** Source, configuration, images and installers contain no default
   or shared password, key or token. The first run makes the operator set unique
   credentials, or generates them per installation.
-- **References:** CISA Secure by Design (Shifting the Balance of Cybersecurity
-  Risk, revised 2023-10-25); CWE-1392; CWE-798
+- **References:** CISA, Shifting the Balance of Cybersecurity Risk (revised
+  2023-10-25), Secure by Default Tactics (eliminate default passwords); CISA
+  Secure by Design Pledge (default passwords goal); CWE-1392; CWE-798
 
 The software MUST NOT ship with a default or shared password, key or token; the
 first run makes the operator set unique credentials.
@@ -276,8 +278,9 @@ every installation that keeps them is open to attack.
   authentication, either in the software itself or through the identity
   provider it delegates to. Documentation or configuration shows how an account
   enables it.
-- **References:** CISA Secure by Design (Shifting the Balance of Cybersecurity
-  Risk, revised 2023-10-25); NIST SP 800-63B-4
+- **References:** CISA, Shifting the Balance of Cybersecurity Risk (revised
+  2023-10-25), Secure by Default Tactics (multifactor authentication); CISA
+  Secure by Design Pledge (multi-factor authentication goal); NIST SP 800-63B-4
 
 Every account that signs in interactively MUST be able to use multi-factor
 authentication, directly or through the identity provider.
@@ -294,7 +297,7 @@ authentication, directly or through the identity provider.
   caller-independent code. The default for anything without an explicit rule is
   denial. A test or review of an unprivileged caller shows access refused.
 - **References:** CWE-862; CWE-863; OWASP Authorization Cheat Sheet; NIST SP
-  800-53 Rev. 5 AC-3 (Access Enforcement)
+  800-53 Rev. 5.2.0 AC-3 (Access Enforcement)
 
 Every access to a protected resource or operation MUST be checked against the
 caller's permissions, in a component the caller does not control, and anything
@@ -473,7 +476,8 @@ a check that does not block the merge is easy to ignore.
   report.
 - **References:** ISO/IEC 29147:2018; CISA et al., Establishing a Coordinated
   Vulnerability Disclosure Program to Work With Security Researchers
-  (2026-07-15)
+  (2026-07-15); CISA Secure by Design Pledge (vulnerability disclosure policy
+  goal)
 
 The repository MUST have a security policy (such as `SECURITY.md`) that says how
 to report a vulnerability privately and what happens next.
@@ -505,7 +509,8 @@ project can be held to them.
   advisory (a repository security advisory, a database entry or a release note
   in a machine-readable format) names the affected and fixed versions and a CVE
   or other public ID. The advisory uses a format such as OSV or CSAF.
-- **References:** OSV schema; CSAF 2.0; CVE Program
+- **References:** OSV schema; CSAF 2.0; CVE Program; CISA Secure by Design
+  Pledge (vulnerability reporting transparency goal)
 
 Each fixed vulnerability in a released version MUST get a published advisory
 that names the affected and fixed versions and a CVE or other public ID.
