@@ -74,7 +74,7 @@ writes the remaining core areas after the user's review of this plan's output.
 - **OWASP ASVS is scoped to web UIs and network APIs at every level.**
   Conventions §7 gives "Level 2 is a MUST when `handles-authentication or
   handles-sensitive-data`" as an example. ASVS covers web applications and
-  web services, so SEC-018 and SEC-019 AND that condition with
+  web services, so SEC-019 and SEC-020 AND that condition with
   `has-web-ui or exposes-network-api`. Task 3 updates the conventions example
   to match.
 - **Signing, SBOM and provenance live in SUP.** Spec §6.1 also mentions signed
@@ -83,7 +83,7 @@ writes the remaining core areas after the user's review of this plan's output.
 - **CI is assumed.** The Testing area (Plan 3) will require tests in CI, so
   the CI rules here apply `always`.
 - **Each requirement lives in exactly one rule.** DEP-008 (fix or assess each
-  known vulnerability) and SEC-029 (publish VEX statements to users) are
+  known vulnerability) and SEC-030 (publish VEX statements to users) are
   different requirements. SUP-010 (review before merge) covers dependency
   update PRs too, so DEP-014 does not repeat it.
 
@@ -261,9 +261,11 @@ Verify text and the rationale, and confirms each reference.
 
 **Interfaces:**
 - Consumes: the facts from Task 2 and the existing facts in `standard/applicability.md`.
-- Produces: rules USS-SEC-001 to USS-SEC-030. USS-SEC-012 is the spec's and
+- Produces: rules USS-SEC-001 to USS-SEC-031. USS-SEC-012 is the spec's and
   conventions' parameterized-query example; keep its fields exactly as
-  conventions §3 shows them.
+  conventions §3 shows them. If the ASVS 5.0 source shows that "injection
+  prevention" is not the right section name, change the References of
+  SEC-012 and of the conventions §3 example together, so they stay identical.
 
 Header: `# Security`, `Prefix: SEC`, `Kind: area`. Default category Safety.
 
@@ -274,7 +276,7 @@ Header: `# Security`, `Prefix: SEC`, `Kind: area`. Default category Safety.
 | SEC-002 | Secure by default | MUST | always | Every security feature is on in the default configuration; turning one off is an explicit, documented setting. | CISA Secure by Design |
 | SEC-003 | Run without elevated privileges | MUST NOT | always | The software does not need administrator or root rights to run, except for documented operations that need them. | CWE-250 |
 | SEC-004 | Keep secrets out of the repository | MUST NOT | always | No secret is committed to the repository or its history. | CWE-798 |
-| SEC-005 | Scan for secrets in CI | MUST | always | CI runs a secret scanner on every change. | OpenSSF guidance on secret scanning (confirm source) |
+| SEC-005 | Scan for secrets in CI | MUST | always | CI runs a secret scanner on every change, and a finding blocks the merge until it is removed or suppressed with a reason. | OpenSSF guidance on secret scanning (confirm source) |
 | SEC-006 | Load secrets at run time | MUST | uses-secrets | Secrets come from the environment, a secret store or a protected file outside the build, never from code or built artifacts. | CWE-798; OWASP Secrets Management Cheat Sheet |
 | SEC-007 | Scope each credential | MUST | uses-secrets | Each credential the software uses grants only the permissions it needs. | NIST SP 800-53 AC-6 (least privilege) |
 | **## Input and output** | | | | | |
@@ -284,34 +286,35 @@ Header: `# Security`, `Prefix: SEC`, `Kind: area`. Default category Safety.
 | SEC-011 | Fail closed | MUST | uses-network or handles-authentication or uses-cryptography | When a security check cannot complete (an error, a timeout, a missing value), access is denied. | CWE-636 |
 | SEC-012 | Use parameterized queries | MUST | uses-database | (exactly as conventions §3: Verify, References `OWASP ASVS 5.0 (injection prevention); CWE-89`, body and rationale; confirm the ASVS section name) | as conventions §3 |
 | SEC-013 | Encode output for its context | MUST | always | Data written into another interpreter or format (HTML, SQL, shell, logs, terminals) is encoded or escaped for that context. | CWE-116; CWE-117 |
-| **## Authentication** | | | | | |
+| **## Authentication and authorization** | | | | | |
 | SEC-014 | Use standard authentication | MUST | handles-authentication | Authentication uses an established protocol (such as OIDC, SAML 2.0, WebAuthn or mutual TLS) through a maintained library, never a scheme of the project's own. | CWE-287; NIST SP 800-63B |
 | SEC-015 | No default credentials | MUST NOT | handles-authentication | The software never ships with a default or shared password, key or token; the first run makes the operator set unique credentials. | CISA Secure by Design; CWE-1392; CWE-798 |
 | SEC-016 | Offer multi-factor authentication | MUST | handles-authentication and has-ui | Every account that signs in interactively can use multi-factor authentication (directly, or through the identity provider). | CISA Secure by Design; NIST SP 800-63B |
+| SEC-017 | Check authorization on every access | MUST | handles-authentication | Every access to a protected resource or operation is checked against the caller's permissions, in a component the caller does not control, and anything not explicitly allowed is denied. | CWE-862; CWE-863; OWASP Authorization Cheat Sheet; NIST SP 800-53 AC-3 |
 | **## Web applications and APIs** | | | | | |
-| SEC-017 | Meet OWASP ASVS Level 1 | MUST | has-web-ui or exposes-network-api | The software meets every ASVS Level 1 requirement. | OWASP ASVS 5.0 |
-| SEC-018 | Meet OWASP ASVS Level 2 | MUST | (has-web-ui or exposes-network-api) and (handles-authentication or handles-sensitive-data) | The software meets every ASVS Level 2 requirement. | OWASP ASVS 5.0 |
-| SEC-019 | Meet OWASP ASVS Level 3 | SHOULD | (has-web-ui or exposes-network-api) and high-assurance | The software meets every ASVS Level 3 requirement. | OWASP ASVS 5.0 |
+| SEC-018 | Meet OWASP ASVS Level 1 | MUST | has-web-ui or exposes-network-api | The software meets every ASVS Level 1 requirement. | OWASP ASVS 5.0 |
+| SEC-019 | Meet OWASP ASVS Level 2 | MUST | (has-web-ui or exposes-network-api) and (handles-authentication or handles-sensitive-data) | The software meets every ASVS Level 2 requirement. | OWASP ASVS 5.0 |
+| SEC-020 | Meet OWASP ASVS Level 3 | SHOULD | (has-web-ui or exposes-network-api) and high-assurance | The software meets every ASVS Level 3 requirement. | OWASP ASVS 5.0 |
 | **## Transport and cryptography** | | | | | |
-| SEC-020 | Encrypt network traffic | MUST | uses-network | Traffic that leaves the host uses TLS 1.2 or later, or another protocol with equal protection such as SSH. | NIST SP 800-52; RFC 9325 (BCP 195); RFC 8446 |
-| SEC-021 | Keep certificate validation on | MUST NOT | uses-network | Certificate and host-name validation is never turned off, including in tests that reach real hosts. | CWE-295 |
-| SEC-022 | Use vetted cryptography | MUST NOT | uses-cryptography | The project never implements its own cryptographic primitives or protocols; it uses a maintained, widely reviewed library. | CWE-327 |
-| SEC-023 | No disallowed algorithms | MUST NOT | uses-cryptography | No algorithm or key size that NIST SP 800-131A disallows is used for a security purpose. | NIST SP 800-131A; CWE-327; CWE-328 |
-| SEC-024 | Use FIPS 140-3 validated modules | MUST | requires-fips | All cryptography runs in modules validated under FIPS 140-3, in their approved mode. | FIPS 140-3; NIST CMVP |
+| SEC-021 | Encrypt network traffic | MUST | uses-network | Traffic that leaves the host uses TLS 1.2 or later, or another protocol with equal protection such as SSH. | NIST SP 800-52; RFC 9325 (BCP 195); RFC 8446 |
+| SEC-022 | Keep certificate validation on | MUST NOT | uses-network | Certificate and host-name validation is never turned off, including in tests that reach real hosts. | CWE-295 |
+| SEC-023 | Use vetted cryptography | MUST NOT | uses-cryptography | The project never implements its own cryptographic primitives or protocols; it uses a maintained, widely reviewed library. | CWE-327 |
+| SEC-024 | No disallowed algorithms | MUST NOT | uses-cryptography | No algorithm or key size that NIST SP 800-131A disallows is used for a security purpose. | NIST SP 800-131A; CWE-327; CWE-328 |
+| SEC-025 | Use FIPS 140-3 validated modules | MUST | requires-fips | All cryptography runs in modules validated under FIPS 140-3, in their approved mode. | FIPS 140-3; NIST CMVP |
 | **## Security testing** | | | | | |
-| SEC-025 | Run static security analysis in CI | MUST | always | CI runs a static application security testing (SAST) tool on every change, and a finding blocks the merge until it is fixed or suppressed with a reason. | NIST SSDF (SP 800-218) PW.7, PW.8 |
+| SEC-026 | Run static security analysis in CI | MUST | always | CI runs a static application security testing (SAST) tool on every change, and a finding blocks the merge until it is fixed or suppressed with a reason. | NIST SSDF (SP 800-218) PW.7, PW.8 |
 | **## Vulnerability handling** | | | | | |
-| SEC-026 | Publish a vulnerability disclosure policy | MUST | always | The repository has a security policy (such as `SECURITY.md`) that says how to report a vulnerability privately and what happens next. | ISO/IEC 29147; CISA vulnerability disclosure guidance |
-| SEC-027 | State response times | SHOULD | always | The security policy states target times to acknowledge a report, assess it and release a fix. | ISO/IEC 30111 |
-| SEC-028 | Publish security advisories | MUST | distributed-as-package or ships-container-image | Each fixed vulnerability in a released version gets a published advisory that names the affected and fixed versions and a CVE or other public ID. | OSV schema; CSAF 2.0; CVE Program |
-| SEC-029 | Publish VEX statements | SHOULD | distributed-as-package or ships-container-image | When a known vulnerability in a dependency does not affect a release, the project publishes a VEX statement for it with that release. | CISA VEX minimum requirements; OpenVEX or CSAF VEX or CycloneDX VEX |
-| SEC-030 | Serve security.txt | SHOULD | operates-service and (has-web-ui or exposes-network-api) | Each web service the project operates serves `/.well-known/security.txt`. | RFC 9116 |
+| SEC-027 | Publish a vulnerability disclosure policy | MUST | always | The repository has a security policy (such as `SECURITY.md`) that says how to report a vulnerability privately and what happens next. | ISO/IEC 29147; CISA vulnerability disclosure guidance |
+| SEC-028 | State response times | SHOULD | always | The security policy states target times to acknowledge a report, assess it and release a fix. | ISO/IEC 30111 |
+| SEC-029 | Publish security advisories | MUST | distributed-as-package or ships-container-image | Each fixed vulnerability in a released version gets a published advisory that names the affected and fixed versions and a CVE or other public ID. | OSV schema; CSAF 2.0; CVE Program |
+| SEC-030 | Publish VEX statements | SHOULD | distributed-as-package or ships-container-image | When a known vulnerability in a dependency does not affect a release, the project publishes a VEX statement for it with that release. | CISA VEX minimum requirements; OpenVEX or CSAF VEX or CycloneDX VEX |
+| SEC-031 | Serve security.txt | SHOULD | operates-service and (has-web-ui or exposes-network-api) | Each web service the project operates serves `/.well-known/security.txt`. | RFC 9116 |
 
 (The `## …` rows are group headings, not rules.)
 
-SEC-025 sets a "no open findings" target, so its body says that suppressions
-follow the check-integrity rules (spec §6.5; the Code quality area in Plan 3
-will hold them). Do not cite IDs that do not exist yet.
+SEC-005 and SEC-026 set a "no open findings" target, so their bodies say that
+suppressions follow the check-integrity rules (spec §6.5; the Code quality
+area in Plan 3 will hold them). Do not cite IDs that do not exist yet.
 
 - [ ] **Step 1: Confirm the references**
 
@@ -325,8 +328,8 @@ Follow "How to write each area" and the table.
 
 - [ ] **Step 3: Update the ASVS example in `standard/conventions.md` §7**
 
-In "Choosing a level", change the ASVS sentence so it matches SEC-017 to
-SEC-019: Level 1 is a MUST when `has-web-ui or exposes-network-api`; Level 2
+In "Choosing a level", change the ASVS sentence so it matches SEC-018 to
+SEC-020: Level 1 is a MUST when `has-web-ui or exposes-network-api`; Level 2
 is a MUST when, in addition, `handles-authentication or
 handles-sensitive-data`; Level 3 is a SHOULD when, in addition,
 `high-assurance`.
@@ -334,18 +337,18 @@ handles-sensitive-data`; Level 3 is a SHOULD when, in addition,
 - [ ] **Step 4: Lint**
 
 Run: `cargo run --locked -p uss -- lint`
-Expected: `uss lint: ok (30 rules, 1 files)`.
+Expected: `uss lint: ok (31 rules, 1 files)`.
 
 - [ ] **Step 5: Compare the export with the table**
 
 Run: `cargo run --locked -p uss -- export --json`
-Expected: 30 rules with prefix SEC whose `id`, `title`, `level`,
+Expected: 31 rules with prefix SEC whose `id`, `title`, `level`,
 `appliesWhen` and `category` equal the table (category `Safety` for all).
 
 - [ ] **Step 6: Run all checks**
 
 Run: `cargo xtask check`
-Expected: exit 0; the lint step prints `uss lint: ok (30 rules, 1 files)`.
+Expected: exit 0; the lint step prints `uss lint: ok (31 rules, 1 files)`.
 
 - [ ] **Step 7: Commit**
 
@@ -405,13 +408,13 @@ maintainer cannot meet it and records a Standard Deviation.
 - [ ] **Step 3: Lint**
 
 Run: `cargo run --locked -p uss -- lint`
-Expected: `uss lint: ok (47 rules, 2 files)`.
+Expected: `uss lint: ok (48 rules, 2 files)`.
 
 - [ ] **Step 4: Compare the export with the table** (17 SUP rules, all `Safety`)
 - [ ] **Step 5: Run all checks**
 
 Run: `cargo xtask check`
-Expected: exit 0; `uss lint: ok (47 rules, 2 files)`.
+Expected: exit 0; `uss lint: ok (48 rules, 2 files)`.
 
 - [ ] **Step 6: Commit**
 
@@ -483,7 +486,7 @@ per the check-integrity rules (spec §6.5).
 - [ ] **Step 3: Lint**
 
 Run: `cargo run --locked -p uss -- lint`
-Expected: `uss lint: ok (64 rules, 3 files)`.
+Expected: `uss lint: ok (65 rules, 3 files)`.
 
 - [ ] **Step 4: Compare the export with the table**
 
@@ -494,7 +497,7 @@ rows and `has-dependencies and <condition>` for the others; DEP-013 is
 - [ ] **Step 5: Run all checks**
 
 Run: `cargo xtask check`
-Expected: exit 0; `uss lint: ok (64 rules, 3 files)`.
+Expected: exit 0; `uss lint: ok (65 rules, 3 files)`.
 
 - [ ] **Step 6: Commit**
 
@@ -515,7 +518,7 @@ The template record answers every fact `false`.
 Run: `cargo run --locked -p uss -- applicable templates/record.yaml`
 Expected: exactly these 23 rules, and no others:
 SEC-002, SEC-003, SEC-004, SEC-005, SEC-008, SEC-009, SEC-010, SEC-013,
-SEC-025, SEC-026, SEC-027, SUP-001, SUP-002, SUP-003, SUP-004, SUP-006,
+SEC-026, SEC-027, SEC-028, SUP-001, SUP-002, SUP-003, SUP-004, SUP-006,
 SUP-007, SUP-008, SUP-009, SUP-010, SUP-011, SUP-012, SUP-013.
 
 Run: `cargo run --locked -p uss -- check templates/record.yaml`
@@ -525,12 +528,12 @@ Expected: `uss check: ok` (no applicable MAY rules, so no decisions needed).
 
 Copy the template to a scratch directory, set `has-cli`, `uses-network` and
 `has-dependencies` to `true`, and run `uss applicable` on it.
-Expected: the 23 rules above, plus SEC-001, SEC-011, SEC-020, SEC-021, and
+Expected: the 23 rules above, plus SEC-001, SEC-011, SEC-021, SEC-022, and
 DEP-001 to DEP-008 and DEP-011 to DEP-015 (40 rules in all).
 
 - [ ] **Step 3: Hand over for the user's review, and stop**
 
-Give the user: the three area files; a table of all 64 rules (ID, title,
+Give the user: the three area files; a table of all 65 rules (ID, title,
 level, applies when, category); the two counts above; and the calibration
 questions below. Do not start Plan 3. The user's answers drive any changes,
 which are made before Plan 3 is written.
@@ -538,9 +541,9 @@ which are made before Plan 3 is written.
 Calibration questions for the user:
 
 1. **Levels on the edge:** SEC-001 threat model (MUST), SEC-016 MFA (MUST),
-   SEC-028 advisories (MUST), SUP-010 review before merge (SHOULD, because a
+   SEC-029 advisories (MUST), SUP-010 review before merge (SHOULD, because a
    solo maintainer cannot meet it), DEP-014 automated updates (SHOULD),
-   SEC-030 security.txt (SHOULD).
+   SEC-031 security.txt (SHOULD).
 2. **Applicability:** is 23 rules for a project with every fact `false` the
    right floor, given that most of them are CI and repository hygiene?
 3. **Vendoring:** an asked fact plus a MUST (DEP-010), not a scored MAY (see
