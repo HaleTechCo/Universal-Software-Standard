@@ -90,9 +90,10 @@ mod tests {
 
     /// The light floor of spec §6.4: the shipped record template, whose
     /// facts are all false, is the smallest project. The spec's budget is at
-    /// most a quarter of the core rules by the 0.1.0 release. This test pins
-    /// today's counts, so every change to them is a deliberate edit that a
-    /// review sees and a plan handover reports.
+    /// most a quarter of the core rules by the 0.1.0 release. The first
+    /// assertion pins today's counts, so every change to them is a deliberate
+    /// edit that a review sees and a plan handover reports. The second holds
+    /// the budget.
     #[test]
     fn all_false_record_floor() {
         let c = load(&Embedded).unwrap();
@@ -110,5 +111,9 @@ mod tests {
             .filter(|rule| is_core(rule))
             .count();
         assert_eq!((floor, core), (59, 317));
+        assert!(
+            floor * 4 <= core,
+            "{floor} of {core} core rules is over the spec §6.4 budget"
+        );
     }
 }
