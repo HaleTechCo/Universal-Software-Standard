@@ -25,13 +25,13 @@ here build on it.
   feature, add-on and support plan that is sold) from the pricing page, the
   order forms and the licence files. For each, find a published list price
   (an amount, or a formula with published rates) and a published list of what
-  it includes, both readable with no sign-in and no contact with sales. An
-  offering priced only as "contact sales", or with no list of its contents,
-  fails.
+  it includes, both public: readable by anyone on the project's website or in
+  its documentation, with no sign-in and no contact with sales. An offering
+  priced only as "contact sales", or with no list of its contents, fails.
 - **References:** none
 
 Each licence model, tier and offering SHOULD have a published list price and
-a published list of what it includes.
+a published list of what it includes, public to anyone.
 
 **Rationale:** A buyer who cannot work out the full cost before talking to
 sales cannot compare products or plan a budget. Published prices also make
@@ -46,14 +46,15 @@ the other rules of this area checkable.
   (or, when it offers none for review, its approved agreement templates and
   its discount rules). For each, compare each term with the published terms
   for the same thing (price, what is included, notice, term, grace period).
-  Then check the agreement against the rules of this area (USS-COM-001 to
-  USS-COM-017). A term worse than the published one, or a term that sets
-  aside another rule of this area, fails. Record `unverified` when the
-  auditor can read neither the agreements nor the templates.
+  A term worse than the published one fails. Then check the agreement
+  against the other rules of this area: a term that removes or contradicts
+  what another rule of this area asks for, such as dropping the cap of
+  USS-COM-005 or the grace period of USS-COM-013, fails. Record `unverified`
+  when the auditor can read neither the agreements nor the templates.
 - **References:** none
 
 A negotiated agreement SHOULD NOT have a term worse than the published terms
-for the same thing, and sets aside no other rule of this area.
+for the same thing, nor a term that sets aside another rule of this area.
 
 **Rationale:** Volume and corporate agreements are welcome on top of the
 published prices. They stop being fair when they are a way around the rules
@@ -140,9 +141,11 @@ one that fits its market.
 - **Verify:** List the price increases since the last audit, or in the last 12
   months when there is none. For each, find the date from which it applies to
   existing customers, and the end date of the term that those customers were
-  in. An increase that applies to an existing customer before the end of their
-  current term fails. An increase that applies only to new sales, or from a
-  renewal, passes.
+  in: the term stated in their agreement, or for a subscription with no
+  stated term, its current billing period. An increase that applies to an
+  existing customer before the end of that term fails. An increase that
+  applies only to new sales, or from a renewal, passes. Record `unverified`
+  when the auditor cannot read the terms or the dates of the agreements.
 - **References:** none
 
 A price SHOULD NOT be increased during the term of an agreement.
@@ -164,8 +167,8 @@ middle makes the agreement a one-sided option.
 Each price increase SHOULD be announced at least 90 days before it applies.
 
 **Rationale:** Ninety days is a figure that USS adds, enough for a customer to
-plan a budget or to move to another product. The announcement itself is
-also a change to be announced in the changelog (USS-TRU-005).
+plan a budget or to move to another product. The price increase is also a
+change to pricing that the changelog announces (USS-TRU-005).
 
 ## Licence terms
 

@@ -53,9 +53,12 @@ of free and open software fear most.
   the latest with each earlier one. A later licence is more restrictive when
   it gives users fewer of the permissions that the earlier one gives (to use,
   copy, modify, distribute or sublicense, or to use commercially), or when it
-  adds a condition, a limit on the field of use, or a charge. A later release
-  under such a licence fails. A later release under the same licence, or under
-  one that gives the same permissions with no added condition, passes.
+  adds a condition on use, modification or distribution that the earlier
+  licence lacks and that limits who may use the software or for what (such as
+  a limit on the field of use, or a charge for use). A later release under
+  such a licence fails. A later release under the same licence, or under one
+  that gives the same permissions and adds only notice, attribution or
+  patent-grant terms, passes.
 - **References:** none
 
 A later version SHOULD NOT be released under a licence that is more
@@ -63,8 +66,10 @@ restrictive than the licence of the earlier versions.
 
 **Rationale:** Users and contributors accepted the terms in force when they
 adopted or contributed to the software. Tightening them later takes back what
-they were given. The declaration of the licence (USS-LIC-001) and the use of an
-OSI-approved one (USS-LIC-002) are held by the Licensing area.
+they were given. A move such as MIT to Apache-2.0 or to BSD-3-Clause adds
+notice, patent or non-endorsement terms but takes nothing back, so it passes.
+The declaration of the licence (USS-LIC-001) and the use of an OSI-approved
+one (USS-LIC-002) are held by the Licensing area.
 
 ## Security essentials
 
@@ -105,13 +110,13 @@ offers these at all is for the Security and Audit logging areas.
 - **Category:** Fairness
 - **Verify:** List each way in which a user can export their own data in an
   open and documented format (a screen, a command, an API call, a documented
-  file copy). For each, search the code and the configuration for a check of
+  file copy). When the software offers none, no such path exists and the rule
+  is met. For each, search the code and the configuration for a check of
   the state of the subscription, the licence or the payment on the path of
   the export: such a check fails. Then run the export with a test account
   whose subscription has lapsed or been cancelled (or whose licence has
   expired): it works as it does for a paying account, and its output is as
-  complete. An export that is refused, cut down or delayed by that state
-  fails.
+  complete. An export that is refused or cut down by that state fails.
 - **References:** none
 
 Users' export of their own data, in an open and documented format, MUST NOT
