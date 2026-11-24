@@ -78,12 +78,12 @@ wrong reason is visible.
 - **Level:** MUST
 - **Applies when:** has-memory-unsafe-code
 - **Category:** Safety
-- **Verify:** The CI configuration runs the tests with a memory-error
-  sanitizer and an undefined-behaviour sanitizer that the toolchain offers
-  (such as AddressSanitizer and UndefinedBehaviorSanitizer for C and C++, or
-  Miri for Rust), on each pull request or on a schedule of at most a week,
-  and a finding fails the job. Where the toolchain offers none, the job file
-  says so and the auditor accepts that.
+- **Verify:** The CI configuration runs the tests with a memory-error sanitizer
+  and an undefined-behaviour sanitizer that the toolchain offers (such as
+  AddressSanitizer and UndefinedBehaviorSanitizer for C and C++, or Miri for
+  Rust), on each pull request or on a schedule of at most a week, and a finding
+  fails the job. A sanitizer of a kind that the toolchain does not offer is not
+  needed; where it offers neither, there is nothing to run and the rule is met.
 - **References:** Clang AddressSanitizer documentation (read 2026-11-24);
   Miri README (read 2026-11-24); CWE-119; CWE-787; CWE-416
 
@@ -100,12 +100,11 @@ where it happens.
 - **Level:** SHOULD
 - **Applies when:** has-memory-unsafe-code
 - **Category:** Safety
-- **Verify:** A published document (in the repository, the documentation or
-  the project's website) names each memory-unsafe component of the project,
-  and for each one the plan and the dates to move it to a memory-safe
-  language or to isolate it. A roadmap that says only "we will adopt Rust" or
-  that has no dates fails. A project that sets an end-of-support date for
-  the component records that date and passes.
+- **Verify:** A published document (in the repository, the documentation or the
+  project's website) names each memory-unsafe component of the project, and for
+  each one the plan and the dates to move it to a memory-safe language or to
+  isolate it. A roadmap that says only "we will adopt Rust" or that has no dates
+  fails.
 - **References:** CISA and partners, The Case for Memory Safe Roadmaps
   (2023-12-06); CISA and FBI, Product Security Bad Practices (Version 2.0,
   2025-01-17); CWE-119; CWE-787; CWE-416
@@ -125,8 +124,9 @@ reviewers see that the risk is being reduced.
 - **Verify:** List the components added since the last audit, or the last 12
   months when there is none (a new directory, package, crate or service with its
   own build). Each one is written in a memory-safe language. A component that is
-  not has a written reason (such as a platform interface that has no memory-safe
-  binding) in the repository.
+  not fails: a reason written in the repository does not make it pass, and a
+  project with a reason (such as a platform interface that has no memory-safe
+  binding) records a Standard Deviation instead.
 - **References:** CISA and FBI, Product Security Bad Practices (Version 2.0,
   2025-01-17); CWE-119; CWE-787; CWE-416
 
@@ -143,8 +143,8 @@ the project has to carry. New code in a memory-safe language does not.
 - **Verify:** Where the toolchain offers a data-race detector (such as Go's
   `-race` or ThreadSanitizer), the CI configuration runs the tests of the
   concurrent code with it, on each pull request or on a schedule of at most a
-  week, and a finding fails the job. Where the toolchain offers none, the job
-  file says so and the auditor accepts that.
+  week, and a finding fails the job. Where the toolchain offers none, there is
+  nothing to run and the rule is met.
 - **References:** Clang ThreadSanitizer documentation (read 2026-11-24);
   CWE-362
 

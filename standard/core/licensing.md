@@ -18,15 +18,17 @@ holds how releases reach users.
 - **Category:** Compatibility
 - **Verify:** The repository root has a licence file (such as `LICENSE` or
   `COPYING`) that holds the licence text. Each package manifest in the
-  repository (such as `Cargo.toml`, `package.json` or `pyproject.toml`) has
-  a licence field whose value is a valid SPDX licence expression, or its
-  language's equivalent of one. A manifest that names a licence file instead
-  of an expression, or an expression that is not valid, fails.
+  repository whose format has a licence field (such as `Cargo.toml`,
+  `package.json` or `pyproject.toml`) has that field, and its value is a valid
+  SPDX licence expression. A manifest that names a licence file instead of an
+  expression, or an expression that is not valid, fails. A manifest format with
+  no licence field (such as `go.mod`) is not judged.
 - **References:** SPDX Specification 3.0.1, Annex B (SPDX license
   expressions); SPDX License List 3.29.0
 
-The repository root MUST have a licence file, and each package manifest MUST
-declare the licence as an SPDX licence expression.
+The repository root MUST have a licence file, and each package manifest whose
+format has a licence field MUST declare the licence there as an SPDX licence
+expression.
 
 **Rationale:** Without a licence, the law gives others no right to use the
 software, and a licence that tools can read lets users and their scanners

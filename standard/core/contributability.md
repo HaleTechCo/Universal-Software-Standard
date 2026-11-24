@@ -59,11 +59,12 @@ that changes the system is a risk that a contributor must trust.
 - **Level:** MUST
 - **Applies when:** always
 - **Category:** Contributability
-- **Verify:** A documented command runs locally the same checks that CI
-  requires for a change: each job that the branch protection or the merge
-  rules of the project name as required, or each CI job when there are none.
-  The CI configuration calls that command, or the two lists of checks are the
-  same. A required CI job that the command does not run fails.
+- **Verify:** A documented command runs locally the same checks that CI requires
+  for a change: each job that the branch protection or the merge rules of the
+  project name as required, or each CI job when there are none. The CI
+  configuration calls that command, or the two lists of checks are the same. A
+  required CI job that the command does not run fails. Without access to the
+  branch protection or merge settings, the auditor records `unverified`.
 - **References:** none
 
 One documented command MUST run locally the same checks that CI requires.
@@ -78,9 +79,9 @@ local checks from drifting apart.
 - **Applies when:** always
 - **Category:** Contributability
 - **Verify:** The repository provides pre-commit hooks (such as a
-  `.pre-commit-config.yaml` file for pre-commit, or hook scripts that the
-  setup command installs). They run the fast checks that CI runs, such as
-  formatting and lint. The setup command (USS-CTB-001) installs them.
+  `.pre-commit-config.yaml` file for pre-commit, or hook scripts in the
+  repository). They run the fast checks that CI runs, such as formatting and
+  lint.
 - **References:** none
 
 The repository SHOULD provide pre-commit hooks that run the fast checks that

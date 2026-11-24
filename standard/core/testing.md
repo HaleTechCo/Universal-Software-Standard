@@ -224,13 +224,12 @@ the largest number.
 - **Level:** MUST
 - **Applies when:** parses-untrusted-input and has-memory-unsafe-code
 - **Category:** Reliability
-- **Verify:** List each parser of untrusted input in the code (a file format,
-  a protocol, a request body). Each one has a fuzz target (such as for
-  libFuzzer, AFL++ or cargo-fuzz) that runs with sanitizers on (USS-SAF-004),
-  and CI runs it (for a fixed time on each change, or on a schedule), or a
-  continuous fuzzing service such as OSS-Fuzz runs it. A recent run exists.
-  Crashes that it found are fixed or tracked as issues. A parser with no
-  fuzz target fails.
+- **Verify:** List each parser of untrusted input in the code (a file format, a
+  protocol, a request body). Each one has a fuzz target (such as for libFuzzer,
+  AFL++ or cargo-fuzz) that runs with sanitizers on (USS-SAF-004), and CI runs
+  it (for a fixed time on each change, or on a schedule), or a continuous
+  fuzzing service such as OSS-Fuzz runs it. A recent run exists. A parser with
+  no fuzz target fails.
 - **References:** NIST SP 800-218 (SSDF 1.1) PW.8.2; CWE-20; OSS-Fuzz (read
   2026-11-24)
 

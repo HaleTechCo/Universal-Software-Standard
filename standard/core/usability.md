@@ -75,14 +75,16 @@ moment's delay.
 - **Verify:** Take the first task that the quick-start section of the user
   documentation describes (or the main purpose that the README states, when
   there is no quick start). In a clean environment with no configuration file,
-  no project-specific environment variable and no flags, install the software
-  as the documentation says and run that task. It starts and completes the
-  task. A step that stops for a missing setting (a path, an address, a
-  credential) fails.
+  no project-specific environment variable and no flags, install the software as
+  the documentation says and run that task. It starts and completes the task. A
+  first-run step that asks for the software's own first credentials, as
+  USS-SEC-016 accepts, passes. A step that stops for any other missing setting
+  (a path, an address, a credential for another service) fails.
 - **References:** none
 
 The software SHOULD start and do its main job with default settings and no
-configuration file.
+configuration file, apart from setting its own first credentials on first run
+(USS-SEC-016).
 
 **Rationale:** Each setting that is required before the first run is a place
 where a new user stops. Sensible defaults let people start at once and adjust
@@ -124,20 +126,27 @@ is about honesty toward users.
 - **Category:** Accessibility & Usability
 - **Verify:** Run the software on each platform that it supports, use it, and
   list the files that it creates for configuration, data, cache and state
-  (compare the user's home and profile folders before and after). Each is in
-  the location that the platform's conventions name. On Linux, that is the
-  directory of the matching XDG variable or its default: `XDG_CONFIG_HOME`
-  (`~/.config`), `XDG_DATA_HOME` (`~/.local/share`), `XDG_CACHE_HOME`
-  (`~/.cache`) and `XDG_STATE_HOME` (`~/.local/state`), and the software
-  honours the variable when it is set. On Windows, it is a Known Folder (such
-  as the roaming or local application data folder) that the software gets from
-  the system and does not build by hand. On macOS, it is the matching folder
-  under `~/Library` (such as `Application Support`, `Caches` or
-  `Preferences`). A file that the software creates directly in the home folder
-  or in another place that the conventions do not name fails.
+  (compare the user's home and profile folders before and after). Each is in the
+  location that the platform's conventions name. On Linux, that is the directory
+  of the matching XDG variable or its default: `XDG_CONFIG_HOME` (`~/.config`),
+  `XDG_DATA_HOME` (`~/.local/share`), `XDG_CACHE_HOME` (`~/.cache`) and
+  `XDG_STATE_HOME` (`~/.local/state`), and the software honours the variable
+  when it is set. On Windows, it is a Known Folder (such as the roaming or local
+  application data folder) that the software gets from the system and does not
+  build by hand. On macOS, it is the matching folder under `~/Library` (such as
+  `Application Support`, `Caches` or `Preferences`). Software that runs as a
+  system service (started by the platform's service manager, not by a user) uses
+  the system locations instead, and the auditor also compares those: on Linux,
+  the directories of the Filesystem Hierarchy Standard (such as `/etc` for
+  configuration, `/var/lib` for data and `/var/cache` for cache); on Windows,
+  the program data Known Folder; on macOS, the matching folder under `/Library`.
+  A file that the software creates directly in the home folder or in another
+  place that the conventions do not name fails.
 - **References:** XDG Base Directory Specification 0.8 (8 May 2021); Windows
   Known Folders (Microsoft Learn, read 2026-11-24); Apple, File System
-  Programming Guide, File System Basics (updated 2018-04-09)
+  Programming Guide, File System Basics (updated 2018-04-09); Filesystem
+  Hierarchy Standard 3.0 (freedesktop.org, read 2026-11-24), sections 3.7, 5.5
+  and 5.8
 
 Configuration, data, cache and state files SHOULD go in the locations that the
 platform's conventions name (such as the XDG Base Directory Specification on

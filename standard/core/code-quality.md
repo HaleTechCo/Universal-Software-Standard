@@ -70,11 +70,10 @@ may not. If warnings do not fail the build, new ones hide among the old.
 - **Level:** MUST NOT
 - **Applies when:** always
 - **Category:** Maintainability
-- **Verify:** The project's linter or compiler is set to report unreachable
-  code and unused functions, types, variables and imports, and its report is
-  empty. A search of the files changed since the last audit (or in the last
-  12 months when there is none) finds no commented-out code: no comment whose
-  text parses as a statement or declaration of the language.
+- **Verify:** The project's linter or compiler is set to report unreachable code
+  and unused functions, types, variables and imports, and its report is empty. A
+  search of all of the project's own code finds no commented-out code: no
+  comment whose text parses as a statement or declaration of the language.
 - **References:** CWE-561
 
 The code MUST NOT contain unreachable code, unused functions, types or
@@ -113,18 +112,23 @@ cause.
 - **Level:** MUST
 - **Applies when:** always
 - **Category:** Maintainability
-- **Verify:** For each check that the project runs, find its configuration.
-  The baseline is, in this order: the one that the check's USS vendor profile
+- **Verify:** For each check that the project runs, find its configuration. The
+  baseline is, in this order: the one that the check's USS vendor profile
   defines; with no profile, the rule set that the USS module of the project's
   language names; with neither, the tool's own recommended set. The
-  configuration enables every rule of the baseline, at the baseline's
-  severity or higher. A rule of the baseline that the configuration turns
-  off fails here and also needs a reason under USS-QLT-007.
+  configuration enables every rule of the baseline, at the baseline's severity
+  or higher. A rule of the baseline that the configuration turns off for the
+  whole project is not judged here: USS-QLT-007 judges its reason, and
+  USS-QLT-008 applies when it is in a security group. A baseline rule that the
+  configuration leaves out without turning it off, or sets to a lower severity,
+  fails.
 - **References:** none
 
-Each check's configuration MUST enable at least the baseline that its USS
-vendor profile defines; with no profile, the rule set that the language's USS
-module names; with neither, the tool's own recommended set.
+Each check's configuration MUST enable at least the baseline that its USS vendor
+profile defines; with no profile, the rule set that the language's USS module
+names; with neither, the tool's own recommended set. A rule of the baseline
+turned off for the whole project is judged by USS-QLT-007 and USS-QLT-008
+instead.
 
 **Rationale:** A project can reach zero violations by choosing a check with no
 rules. A baseline fixes the minimum that "zero violations" means.
@@ -135,10 +139,10 @@ rules. A baseline fixes the minimum that "zero violations" means.
 - **Applies when:** always
 - **Category:** Maintainability
 - **Verify:** In each configuration file of a check, each rule that is turned
-  off or lowered for the whole project (an ignore list, a disable list, a
-  severity of `off`) has a comment or an adjacent field next to it that says
-  why. A reason such as "noisy" with no cause fails; one that names the
-  cause (for example, the conflict with the formatter) passes.
+  off for the whole project (an ignore list, a disable list, a severity of
+  `off`) has a comment or an adjacent field next to it that says why. A reason
+  such as "noisy" with no cause fails; one that names the cause (for example,
+  the conflict with the formatter) passes.
 - **References:** none
 
 Each rule of a check that is turned off for the whole project MUST have its

@@ -121,9 +121,11 @@ chart lets users set their own values without editing manifests.
 - **Verify:** Adoption means that the release has an extension for an IDE or
   editor. It is adopted when the repository holds the extension, with the
   manifest that the IDE's extension format needs, and the release publishes it
-  (to the IDE's marketplace or as a file in the release) for at least one
-  widely used IDE or editor. Install it from that source into the IDE: it
-  loads without error and offers the functions that the documentation names.
+  (to the IDE's marketplace or as a file in the release) for at least one widely
+  used IDE or editor. Install it from that source into the IDE: it loads without
+  error and offers the functions that the documentation names. An extension that
+  the release does not publish, or that does not load, fails once the MAY is
+  adopted.
 - **References:** none
 
 The software MAY be released as an extension for at least one widely used IDE
@@ -156,12 +158,13 @@ functions, so a server lets agents use the software without custom glue.
 - **Level:** MAY
 - **Applies when:** has-cli or exposes-network-api
 - **Category:** Features
-- **Verify:** Adoption means that the release has an agent skill or plugin.
-  It is adopted when the repository holds it, in the format of at least one
-  coding agent whose documentation the project names, and the release or the
-  documentation says how to install it. Open it: it says when an agent is to
-  use the software and gives the commands or calls to use, and the agent that
-  it targets loads it without error.
+- **Verify:** Adoption means that the release has an agent skill or plugin. It
+  is adopted when the repository holds it, in the format of at least one coding
+  agent whose documentation the project names, and the release or the
+  documentation says how to install it. Open it: it says when an agent is to use
+  the software and gives the commands or calls to use, and the agent that it
+  targets loads it without error. A skill that gives no commands or calls, or
+  that its agent does not load, fails once the MAY is adopted.
 - **References:** Claude Code documentation, Extend Claude with skills (read
   2026-11-24), as an example of an agent-skill format
 

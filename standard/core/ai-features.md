@@ -108,22 +108,23 @@ applies to each credential; this rule adds the ceiling of the user's rights.
 - **Applies when:** has-ai-tool-use
 - **Category:** Safety
 - **Verify:** List the actions that a model can start, and mark each one that
-  deletes data, spends money, sends a message (to a person or to another
-  system) or cannot be undone. For each marked action, read the code: it does
-  not run until a person has confirmed it, and the confirmation names the
-  action and its target. In a test instance, make the model start each marked
-  action: it waits for a person, and does not run if the person declines or
-  does not answer. An MCP server meets this in one of two ways. Either it
-  relies on the confirmation that the MCP client asks of the person before a
-  tool call (the documentation says so, and says that clients confirm
-  tool calls, as the specification expects), or its tool sends an elicitation
-  request that the person has to accept before the action runs (MCP
-  Specification 2026-07-28, Elicitation). For the first route, the
-  documentation also names the confirming clients that the server supports (or
-  says that it serves only clients that confirm). Run the check with a
-  confirming client where the person declines, or with the elicitation
-  declined: the action does not run. An action that runs with no person's
-  approval fails.
+  deletes data, spends money, sends a message (to a person or to another system)
+  or cannot be undone. For each marked action, read the code: it does not run
+  until a person has confirmed it, and the confirmation names the action and its
+  target. In a test instance, make the model start each marked action: it waits
+  for a person, and does not run if the person declines or does not answer. An
+  MCP server meets this in one of two ways. Either it relies on the confirmation
+  that the MCP client asks of the person before a tool call (the documentation
+  says so, and says that clients confirm tool calls, as the specification
+  expects), or its tool sends an elicitation request that the person has to
+  accept before the action runs (MCP Specification 2026-07-28, Elicitation). For
+  the first route, the documentation also names the confirming clients that the
+  server supports (or says that it serves only clients that confirm). Run the
+  check with a confirming client where the person declines, or with the
+  elicitation declined: the action does not run. An action that runs with no
+  person's approval fails, and so does a server that sends no elicitation of its
+  own and whose documentation names no confirming client and does not say that
+  it serves only clients that confirm.
 - **References:** OWASP Top 10 for LLM Applications 2025, LLM06; MCP
   Specification 2026-07-28, Server, Tools (User Interaction Model) and Client,
   Elicitation
@@ -191,19 +192,24 @@ large.
 - **Level:** MUST
 - **Applies when:** uses-ai-models
 - **Category:** Safety
-- **Verify:** Find in the code or the configuration each of three limits: a
-  cap on the tokens of each request (input and output), a cap on the requests
-  per user in a period, and a cap on the total spend in a period (in the
-  software or in the provider's account settings). Each has a value. In a test
-  instance, send a request over the token cap, then requests over the rate
-  cap: each is refused or cut short. Find the alert for a reached limit (such
-  as a notification or a metric with an alert rule), and trigger it in the test
-  instance. A limit that is missing, or a limit with no alert, fails. Account
-  settings that the auditor cannot open are `unverified`.
+- **Verify:** Find in the code or the configuration each of three limits: a cap
+  on the tokens of each request (input and output), a cap on the requests per
+  user in a period, and a cap on the total spend in a period (in the software or
+  in the provider's account settings). A model that does not work in tokens
+  (such as an image classifier) needs no token cap, and a model whose calls cost
+  nothing (such as one that runs on the project's or the user's own hardware)
+  needs no spend cap; the cap on requests applies to every model. Each limit
+  that applies has a value. In a test instance, send a request over the token
+  cap, then requests over the rate cap: each is refused or cut short. Find the
+  alert for a reached limit (such as a notification or a metric with an alert
+  rule), and trigger it in the test instance. A limit that applies and is
+  missing, or a limit with no alert, fails. Account settings that the auditor
+  cannot open are `unverified`.
 - **References:** OWASP Top 10 for LLM Applications 2025, LLM10
 
-The software MUST limit the tokens per request, the requests per user and the
-total spend, and MUST alert when a limit is reached.
+The software MUST limit the tokens per request and the total spend, where the
+model has tokens or a cost per call, and the requests per user, and MUST alert
+when a limit is reached.
 
 **Rationale:** Model calls cost money for each token, and an attacker, a loop
 or a popular day can use a month's budget in an hour. The limits keep a

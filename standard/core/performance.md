@@ -58,18 +58,22 @@ build is the one signal that every contributor sees before the slowdown ships.
 - **Level:** SHOULD
 - **Applies when:** has-web-ui
 - **Category:** Efficiency
-- **Verify:** List the pages that the project's own deployment or demo
-  serves (from the router or the sitemap; the 20 most visited when there are
-  more). For each, take field data at the 75th percentile of page loads (such
-  as the Chrome UX Report, or the project's own real-user monitoring):
-  Largest Contentful Paint is 2.5 seconds or less, Interaction to Next Paint
-  is 200 milliseconds or less, and Cumulative Layout Shift is 0.1 or less. A
-  page above one threshold fails. Without field data (a project that has no
-  deployment with traffic), the auditor records `unverified`.
+- **Verify:** List the pages that the UI serves (from the router or the sitemap;
+  when there are more than 20, the 20 most visited, or the first 20 of the
+  sitemap when there are no visit counts). For each, take field data at the 75th
+  percentile of page loads (such as the Chrome UX Report, or the project's own
+  real-user monitoring): Largest Contentful Paint is 2.5 seconds or less,
+  Interaction to Next Paint is 200 milliseconds or less, and Cumulative Layout
+  Shift is 0.1 or less. Where there is no field data (such as when the project
+  does not operate the UI), take lab measurements of the same three metrics
+  instead: load each page in a test instance with a scripted browser that also
+  performs an interaction, at least five times, and take the 75th percentile of
+  the runs. The same thresholds apply. A page above one threshold fails.
 - **References:** web.dev, Web Vitals (read 2026-11-24)
 
 Web pages SHOULD meet the "good" thresholds of the Core Web Vitals at the 75th
-percentile.
+percentile, in field data or, where there is none, in lab measurements of the
+same metrics.
 
 **Rationale:** The three measures stand for what users notice: how soon the
 content shows, how soon the page answers an input, and whether it stays still
