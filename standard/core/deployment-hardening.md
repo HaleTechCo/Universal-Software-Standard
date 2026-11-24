@@ -63,21 +63,30 @@ one.
 - **Level:** SHOULD
 - **Applies when:** always
 - **Category:** Safety
-- **Verify:** Each Compose file, `docker run` instruction and Kubernetes
-  workload that the project publishes sets the root filesystem read-only
-  (`read_only: true`, `--read-only` or `readOnlyRootFilesystem: true`). Run
-  the software that way for its documented tasks: it works, and each path
-  that it writes to (found from the errors when a write fails) is a declared
-  volume, tmpfs or mount in that file. A container that runs with a writable
-  root filesystem, or that writes to a path that is not declared, fails.
-- **References:** none
+- **Verify:** Render each chart with its default values and take the
+  Kubernetes manifests that the project publishes. Each container of each
+  workload sets `securityContext.readOnlyRootFilesystem: true`. For each
+  Compose file and `docker run` instruction, the read-only root filesystem
+  itself is checked under USS-HRD-002 and is not checked again here. Then run
+  the software with a read-only root filesystem (set in the Compose file or
+  the instruction, or by the manifest) for its documented tasks: it works, and
+  each path that it writes to (found from the errors when a write fails) is a
+  declared volume, tmpfs or mount in that file, instruction or manifest. A
+  Kubernetes container with a writable root filesystem, or a container that
+  writes to a path that is not declared, fails.
+- **References:** Kubernetes documentation, Configure a Security Context for
+  a Pod or Container (read 2026-11-24)
 
 Containers SHOULD run with a read-only root filesystem, and each path that the
 software writes to SHOULD be a declared volume.
 
 **Rationale:** An attacker who runs code in the container cannot change the
 software or plant tools on a filesystem that is read-only. Naming each place
-that the software writes also tells operators what to back up.
+that the software writes also tells operators what to back up. For Compose
+files and `docker run` instructions, the read-only root filesystem itself comes
+through USS-HRD-002, where the Level 1 recommendations of the CIS Docker
+Benchmark include it; this rule adds the Kubernetes manifests and the declared
+paths.
 
 ## Kubernetes
 
@@ -158,7 +167,7 @@ serve it. The endpoints that the probes call are USS-OBS-003.
   destination (an empty `from` or `to`, or a CIDR of `0.0.0.0/0`) unless the
   documentation names a connection that needs it. A workload without a policy
   that selects it fails.
-- **References:** none
+- **References:** Kubernetes documentation, Network Policies (read 2026-11-24)
 
 The manifests and charts SHOULD include network policies that allow only the
 traffic that the software needs.
@@ -181,7 +190,8 @@ policy limits what an attacker can reach from a pod that is compromised.
   with no `*`, and each of them matches a call that the workload makes. A
   workload that mounts a token without calling the API, or whose role grants a
   permission that it does not use, fails.
-- **References:** none
+- **References:** Kubernetes documentation, Role Based Access Control Good
+  Practices (read 2026-11-24)
 
 A workload MUST mount a service-account token only when it calls the
 Kubernetes API, and then its role MUST grant only the permissions it needs.

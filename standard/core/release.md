@@ -48,7 +48,7 @@ is.
   a leading `v`. The tag points to the commit that the release was built from
   (the commit that the release workflow ran on, or that the release page
   names). A release without a tag, or a tag on another commit, fails.
-- **References:** NIST SP 800-218 (SSDF 1.1) PS.3.1
+- **References:** Semantic Versioning 2.0.0, FAQ (`git tag v1.2.3`)
 
 Each release MUST have a tag in the repository, on the commit it was built
 from, named after its version, with or without a leading `v`.
@@ -146,7 +146,8 @@ USS-SEC-031.
 - **Category:** Compatibility
 - **Verify:** Take the changelog entries of the last 12 months, or since the
   last audit. No entry is marked as breaking (Common Changelog marks it with
-  `**Breaking:**`), and no release raises MAJOR. A release that does either
+  `**Breaking:**`), and no release raises MAJOR for an incompatible change to
+  the public API (USS-REL-001). A release that contains a breaking change
   fails.
 - **References:** Semantic Versioning 2.0.0
 
