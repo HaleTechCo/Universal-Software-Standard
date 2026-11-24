@@ -44,8 +44,7 @@ can fail, and most who fail do not ask for help.
   They do not tell the contributor to install a tool for the whole system
   with a system package manager or with administrator rights, and no setup
   script does so.
-- **References:** Development Containers Specification (containers.dev, read
-  2026-11-24)
+- **References:** none
 
 Toolchains and build tools SHOULD be installed for the project only (such as
 through a version manager, a wrapper script or a dev container), not
@@ -197,8 +196,8 @@ work.
 - **Verify:** The repository has a template for bug reports, one for feature
   requests and one for pull requests (such as files in `.github/ISSUE_TEMPLATE`
   and `.github/pull_request_template.md`, or the equivalent for the host).
-- **References:** OpenSSF Best Practices Badge criteria (read 2026-11-24),
-  report_process
+- **References:** GitHub Docs, About issue and pull request templates (read
+  2026-11-24)
 
 The repository SHOULD have templates for bug reports, feature requests and
 pull requests.
@@ -267,10 +266,9 @@ being read. A stated time lets them wait, or ask.
 - **Verify:** The repository has a `GOVERNANCE.md` that says how decisions are
   made and how people become maintainers, and a `MAINTAINERS` file (or an
   equivalent such as `CODEOWNERS` with names) that lists the current
-  maintainers. Each person in the list has merged or reviewed a change in the
-  last 12 months, or the list says that the person is retired.
+  maintainers by name.
 - **References:** OpenSSF Best Practices Badge criteria (read 2026-11-24),
-  bus_factor
+  governance and roles_responsibilities
 
 A `GOVERNANCE.md` SHOULD say how decisions are made and how people become
 maintainers, and a `MAINTAINERS` file SHOULD list the current maintainers.

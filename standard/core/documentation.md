@@ -118,8 +118,8 @@ and a caller cannot rely on a contract that is not written down.
 - **Category:** Maintainability
 - **Verify:** The user documentation has a troubleshooting section or page.
   It lists the common errors and failure modes, each with its cause and its
-  fix. Each error that the last 12 months of closed bug reports name more
-  than once has an entry.
+  fix. Each error that the closed bug reports since the last audit (or of
+  the last 12 months when there is none) name more than once has an entry.
 - **References:** none
 
 The user documentation SHOULD list common errors and failure modes, each with

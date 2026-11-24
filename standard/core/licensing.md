@@ -67,7 +67,7 @@ product does not meet this rule and records a Standard Deviation.
   and fails on one whose licence the policy does not allow, or whose licence
   is unknown. A run on the default branch passes.
 - **References:** SPDX Specification 3.0.1, Annex B (SPDX license
-  expressions); ISO/IEC 5230:2020 (OpenChain)
+  expressions)
 
 A written policy MUST list the dependency licences that are compatible with
 the project's licence and the way it is distributed, and CI MUST fail on a
@@ -89,7 +89,9 @@ user raises it.
   requires its text or a notice to be shipped, the artifact includes it, in
   the artifact or in a file that the artifact names. A generated notices file
   that lists every included dependency passes.
-- **References:** ISO/IEC 5230:2020 (OpenChain)
+- **References:** ISO/IEC 5230:2020 (OpenChain Specification 2.1), clause
+  3.4.1 (compliance artifacts); Apache License 2.0, section 4 (as an
+  example of a notice obligation)
 
 Each release artifact MUST include the licence texts and notices that its
 dependencies' licences require.
