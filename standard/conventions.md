@@ -362,9 +362,10 @@ module points to it.
   weakened for that purpose.
 - Scale the levels of an external standard with facts, not tiers. For OWASP
   ASVS: Level 1 is a MUST when `has-web-ui or exposes-network-api`; Level 2 is
-  a MUST when `handles-authentication or handles-sensitive-data`; Level 3 is a
-  SHOULD when `high-assurance`. SLSA build levels and CIS profiles follow the
-  same pattern.
+  a MUST when, in addition, `handles-authentication or
+  handles-sensitive-data`; Level 3 is a SHOULD when, in addition,
+  `high-assurance`. SLSA build levels and CIS profiles follow the same
+  pattern.
 
 ### Check integrity
 
