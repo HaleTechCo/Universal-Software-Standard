@@ -232,10 +232,10 @@ misses them.
   assessment either says why the product is not affected, or says that the
   product is affected and no fix can be applied yet. An assessment of the
   second kind links an issue that tracks the fix and expires at most 30 days
-  after it was recorded. A recorded assessment without a reason is a
-  failure. Where the tool supports an expiry date, so is one with no
-  expiry date, and so is one past its expiry date; where it does not, an
-  "affected" assessment states its expiry date in its text. A finding that is
+  after it was recorded. A recorded assessment without a reason is a failure.
+  Where the tool supports an expiry date, so is one with no expiry date, and
+  so is one past its expiry date; where it does not, an "affected"
+  assessment states its expiry date in its text. A finding that is
   neither fixed nor assessed is a failure.
 - **References:** NIST SP 800-218 (SSDF 1.1) RV.2.1, RV.2.2; OSV schema 1.9.2
   (a format for vulnerability data that scanners read)
