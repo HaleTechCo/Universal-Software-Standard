@@ -26,9 +26,8 @@ service for another.
   that the operator runs or controls (the software's own components, a
   database, a proxy). Install the software by the guide on infrastructure
   that you control. Then run it with no connection to a service that the
-  project or a vendor runs (registries used only to install are out of
-  scope, because the rule is about running): it starts and does its main job
-  as the guide describes. Search the code and the configuration for such
+  project or a vendor runs: it starts and does its main job as the guide
+  describes. Search the code and the configuration for such
   connections (a licence server, a phone-home call, a required sign-in to a
   hosted service): each is optional and off by default, or the guide names it
   as an optional integration. A required connection to a service outside the
