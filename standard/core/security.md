@@ -71,14 +71,17 @@ rights.
 - **Applies when:** always
 - **Category:** Safety
 - **Verify:** A secret scan of the working tree and the full history finds no
-  live credential, key or token. Example and test values are clearly fake.
+  credential, key or token. The only exceptions are clearly fake example and
+  test values, and credentials that the scanner's configuration suppresses with
+  a reason that records their revocation.
 - **References:** CWE-798
 
 The project MUST NOT commit any secret to the repository or its history.
 
 **Rationale:** Anyone who can read the repository, now or through a fork or
 clone, can read every secret in its history. Removing a secret from the latest
-commit does not make it safe; it has to be revoked.
+commit does not remove it from the history. A revoked credential grants no
+access, so it is no longer a secret.
 
 ### USS-SEC-005: Scan for secrets in CI
 
@@ -220,13 +223,15 @@ SQL, so external input cannot change what a query does.
 - **Level:** MUST
 - **Applies when:** always
 - **Category:** Safety
-- **Verify:** Where data is written into HTML, SQL, a shell, a log, a terminal
-  or another interpreter or format, the code encodes or escapes it for that
-  context, through a library or the framework's automatic escaping.
+- **Verify:** Where data is written into HTML, a URL, a log, a terminal or
+  another interpreter or format, the code encodes or escapes it for that
+  context, through a library or the framework's automatic escaping. Escaping
+  does not satisfy this rule for database queries or shell commands, which
+  USS-SEC-012 and USS-SEC-009 cover.
 - **References:** CWE-116; CWE-117
 
-Data written into another interpreter or format (HTML, SQL, shell, logs,
-terminals) MUST be encoded or escaped for that context.
+Data written into another interpreter or format (HTML, URLs, logs, terminals)
+MUST be encoded or escaped for that context.
 
 **Rationale:** Each interpreter has its own special characters. Data that is
 safe in one context can change the meaning of the text around it in another.
@@ -336,8 +341,9 @@ Level 1 is the baseline for any such software.
 
 The software MUST meet every OWASP ASVS Level 2 requirement.
 
-**Rationale:** ASVS recommends Level 2 for software that holds sensitive data
-or signs users in.
+**Rationale:** ASVS 5.0 says that most applications should strive to reach
+Level 2. This standard makes Level 2 a requirement where the software signs
+users in or handles sensitive data.
 
 ### USS-SEC-020: Meet OWASP ASVS Level 3
 
@@ -365,8 +371,7 @@ deviation.
 - **Verify:** Code and configuration for every connection that leaves the host
   use TLS 1.2 or later, or another protocol with equal protection such as SSH.
   A TLS configuration scan, or a review of client and server settings, shows no
-  older protocol version enabled. TLS configuration follows NIST SP 800-52 and
-  RFC 9325.
+  older protocol version enabled.
 - **References:** NIST SP 800-52 Rev. 2; RFC 9325 (BCP 195); RFC 8446
 
 Traffic that leaves the host MUST use TLS 1.2 or later, or another protocol with
@@ -414,10 +419,11 @@ long public review finds.
 - **Level:** MUST NOT
 - **Applies when:** uses-cryptography
 - **Category:** Safety
-- **Verify:** Code and configuration are checked against NIST SP 800-131A: no
-  algorithm, key size or mode that it disallows for the use appears. A search
-  for the usual offenders (such as MD5 or SHA-1 for signatures, DES, RC4 and
-  short RSA keys) finds no use for a security purpose.
+- **Verify:** Code and configuration are checked against NIST SP 800-131A
+  Rev. 2: no algorithm or key size that it disallows for the use appears. For
+  example, a search finds no SHA-1 for digital signature generation, no
+  two-key TDEA for encryption and no RSA key shorter than 2048 bits for digital
+  signature generation.
 - **References:** NIST SP 800-131A Rev. 2; CWE-327; CWE-328
 
 The project MUST NOT use, for a security purpose, any algorithm or key size
@@ -509,7 +515,7 @@ project can be held to them.
   advisory (a repository security advisory, a database entry or a release note
   in a machine-readable format) names the affected and fixed versions and a CVE
   or other public ID. The advisory uses a format such as OSV or CSAF.
-- **References:** OSV schema; CSAF 2.0; CVE Program; CISA Secure by Design
+- **References:** OSV schema 1.9.2; CSAF 2.0; CVE Program; CISA Secure by Design
   Pledge (vulnerability reporting transparency goal)
 
 Each fixed vulnerability in a released version MUST get a published advisory
@@ -528,7 +534,8 @@ fix is announced where they look.
   CycloneDX VEX) published with that release, giving the status and a
   justification.
 - **References:** CISA Minimum Requirements for Vulnerability Exploitability
-  eXchange (VEX) (2023); OpenVEX, CSAF 2.0 VEX profile or CycloneDX VEX
+  eXchange (VEX) (2023); OpenVEX 0.2.0, CSAF 2.0 (4.5 Profile 5: VEX) or
+  CycloneDX 1.7 VEX
 
 When a known vulnerability in a dependency does not affect a release, the
 project SHOULD publish a VEX statement for it with that release.
