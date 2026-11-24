@@ -66,10 +66,11 @@ needs the client to change.
 - **Verify:** For each major API version that a newer one replaced in the last
   12 months, or since the last audit, the documentation gives a deprecation
   period and an end date, and the old version still answers requests until
-  that date. Its responses carry the `Deprecation` header, and the `Sunset`
-  header with the end date, or the contract marks the operations as
-  deprecated. An old version that stopped before its date, or that gives no
-  signal in its responses, fails. When no version was replaced in that time,
+  that date. Its responses carry the `Deprecation` header and the `Sunset`
+  header with the end date (or, for a protocol with no headers, an equivalent
+  field of the response that gives the end date). An old version that stopped
+  before its date, or whose responses give no deprecation signal or no end
+  date, fails. When no version was replaced in that time,
   there is nothing to check, and the rule passes.
 - **References:** RFC 9745; RFC 8594; Martin Fowler, ParallelChange (expand and
   contract; read 2026-11-24), as an example of the practice

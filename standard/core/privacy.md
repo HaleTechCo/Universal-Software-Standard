@@ -25,7 +25,7 @@ person.
   (USS-DAT-003, where it applies): each one appears in the inventory. A kind
   of personal data that the code handles and the inventory omits fails.
 - **References:** NIST Privacy Framework 1.0 (2020-01-16), ID.IM-P5 and
-  ID.IM-P6; ISO/IEC 29100:2024
+  ID.IM-P6
 
 A maintained inventory MUST list each kind of personal data that the software
 handles, with its purpose, where it is stored and how long it is kept.
@@ -42,13 +42,14 @@ what the project holds about them.
 - **Verify:** For each kind of personal data in the inventory (USS-PRV-001),
   the inventory names a purpose, and the code that uses the data serves that
   purpose. Take each form, API field, event and log field that collects
-  personal data: each maps to an entry in the inventory. For each entry,
-  ask whether the purpose can be met without the field or with less detail
-  (such as a year of birth in place of a date, or an IP address that is
-  truncated): where the answer is yes and the software still collects the
-  more, the rule fails.
-- **References:** NIST Privacy Framework 1.0 (2020-01-16), ID.IM-P5 and
-  ID.IM-P6; ISO/IEC 29100:2024
+  personal data: each maps to an entry in the inventory, and the purpose of
+  that entry uses the field: read the code that uses the field and find the
+  step of the purpose (such as sending the mail, or billing) that needs its
+  value. A field that is collected and has no entry, or whose stated purpose
+  does not use it, or that the code collects and never reads, fails.
+- **References:** Regulation (EU) 2016/679 (GDPR), Article 5(1)(c), data
+  minimisation: personal data is "adequate, relevant and limited to what is
+  necessary in relation to the purposes for which they are processed"
 
 The software MUST collect no personal data beyond what the purposes in the
 inventory need.
@@ -67,10 +68,8 @@ be deleted. Each extra field is a risk that has no purpose to balance it.
   Read the job's code or the setting. In a test instance, create data older
   than the period and run the job, or wait for the setting to act: the data
   is gone, from indexes and caches too. A retention period of "indefinitely",
-  or one that only an operator's action ends, fails, unless the inventory
-  states the purpose that needs the data for as long as the software runs.
-- **References:** NIST Privacy Framework 1.0 (2020-01-16), CT.DM-P5;
-  ISO/IEC 29100:2024
+  or one that only an operator's action ends, fails.
+- **References:** NIST Privacy Framework 1.0 (2020-01-16), CT.DM-P5
 
 Stored personal data MUST be deleted automatically when its retention period
 in the inventory ends.
