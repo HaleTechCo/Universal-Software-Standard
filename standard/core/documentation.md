@@ -116,10 +116,10 @@ and a caller cannot rely on a contract that is not written down.
 - **Applies when:** publishes-releases and (has-cli or has-ui or
   is-network-service)
 - **Category:** Maintainability
-- **Verify:** The user documentation has a troubleshooting section or page.
-  It lists the common errors and failure modes, each with its cause and its
-  fix. Each error that the closed bug reports since the last audit (or of
-  the last 12 months when there is none) name more than once has an entry.
+- **Verify:** The user documentation has a troubleshooting section or page. It
+  lists the common errors and failure modes, each with its cause and its fix.
+  Take the bug reports closed since the last audit, or the last 12 months when
+  there is none: each error that they name more than once has an entry.
 - **References:** none
 
 The user documentation SHOULD list common errors and failure modes, each with

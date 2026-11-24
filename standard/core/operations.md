@@ -120,17 +120,16 @@ changing the system at once.
 - **Level:** SHOULD
 - **Applies when:** always
 - **Category:** Reliability
-- **Verify:** List the major incidents of the last 12 months, or since the last
-  audit when that is shorter. A major incident is one that the project's
-  incident-response document ranks at its highest severity or its highest
-  but one; where there is no such document, one in which users lost the
-  service or lost data. Each has a postmortem that gives the timeline, the
-  impact, the causes and the follow-up actions. The causes are about
-  systems and processes: the text blames no person or team by name. Each
-  follow-up action is an entry in the project's tracker, with a status that
-  the tracker updates until the action is closed. A major incident with no
-  postmortem, an action that is not in the tracker, or a postmortem that
-  blames a person fails.
+- **Verify:** List the major incidents since the last audit, or the last 12
+  months when there is none. A major incident is one that the project's
+  incident-response document ranks at its highest severity or its highest but
+  one; where there is no such document, one in which users lost the service or
+  lost data. Each has a postmortem that gives the timeline, the impact, the
+  causes and the follow-up actions. The causes are about systems and processes:
+  the text blames no person or team by name. Each follow-up action is an entry
+  in the project's tracker, with a status that the tracker updates until the
+  action is closed. A major incident with no postmortem, an action that is not
+  in the tracker, or a postmortem that blames a person fails.
 - **References:** Google, Site Reliability Engineering (2016), chapter 15
 
 Each major incident SHOULD get a blameless postmortem, and its follow-up
@@ -149,13 +148,13 @@ action is good practice, because an action that is everyone's is no one's.
 - **Verify:** Read the deployment pipeline or the rollout configuration for
   production. A change reaches a part of production first (such as a canary
   instance, a percentage of traffic or a first ring of users), is evaluated
-  there, and only then reaches the rest. The configuration has a health or
-  SLO check (such as an error-rate or latency comparison with the part that
-  has the old version) that, when it fails, starts a rollback with no manual
-  step. In the deployment history of the last 12 months or since the last
-  audit, open at least three deployments (all, if fewer): each shows the
-  stages. A pipeline that sends each change to all of production at once, or
-  one that a person must roll back, fails.
+  there, and only then reaches the rest. The configuration has a health or SLO
+  check (such as an error-rate or latency comparison with the part that has the
+  old version) that, when it fails, starts a rollback with no manual step. In
+  the deployment history since the last audit, or the last 12 months when there
+  is none, open at least three deployments (all, if fewer): each shows the
+  stages. A pipeline that sends each change to all of production at once, or one
+  that a person must roll back, fails.
 - **References:** Google, The Site Reliability Workbook (2018), chapter 16,
   "Canarying Releases"
 
@@ -171,14 +170,14 @@ harm at once without waiting for a person to see it.
 - **Level:** SHOULD
 - **Applies when:** always
 - **Category:** Reliability
-- **Verify:** The documentation gives the address of a status page or
-  channel (such as a status site, a feed or a pinned channel) that users can
-  read. For each incident of the last 12 months, or since the last audit when
-  that is shorter, in which users felt the failure (the service was down,
-  slow or wrong for them), the page or channel has an entry that names what
-  was affected and gives the time of its latest update. Where there was no
-  such incident, the page or channel exists and its entries have both
-  fields. An incident that users felt and that has no entry fails.
+- **Verify:** The documentation gives the address of a status page or channel
+  (such as a status site, a feed or a pinned channel) that users can read. For
+  each incident since the last audit, or the last 12 months when there is none,
+  in which users felt the failure (the service was down, slow or wrong for
+  them), the page or channel has an entry that names what was affected and gives
+  the time of its latest update. Where there was no such incident, the page or
+  channel exists and its entries have both fields. An incident that users felt
+  and that has no entry fails.
 - **References:** NIST SP 800-61 Rev. 3 (April 2025), RC.CO-04; Google, The
   Site Reliability Workbook (2018), chapter 9
 

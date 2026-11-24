@@ -81,13 +81,13 @@ while it loads. The 75th percentile keeps the slower quarter of visits in view.
 - **Level:** SHOULD
 - **Applies when:** operates-service and is-network-service
 - **Category:** Efficiency
-- **Verify:** The repository or the documentation holds the load test (a
-  script and its settings) and states the expected peak load (such as requests
-  per second, or concurrent users) and the margin that is added to it (such as
-  50 percent). The release process runs the test before each release. In the
-  last 12 months, or since the last audit when that is shorter, each release
-  has a result record that shows a run at a load of at least the peak plus the
-  margin. A release with no record, or a run below that load, fails.
+- **Verify:** The repository or the documentation holds the load test (a script
+  and its settings) and states the expected peak load (such as requests per
+  second, or concurrent users) and the margin that is added to it (such as 50
+  percent). The release process runs the test before each release. Each release
+  since the last audit, or the last 12 months when there is none, has a result
+  record that shows a run at a load of at least the peak plus the margin. A
+  release with no record, or a run below that load, fails.
 - **References:** Google, Site Reliability Engineering (2016), chapter 17,
   "Stress test"
 
@@ -125,14 +125,13 @@ costs nothing until the event comes.
 - **Level:** SHOULD
 - **Applies when:** operates-service
 - **Category:** Efficiency
-- **Verify:** Open the project's calculation of the Software Carbon Intensity
-  of its production service: it states the software boundary and the
-  functional unit, and gives the energy, the carbon intensity of the grid, the
-  embodied emissions and the resulting score, as the SCI specification sets
-  them. The project keeps the score of each release in the last 12 months, or
-  since the last audit when that is shorter (such as a file in the
-  repository, or a dashboard that shows the history). A release with no
-  score fails.
+- **Verify:** Open the project's calculation of the Software Carbon Intensity of
+  its production service: it states the software boundary and the functional
+  unit, and gives the energy, the carbon intensity of the grid, the embodied
+  emissions and the resulting score, as the SCI specification sets them. The
+  project keeps the score of each release since the last audit, or the last 12
+  months when there is none (such as a file in the repository, or a dashboard
+  that shows the history). A release with no score fails.
 - **References:** Green Software Foundation, Software Carbon Intensity (SCI)
   Specification, version 1.1.0 (read 2026-11-24)
 

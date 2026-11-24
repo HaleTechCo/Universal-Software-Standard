@@ -312,8 +312,8 @@ USS-DEP-008, and into the updates of USS-DEP-014.
 - **Category:** Safety
 - **Verify:** Each direct dependency has its purpose written down, in a comment
   in the manifest or in a dependency list in the repository. For a dependency
-  that was added since the last recorded audit (or in the last 12 months when
-  there is no earlier audit), the change that added it carries that record.
+  that was added since the last audit, or the last 12 months when there is none,
+  the change that added it carries that record.
 - **References:** none
 
 The purpose of each direct dependency SHOULD be recorded, in the manifest or a
@@ -327,13 +327,12 @@ needed, or can be replaced, if its purpose is written down.
 - **Level:** SHOULD
 - **Applies when:** always
 - **Category:** Safety
-- **Verify:** For each dependency added since the last recorded audit (or in
-  the last 12 months when there is no earlier audit), the change that added it
-  carries a record of the check that covers whether it is maintained, whether
-  it is deprecated or archived, whether it has more than one maintainer, and
-  whether the standard library is enough instead. Each point that the
-  dependency fails has a reason in the record. A dependency with no such
-  record is a failure.
+- **Verify:** For each dependency added since the last audit, or the last 12
+  months when there is none, the change that added it carries a record of the
+  check that covers whether it is maintained, whether it is deprecated or
+  archived, whether it has more than one maintainer, and whether the standard
+  library is enough instead. Each point that the dependency fails has a reason
+  in the record. A dependency with no such record is a failure.
 - **References:** OpenSSF, Concise Guide for Evaluating Open Source Software
   (2025-03-28)
 
@@ -374,11 +373,10 @@ adds attack surface, and it gives nothing back.
 - **Level:** SHOULD
 - **Applies when:** always
 - **Category:** Safety
-- **Verify:** The repository holds the configuration of an update tool (such
-  as `renovate.json` or `.github/dependabot.yml`) that covers every manifest.
-  The dependency updates merged since the last recorded audit (or in the last
-  12 months when there is no earlier audit) were opened as pull requests by the
-  tool.
+- **Verify:** The repository holds the configuration of an update tool (such as
+  `renovate.json` or `.github/dependabot.yml`) that covers every manifest. The
+  dependency updates merged since the last audit, or the last 12 months when
+  there is none, were opened as pull requests by the tool.
 - **References:** Renovate Docs, Configuration options (read 2026-11-23);
   GitHub Docs, Dependabot options reference (read 2026-11-23)
 

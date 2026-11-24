@@ -85,10 +85,10 @@ makes a rollback possible.
 - **Category:** Reliability
 - **Verify:** The CI configuration has a job that installs the current version
   on a clean machine or container, restores a backup into it, and checks the
-  restored data (such as a count of records, or a known record). The job runs
-  on each change, or at least on each release. Open the latest run, and the
-  runs for the last 12 months or since the last audit: the job ran and passed.
-  A restore test that is only run by hand fails.
+  restored data (such as a count of records, or a known record). The job runs on
+  each change, or at least on each release. Open the latest run, and the runs
+  since the last audit, or the last 12 months when there is none: the job ran
+  and passed. A restore test that is only run by hand fails.
 - **References:** NIST SP 800-34 Rev. 1 (May 2010, updated 2010-11-11),
   section 3.4.1
 
@@ -211,12 +211,12 @@ copies.
 - **Category:** Reliability
 - **Verify:** The monitoring or backup configuration has an alert for each
   production data store that fires when a backup run fails and when no backup
-  has completed within its schedule interval (USS-BAK-006). The alert goes to
-  a person (such as a pager, a chat channel that the team reads, or an email
-  address), and a log line alone does not count. Where the project has a
-  record of a failed or missed backup in the last 12 months or since the last
-  audit, the alert that it raised is on record. Settings in a console that the
-  auditor cannot open are `unverified`.
+  has completed within its schedule interval (USS-BAK-006). The alert goes to a
+  person (such as a pager, a chat channel that the team reads, or an email
+  address), and a log line alone does not count. Where the project has a record
+  of a failed or missed backup since the last audit, or the last 12 months when
+  there is none, the alert that it raised is on record. Settings in a console
+  that the auditor cannot open are `unverified`.
 - **References:** none
 
 A failed or missed backup MUST raise an alert to a person.
@@ -230,11 +230,13 @@ safety. The failure is found on the day the restore is needed.
 - **Applies when:** operates-service and stores-persistent-data
 - **Category:** Reliability
 - **Verify:** The documentation sets a schedule for restore tests, with an
-  interval of at most three months. The project holds a record of each test
-  (a date, the backup that was restored, the result): there is at least one
-  record in each quarter of the last 12 months, or since the last audit when
-  that is shorter. Each record shows a restore into a separate environment
-  and a check of the restored data.
+  interval of at most three months. The project holds a record of each test (a
+  date, the backup that was restored, the result). Take the period since the
+  last audit, or the last 12 months when there is none, and split it into spans
+  of three months, counted back from the audit date; because the schedule is
+  quarterly, a period shorter than three months is widened to three. Each full
+  span holds at least one record. Each record shows a restore into a separate
+  environment and a check of the restored data.
 - **References:** CIS Critical Security Controls v8.1, safeguard 11.5
 
 A restore from backup MUST be tested on a documented schedule, at least once a

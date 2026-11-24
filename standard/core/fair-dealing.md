@@ -133,11 +133,11 @@ USS-DAT-006.
 - **Applies when:** is-commercial
 - **Category:** Fairness
 - **Verify:** List the changes to pricing or to licence terms since the last
-  audit, or in the last 12 months when there is none, from the history of the
-  price list, the terms and the licence files. For each, find the changelog
-  entry that announces it, and compare its date with the date on which the
-  change takes effect. A change with no changelog entry, or with an entry
-  dated on or after the day it takes effect, fails.
+  audit, or the last 12 months when there is none, from the history of the price
+  list, the terms and the licence files. For each, find the changelog entry that
+  announces it, and compare its date with the date on which the change takes
+  effect. A change with no changelog entry, or with an entry dated on or after
+  the day it takes effect, fails.
 - **References:** none
 
 Each change to pricing or to licence terms SHOULD be announced in the

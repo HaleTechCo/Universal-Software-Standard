@@ -168,11 +168,11 @@ the evaluation that the next rule asks for.
   configuration runs it for each change that touches a model identifier, a
   prompt, or a model setting (such as temperature or a token limit), and the
   change cannot merge when the suite fails. Take the changes of those kinds
-  merged since the last audit, or in the last 12 months when there is none:
-  the CI run of each one ran the suite. In a test branch, worsen a prompt until
-  a case fails: the check fails. A change of those kinds that merged with no
-  suite run, a suite with no threshold, or a failing run that did not block the
-  merge fails.
+  merged since the last audit, or the last 12 months when there is none: the CI
+  run of each one ran the suite. In a test branch, worsen a prompt until a case
+  fails: the check fails. A change of those kinds that merged with no suite run,
+  a suite with no threshold, or a failing run that did not block the merge
+  fails.
 - **References:** NIST AI 100-1 (AI RMF 1.0, January 2023), 5.3 Measure
 
 An evaluation suite with pass thresholds MUST run in CI before each change of

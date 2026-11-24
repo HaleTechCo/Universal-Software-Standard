@@ -116,13 +116,12 @@ over time. A stated cap lets them judge the cost of that over the years.
 - **Level:** SHOULD NOT
 - **Applies when:** always
 - **Category:** Fairness
-- **Verify:** List the price increases announced since the last audit, or in
-  the last 12 months when there is none, from the price list history and the
+- **Verify:** List the price increases announced since the last audit, or the
+  last 12 months when there is none, from the price list history and the
   announcements. For each, find the inflation index that the terms or the
   announcement name (such as a consumer price index, CPI). Take the change in
   that index over the 12 months before the announcement, and add 3 percentage
-  points. An increase above that sum, or an increase with no named index,
-  fails.
+  points. An increase above that sum, or an increase with no named index, fails.
 - **References:** none
 
 A price increase SHOULD NOT exceed a named inflation index (such as CPI) plus
@@ -138,14 +137,14 @@ one that fits its market.
 - **Level:** SHOULD NOT
 - **Applies when:** always
 - **Category:** Fairness
-- **Verify:** List the price increases since the last audit, or in the last 12
+- **Verify:** List the price increases since the last audit, or the last 12
   months when there is none. For each, find the date from which it applies to
-  existing customers, and the end date of the term that those customers were
-  in: the term stated in their agreement, or for a subscription with no
-  stated term, its current billing period. An increase that applies to an
-  existing customer before the end of that term fails. An increase that
-  applies only to new sales, or from a renewal, passes. Record `unverified`
-  when the auditor cannot read the terms or the dates of the agreements.
+  existing customers, and the end date of the term that those customers were in:
+  the term stated in their agreement, or for a subscription with no stated term,
+  its current billing period. An increase that applies to an existing customer
+  before the end of that term fails. An increase that applies only to new sales,
+  or from a renewal, passes. Record `unverified` when the auditor cannot read
+  the terms or the dates of the agreements.
 - **References:** none
 
 A price SHOULD NOT be increased during the term of an agreement.
@@ -158,10 +157,10 @@ middle makes the agreement a one-sided option.
 - **Level:** SHOULD
 - **Applies when:** always
 - **Category:** Fairness
-- **Verify:** List the price increases since the last audit, or in the last 12
+- **Verify:** List the price increases since the last audit, or the last 12
   months when there is none. For each, find the date of its announcement to
-  customers and the date from which it applies. An increase announced fewer
-  than 90 days before it applies fails.
+  customers and the date from which it applies. An increase announced fewer than
+  90 days before it applies fails.
 - **References:** none
 
 Each price increase SHOULD be announced at least 90 days before it applies.

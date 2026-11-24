@@ -51,9 +51,9 @@ follow apply once the interface exists.
   events, data formats and permissions that plugins use). It states a contract
   version, and the version follows Semantic Versioning 2.0.0 (a number of the
   form MAJOR.MINOR.PATCH). It also states the compatibility guarantees: which
-  kinds of change keep a plugin that was written for an earlier version
-  working, and which kinds do not. In the contract's change history for the
-  last 12 months (or since the last audit), each change that removes or alters
+  kinds of change keep a plugin that was written for an earlier version working,
+  and which kinds do not. In the contract's change history since the last audit,
+  or the last 12 months when there is none, each change that removes or alters
   something that the contract documented raises the MAJOR version. A contract
   with no version, no stated guarantees, or such a change under a lower
   increment fails.
@@ -255,14 +255,14 @@ own artifacts are in USS-SUP-015 and USS-SUP-016.
 - **Level:** MUST
 - **Applies when:** has-plugin-marketplace
 - **Category:** Safety
-- **Verify:** Read the marketplace's publishing pipeline and its review
-  policy. The pipeline scans each uploaded plugin version for malware and for
-  known vulnerabilities in the plugin's dependencies, and a version that fails
-  the scan is not listed. The policy documents a review (who reviews, what
-  they check, and what makes them reject a plugin), and the pipeline lists a
-  version only after the review is recorded. For the versions listed in the
-  last 12 months (or since the last audit), a sample of five (or all, when
-  there are fewer) each have a scan result and a review record dated before
+- **Verify:** Read the marketplace's publishing pipeline and its review policy.
+  The pipeline scans each uploaded plugin version for malware and for known
+  vulnerabilities in the plugin's dependencies, and a version that fails the
+  scan is not listed. The policy documents a review (who reviews, what they
+  check, and what makes them reject a plugin), and the pipeline lists a version
+  only after the review is recorded. For the versions listed since the last
+  audit, or the last 12 months when there is none, a sample of five (or all,
+  when there are fewer) each have a scan result and a review record dated before
   the listing. A version listed without either fails.
 - **References:** none
 

@@ -174,10 +174,10 @@ to expect and whom to tell when it fails.
 - **Applies when:** accepts-external-contributions
 - **Category:** Contributability
 - **Verify:** The contributing guide asks for a `Signed-off-by` line under the
-  Developer Certificate of Origin. A CI job or a repository app checks that
-  each commit of a pull request has one. The project asks for no contributor
-  licence agreement (CLA). The commits of the last 12 months, or since the
-  last audit, that came from outside the team have the line.
+  Developer Certificate of Origin. A CI job or a repository app checks that each
+  commit of a pull request has one. The project asks for no contributor licence
+  agreement (CLA). The commits since the last audit, or the last 12 months when
+  there is none, that came from outside the team have the line.
 - **References:** Developer Certificate of Origin 1.1
 
 Contributors SHOULD certify their right to contribute by Developer
@@ -282,9 +282,9 @@ a decision is made and who has the right to make it.
 - **Applies when:** accepts-external-contributions
 - **Category:** Contributability
 - **Verify:** Take the contributors from outside the team whose changes were
-  merged in the last 12 months, or since the last audit. Each one is named in
-  the release notes of the release that holds the change, or in a
-  contributors list (such as `CONTRIBUTORS` or `AUTHORS`).
+  merged since the last audit, or the last 12 months when there is none. Each
+  one is named in the release notes of the release that holds the change, or in
+  a contributors list (such as `CONTRIBUTORS` or `AUTHORS`).
 - **References:** none
 
 Each contributor SHOULD be credited, such as in the release notes or a

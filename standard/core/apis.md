@@ -40,14 +40,14 @@ promise. A contract that has drifted from the code misleads each of them.
 - **Level:** MUST
 - **Applies when:** always
 - **Category:** Compatibility
-- **Verify:** The contract (USS-API-001) or the documentation states the
-  API's version, and the version is part of the contract, the address or a
-  request header. For each change to the contract in the last 12 months, or
-  since the last audit, compare the old and the new contract: each change that
-  removes or renames an operation, a field or a value, makes an optional field
-  mandatory or changes a type or the meaning of a field is a breaking change,
-  and it ships under a new major API version. A breaking change within the
-  same major version fails.
+- **Verify:** The contract (USS-API-001) or the documentation states the API's
+  version, and the version is part of the contract, the address or a request
+  header. For each change to the contract since the last audit, or the last 12
+  months when there is none, compare the old and the new contract: each change
+  that removes or renames an operation, a field or a value, makes an optional
+  field mandatory or changes a type or the meaning of a field is a breaking
+  change, and it ships under a new major API version. A breaking change within
+  the same major version fails.
 - **References:** OpenAPI Specification 3.2.1, the info object (its version
   field)
 
@@ -63,15 +63,15 @@ needs the client to change.
 - **Level:** SHOULD
 - **Applies when:** always
 - **Category:** Compatibility
-- **Verify:** For each major API version that a newer one replaced in the last
-  12 months, or since the last audit, the documentation gives a deprecation
-  period and an end date, and the old version still answers requests until
-  that date. Its responses carry the `Deprecation` header and the `Sunset`
-  header with the end date (or, for a protocol with no headers, an equivalent
-  field of the response that gives the end date). An old version that stopped
-  before its date, or whose responses give no deprecation signal or no end
-  date, fails. When no version was replaced in that time,
-  there is nothing to check, and the rule passes.
+- **Verify:** For each major API version that a newer one replaced since the
+  last audit, or the last 12 months when there is none, the documentation gives
+  a deprecation period and an end date, and the old version still answers
+  requests until that date. Its responses carry the `Deprecation` header and the
+  `Sunset` header with the end date (or, for a protocol with no headers, an
+  equivalent field of the response that gives the end date). An old version that
+  stopped before its date, or whose responses give no deprecation signal or no
+  end date, fails. When no version was replaced in that time, there is nothing
+  to check, and the rule passes.
 - **References:** RFC 9745; RFC 8594; Martin Fowler, ParallelChange (expand and
   contract; read 2026-11-24), as an example of the practice
 

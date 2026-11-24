@@ -169,10 +169,10 @@ deviation states the feature and why it cannot be had elsewhere.
 - **Verify:** List the databases that the documentation, the release notes and
   the configuration claim to support. Open the CI configuration: its test job
   runs the full test suite (the same suite that the project runs against its
-  main database; USS-TST-001 has the tests in CI, and USS-TST-004 has the
-  tests against real services) once for each listed database, with a real
-  engine of that kind (a container or a service, not a mock). In the CI runs
-  of the last 12 months (or since the last audit), the matrix ran for each
+  main database; USS-TST-001 has the tests in CI, and USS-TST-004 has the tests
+  against real services) once for each listed database, with a real engine of
+  that kind (a container or a service, not a mock). In the CI runs since the
+  last audit, or the last 12 months when there is none, the matrix ran for each
   database. A claimed database that is missing from the matrix, or whose runs
   skip tests that the others run, fails.
 - **References:** none
@@ -211,10 +211,10 @@ not have to be an ORM; a set of repository interfaces does the same work.
 - **Category:** Compatibility
 - **Verify:** Open the migrations (versioned under USS-DAT-001). For each
   supported database, each migration exists in a form that runs on it: a
-  separate script for each database, or one definition from which the
-  migration tool generates the statements for each. For the migrations added
-  in the last 12 months (or since the last audit), each has a form for every
-  supported database. A migration that runs on only some of them fails.
+  separate script for each database, or one definition from which the migration
+  tool generates the statements for each. For the migrations added since the
+  last audit, or the last 12 months when there is none, each has a form for
+  every supported database. A migration that runs on only some of them fails.
 - **References:** none
 
 Each migration SHOULD be written or generated for every supported database.

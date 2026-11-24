@@ -122,11 +122,11 @@ reviewers see that the risk is being reduced.
 - **Level:** SHOULD
 - **Applies when:** has-memory-unsafe-code
 - **Category:** Safety
-- **Verify:** List the components added since the last audit, or in the last
-  12 months when there is none (a new directory, package, crate or service
-  with its own build). Each one is written in a memory-safe language. A
-  component that is not has a written reason (such as a platform interface that
-  has no memory-safe binding) in the repository.
+- **Verify:** List the components added since the last audit, or the last 12
+  months when there is none (a new directory, package, crate or service with its
+  own build). Each one is written in a memory-safe language. A component that is
+  not has a written reason (such as a platform interface that has no memory-safe
+  binding) in the repository.
 - **References:** CISA and FBI, Product Security Bad Practices (Version 2.0,
   2025-01-17); CWE-119; CWE-787; CWE-416
 

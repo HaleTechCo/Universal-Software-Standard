@@ -22,11 +22,12 @@ Testing (TST) area holds the test of each migration (USS-TST-007).
 - **Verify:** The repository holds the migrations (such as numbered SQL
   files, or files of a migration tool) in order, and the software or its
   installer runs the pending ones when it starts or upgrades, with no manual
-  step. Take each change to a schema, a file format or a stored structure in
-  the history of the last 12 months, or since the last audit: it comes with a
-  migration in the same change. Search the code for schema statements (such as
-  `CREATE`, `ALTER` and `DROP`) outside the migration files: none changes a
-  production schema. A change made by hand on a running database fails.
+  step. Take each change to a schema, a file format or a stored structure
+  since the last audit, or the last 12 months when there is none: it comes
+  with a migration in the same change. Search the code for schema statements
+  (such as `CREATE`, `ALTER` and `DROP`) outside the migration files: none
+  changes a production schema. A change made by hand on a running database
+  fails.
 - **References:** none
 
 Each change to the structure of stored data, a database schema or a file
@@ -42,12 +43,12 @@ every installation the same path, and the repository records it.
 - **Level:** MUST NOT
 - **Applies when:** always
 - **Category:** Reliability
-- **Verify:** Read each migration that runs on upgrade (USS-DAT-001), for
-  those added in the last 12 months or since the last audit. None drops a
-  table or a column, removes a field from stored documents, truncates a table
-  or deletes rows. Where the structure must shrink, the repository has a
-  separate script or documented command, outside the automatic migrations,
-  that an operator runs on purpose.
+- **Verify:** Read each migration that runs on upgrade (USS-DAT-001), for those
+  added since the last audit, or the last 12 months when there is none. None
+  drops a table or a column, removes a field from stored documents, truncates a
+  table or deletes rows. Where the structure must shrink, the repository has a
+  separate script or documented command, outside the automatic migrations, that
+  an operator runs on purpose.
 - **References:** Martin Fowler, ParallelChange (read 2026-11-24), as an
   example
 

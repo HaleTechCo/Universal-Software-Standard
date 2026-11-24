@@ -191,13 +191,12 @@ branch.
 - **Applies when:** has-multiple-maintainers
 - **Category:** Safety
 - **Verify:** The repository host's settings (for example a GitHub ruleset or
-  branch protection that requires an approving review, or a GitLab merge
-  request approval rule, read through the host's settings or API) require an
-  approval from someone other than the author before a change merges into the
-  default branch. Without such a setting, every change merged since the last
-  recorded audit (or in the last 12 months when there is no earlier audit)
-  shows such an approval. Without access to either, the auditor records
-  `unverified`.
+  branch protection that requires an approving review, or a GitLab merge request
+  approval rule, read through the host's settings or API) require an approval
+  from someone other than the author before a change merges into the default
+  branch. Without such a setting, every change merged since the last audit, or
+  the last 12 months when there is none, shows such an approval. Without access
+  to either, the auditor records `unverified`.
 - **References:** OpenSSF Scorecard v5.7.0 (Code-Review); SLSA v1.2, Source
   track (two-party review)
 

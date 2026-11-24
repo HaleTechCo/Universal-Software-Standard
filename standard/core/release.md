@@ -19,15 +19,15 @@ holds the security policy and its advisories (USS-SEC-031).
 - **Level:** MUST
 - **Applies when:** always
 - **Category:** Maintainability
-- **Verify:** The documentation defines the public API: it lists what a user
-  can depend on, in each of these that the software has (a library's exported
+- **Verify:** The documentation defines the public API: it lists what a user can
+  depend on, in each of these that the software has (a library's exported
   interface, the commands and options of a command-line interface, the
-  configuration keys, the format of stored data). Take the releases of the
-  last 12 months, or since the last audit, and compare each with the one
-  before it. Each version has the form MAJOR.MINOR.PATCH. A release with an
-  incompatible change to the public API raises MAJOR (or MINOR while MAJOR is
-  0), a release with only added features raises MINOR, and a release with
-  only fixes raises PATCH. A release that does not follow this fails.
+  configuration keys, the format of stored data). Take the releases since the
+  last audit, or the last 12 months when there is none, and compare each with
+  the one before it. Each version has the form MAJOR.MINOR.PATCH. A release with
+  an incompatible change to the public API raises MAJOR (or MINOR while MAJOR is
+  0), a release with only added features raises MINOR, and a release with only
+  fixes raises PATCH. A release that does not follow this fails.
 - **References:** Semantic Versioning 2.0.0, item 1
 
 Releases MUST follow Semantic Versioning 2.0.0, and the documentation MUST
@@ -43,10 +43,10 @@ is.
 - **Level:** MUST
 - **Applies when:** always
 - **Category:** Maintainability
-- **Verify:** Take each release of the last 12 months, or since the last
-  audit. The repository has a tag whose name is the version, with or without
-  a leading `v`. The tag points to the commit that the release was built from
-  (the commit that the release workflow ran on, or that the release page
+- **Verify:** Take each release since the last audit, or the last 12 months when
+  there is none. The repository has a tag whose name is the version, with or
+  without a leading `v`. The tag points to the commit that the release was built
+  from (the commit that the release workflow ran on, or that the release page
   names). A release without a tag, or a tag on another commit, fails.
 - **References:** Semantic Versioning 2.0.0, FAQ (`git tag v1.2.3`)
 
@@ -102,11 +102,11 @@ getting fixes. How quickly the project answers a report is USS-SEC-030.
 - **Level:** MUST
 - **Applies when:** always
 - **Category:** Maintainability
-- **Verify:** The repository root has `CHANGELOG.md`. Read it against the
-  Common Changelog guide: it begins with `# Changelog`, has an entry for each
-  release tag of the last 12 months, or since the last audit, newest first,
-  and each entry has a heading of the form `## VERSION - DATE`. Changes sit
-  under the guide's categories, in its order, with its wording and
+- **Verify:** The repository root has `CHANGELOG.md`. Read it against the Common
+  Changelog guide: it begins with `# Changelog`, has an entry for each release
+  tag since the last audit, or the last 12 months when there is none, newest
+  first, and each entry has a heading of the form `## VERSION - DATE`. Changes
+  sit under the guide's categories, in its order, with its wording and
   references, and breaking changes are marked as the guide says. A release
   without an entry, or a file that departs from the guide, fails.
 - **References:** Common Changelog (no version number; read 2026-11-24),
@@ -123,9 +123,9 @@ history.
 - **Level:** MUST
 - **Applies when:** always
 - **Category:** Maintainability
-- **Verify:** Take the changelog entries of the last 12 months, or since the
-  last audit, that describe a security fix (the word "security" or
-  "vulnerability" in the entry, or a fix that closes a published advisory).
+- **Verify:** Take the changelog entries since the last audit, or the last 12
+  months when there is none, that describe a security fix (the word "security"
+  or "vulnerability" in the entry, or a fix that closes a published advisory).
   Each names an advisory ID or a CVE ID. A security fix whose entry names
   neither fails.
 - **References:** GitHub Docs, About repository security advisories (read
@@ -144,11 +144,11 @@ USS-SEC-031.
 - **Level:** SHOULD NOT
 - **Applies when:** always
 - **Category:** Compatibility
-- **Verify:** Take the changelog entries of the last 12 months, or since the
-  last audit. No entry is marked as breaking (Common Changelog marks it with
-  `**Breaking:**`), and no release raises MAJOR for an incompatible change to
-  the public API (USS-REL-001). A release that contains a breaking change
-  fails.
+- **Verify:** Take the changelog entries since the last audit, or the last 12
+  months when there is none. No entry is marked as breaking (Common Changelog
+  marks it with `**Breaking:**`), and no release raises MAJOR for an
+  incompatible change to the public API (USS-REL-001). A release that contains a
+  breaking change fails.
 - **References:** Semantic Versioning 2.0.0
 
 A release SHOULD NOT introduce a breaking change.
@@ -161,12 +161,12 @@ cannot be avoided, the rules that follow limit the cost.
 - **Level:** MUST
 - **Applies when:** always
 - **Category:** Compatibility
-- **Verify:** Take each release of the last 12 months, or since the last
-  audit, that has a breaking change (an entry marked breaking in the
+- **Verify:** Take each release since the last audit, or the last 12 months when
+  there is none, that has a breaking change (an entry marked breaking in the
   changelog, or a raised MAJOR). A migration guide comes with it, linked from
-  the release notes or the changelog. It starts from the previous major
-  version, and gives a step for each breaking change that the changelog lists.
-  A breaking release without such a guide fails.
+  the release notes or the changelog. It starts from the previous major version,
+  and gives a step for each breaking change that the changelog lists. A breaking
+  release without such a guide fails.
 - **References:** none
 
 Each release with a breaking change MUST come with a migration guide that says
@@ -180,10 +180,10 @@ Writing that down once saves each user from finding it out alone.
 - **Level:** SHOULD
 - **Applies when:** always
 - **Category:** Compatibility
-- **Verify:** Take each feature that a release of the last 12 months, or since
-  the last audit, removed (the changelog's removed entries). An earlier
-  release, at least one before the removing one, deprecated it: the code of
-  that release has a warning that appears when the feature is used (a log
+- **Verify:** Take each feature that a release since the last audit, or the last
+  12 months when there is none, removed (the changelog's removed entries). An
+  earlier release, at least one before the removing one, deprecated it: the code
+  of that release has a warning that appears when the feature is used (a log
   line, a console message or an API warning), and the documentation or the
   changelog says it is deprecated. A removed feature that was not deprecated
   this way fails.
@@ -200,11 +200,11 @@ time to move. A note in a changelog is read only by those who look.
 - **Level:** SHOULD
 - **Applies when:** always
 - **Category:** Compatibility
-- **Verify:** Take each breaking change of the last 12 months, or since the
-  last audit (USS-REL-007 gives how to find them). The repository or the
-  release holds an automated migration for it, such as a codemod, a script or
-  a configuration converter, and the migration guide names it. Run it on a
-  sample of the old form (code, configuration or a file): the output works
+- **Verify:** Take each breaking change since the last audit, or the last 12
+  months when there is none (USS-REL-007 gives how to find them). The repository
+  or the release holds an automated migration for it, such as a codemod, a
+  script or a configuration converter, and the migration guide names it. Run it
+  on a sample of the old form (code, configuration or a file): the output works
   with the new version. A breaking change without one fails.
 - **References:** none
 
