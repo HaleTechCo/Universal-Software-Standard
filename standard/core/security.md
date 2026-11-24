@@ -53,7 +53,7 @@ Every security feature of the software MUST be on in the default
 configuration. The default configuration is the one that applies until a user
 or operator sets something on purpose, so the software never turns a security
 feature off by itself. Documenting the settings that turn a feature off is a
-Documentation (DOC) rule.
+Documentation (DOC) rule (USS-DOC-004).
 
 **Rationale:** Users seldom change defaults, so the default decides the
 security of most installations.

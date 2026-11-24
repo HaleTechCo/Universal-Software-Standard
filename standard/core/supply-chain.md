@@ -11,7 +11,7 @@ by default. Library and package dependencies are in the Dependencies area
 declares (such as `typescript` in `devDependencies`, or a Maven or Gradle
 plugin) belongs to the Dependencies area; a tool installed outside a manifest
 belongs to this area. Installing toolchains per project, rather than for the
-whole system, is a Contributability (CTB) rule.
+whole system, is a Contributability (CTB) rule (USS-CTB-002).
 
 ## Toolchains and build inputs
 

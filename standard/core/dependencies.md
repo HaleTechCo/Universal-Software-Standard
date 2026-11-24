@@ -342,7 +342,7 @@ recorded in the change that adds it. The check covers whether the dependency
 is maintained, whether it is deprecated or archived, whether it has more than
 one maintainer, and whether the standard library is enough instead. A
 dependency that fails a point can still be added when the record gives the
-reason. Licence compatibility is a Licensing (LIC) rule.
+reason. Licence compatibility is a Licensing (LIC) rule (USS-LIC-003).
 
 **Rationale:** A dependency that nobody maintains, or that one person
 maintains, is a risk that the project takes on with every release it ships.
