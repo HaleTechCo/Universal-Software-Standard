@@ -17,7 +17,7 @@ mod tests {
     use super::*;
     use crate::catalog::{Catalog, Rule, load};
     use crate::record::{Record, parse_record};
-    use crate::source::Embedded;
+    use crate::source::{Embedded, Source};
     use crate::testfixture::standard;
 
     fn catalog() -> Catalog {
@@ -86,5 +86,24 @@ mod tests {
         let c = catalog();
         let a = applicable(&c, &record("facts: { has-web-ui: true }\n"));
         assert!(ids(&a).contains(&"USS-SEC-003".to_string()));
+    }
+
+    /// The light floor of spec §6.4: the shipped record template, whose
+    /// facts are all false, is the smallest project. The spec's budget is at
+    /// most a quarter of the core rules by the 0.1.0 release. This test pins
+    /// today's counts, so every change to them is a deliberate edit that a
+    /// review sees and a plan handover reports.
+    #[test]
+    fn all_false_record_floor() {
+        let c = load(&Embedded).unwrap();
+        let path = "templates/record.yaml";
+        let data = Embedded.read(path).unwrap();
+        let r = parse_record(&Embedded, path, &data).unwrap();
+        let active = c
+            .rules
+            .iter()
+            .filter(|rule| rule.active().is_some())
+            .count();
+        assert_eq!((applicable(&c, &r).len(), active), (21, 66));
     }
 }

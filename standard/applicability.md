@@ -56,6 +56,12 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 - **Definition:** Yes when other programs can send it requests over a network.
 - **Implies:** uses-network
 
+### exposes-web-api
+
+- **Question:** Does it accept HTTP-based requests from other software?
+- **Definition:** Yes when other programs can send it requests over HTTP or a protocol carried over HTTP, such as REST, GraphQL, gRPC or WebSocket.
+- **Implies:** exposes-network-api
+
 ### is-network-service
 
 - **Question:** Does it run as a long-lived network service?
@@ -91,6 +97,12 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 
 - **Question:** Does it use cryptography?
 - **Definition:** Yes when it encrypts data, signs data, hashes data for security, or manages keys.
+
+### implements-cryptography
+
+- **Question:** Is implementing cryptography for other software a purpose of the project?
+- **Definition:** Yes when the project provides cryptographic primitives or protocols for other software to use, such as a cryptography library or a TLS implementation. Code that only calls a cryptography library does not count.
+- **Implies:** uses-cryptography
 
 ### requires-fips
 
@@ -128,7 +140,7 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 ### has-dependencies
 
 - **Question:** Does it use third-party code?
-- **Definition:** Yes when it uses code that it does not maintain itself, such as packages from a registry, libraries from other repositories, or vendored code. The language's standard library and runtime, toolchains and CI components do not count; the Supply chain area covers them.
+- **Definition:** Yes when it declares a third-party package in a manifest, including a tool such as `typescript` in `devDependencies`, or when it vendors third-party code. The language's standard library and runtime, and toolchains and CI components installed outside a manifest, do not count; the Supply chain area covers them.
 
 ### uses-private-packages
 
@@ -146,6 +158,11 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 
 - **Question:** Can people outside the core team contribute?
 - **Definition:** Yes when people outside the core team may send changes to it.
+
+### has-multiple-maintainers
+
+- **Question:** Can more than one person approve and merge changes?
+- **Definition:** Yes when two or more people have the right to approve and merge changes into its default branch. Bots and automation accounts do not count.
 
 ### uses-ai-models
 

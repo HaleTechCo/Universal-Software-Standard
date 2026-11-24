@@ -10,7 +10,8 @@ by default. Library and package dependencies are in the Dependencies area
 (DEP), and this area has no rule for them. A tool that a dependency manifest
 declares (such as `typescript` in `devDependencies`, or a Maven or Gradle
 plugin) belongs to the Dependencies area; a tool installed outside a manifest
-belongs to this area.
+belongs to this area. Installing toolchains per project, rather than for the
+whole system, is a Contributability (CTB) rule.
 
 ## Toolchains and build inputs
 
@@ -35,26 +36,7 @@ different results on different machines and can change without any change to
 the code. A pinned version makes the build repeatable and makes a toolchain
 upgrade a reviewed change.
 
-### USS-SUP-002: Install toolchains per project
-
-- **Level:** SHOULD
-- **Applies when:** always
-- **Category:** Safety
-- **Verify:** The setup instructions and other documentation have each
-  toolchain and build tool installed into the project (through a version
-  manager, a wrapper script, a dev container or the like), not into the
-  system. A script that installs system-wide is left to USS-SUP-003, so it
-  does not also fail this rule.
-- **References:** none
-
-Toolchains and build tools SHOULD be installed per project (such as through a
-version manager, a wrapper script or a dev container), not system-wide.
-USS-SUP-003 covers scripts that install system-wide.
-
-**Rationale:** Per-project installs let each project pin its own versions and
-leave the other software on the machine alone.
-
-### USS-SUP-003: Leave system-wide installs alone
+### USS-SUP-002: Leave system-wide installs alone
 
 - **Level:** MUST NOT
 - **Applies when:** always
@@ -75,48 +57,53 @@ system-wide.
 **Rationale:** A script that changes the machine can break other projects and
 the system itself, and it makes the result depend on the state of the machine.
 
-### USS-SUP-004: Pin CI components by commit
+### USS-SUP-003: Pin CI components by commit
 
 - **Level:** MUST
 - **Applies when:** always
 - **Category:** Safety
 - **Verify:** Every third-party CI component in the CI configuration (a GitHub
-  Action, a GitLab CI include or component, or the like) is referenced by a
-  full commit SHA or a content digest, and a comment gives its version.
-  Scorecard Pinned-Dependencies reports unpinned GitHub Actions, as evidence
-  for GitHub Actions only. It does not flag a reference to a tag that is
-  backed by a published immutable release, so the auditor checks such
-  references directly.
+  Action, a reusable workflow, a GitLab CI include or component, or the like)
+  is pinned to a full commit SHA or a content digest, either in its reference
+  or in a lockfile that the CI host uses to run the locked commit (such as
+  GitHub's `.github/workflows/actions.lock`, which also covers the actions that
+  other actions use). The lockfile has an entry for every component that the
+  configuration uses. A component that the lockfile does not cover (on GitHub,
+  a reusable workflow) has the SHA in its reference. A tag or branch reference
+  with neither is a failure, also when the tag belongs to an immutable release.
 - **References:** GitHub Docs, Secure use reference (read 2026-11-23), Pin
-  actions to a full-length commit SHA; OpenSSF Scorecard v5.7.0
-  (Pinned-Dependencies)
+  actions to a full-length commit SHA; GitHub Docs, Workflow dependency
+  lockfiles (read 2026-11-24); OpenSSF Scorecard v5.7.0 (Pinned-Dependencies)
 
-Every third-party CI component (such as a GitHub Action, a GitLab CI include or
-component) MUST be referenced by a full commit SHA or content digest, with
-its version in a comment.
+Every third-party CI component (such as a GitHub Action, or a GitLab CI include
+or component) MUST be pinned to a full commit SHA or content digest, in its
+reference or in a lockfile that the CI host uses to run the locked commit.
 
 **Rationale:** A tag or a branch can be moved to different code after the
-project has reviewed it. A commit SHA or digest always names the same code.
+project has reviewed it. A commit SHA or digest always names the same code. A
+host lockfile also pins the actions that other actions pull in, which a SHA in
+the workflow cannot reach.
 
-### USS-SUP-005: Pin container images by digest
+### USS-SUP-004: Pin container images by digest
 
 - **Level:** MUST
 - **Applies when:** uses-container-images
 - **Category:** Safety
-- **Verify:** Each container image reference in the repository (such as in
-  Dockerfiles, Compose files, Kubernetes manifests, Helm charts and CI jobs)
-  includes a content digest (for example `@sha256:...`). Scorecard
-  Pinned-Dependencies covers Dockerfiles and workflows, so it is partial
-  evidence.
+- **Verify:** Each reference in the repository to a container image that the
+  project does not build (such as in Dockerfiles, Compose files, Kubernetes
+  manifests, Helm charts and CI jobs) includes a content digest (for example
+  `@sha256:...`). References to images that the project builds itself are
+  outside this check.
 - **References:** OpenSSF Scorecard v5.7.0 (Pinned-Dependencies)
 
-Every container image reference in the repository MUST include its content
-digest.
+Every reference in the repository to a container image that the project does
+not build MUST include its content digest. How the project's published charts
+and manifests name its own images is a Distribution (DST) rule.
 
 **Rationale:** A tag names whatever image its owner last pushed to it. A digest
 names one image, so the build gets the image that was reviewed.
 
-### USS-SUP-006: Verify downloaded build inputs
+### USS-SUP-005: Verify downloaded build inputs
 
 - **Level:** MUST
 - **Applies when:** always
@@ -125,20 +112,20 @@ names one image, so the build gets the image that was reviewed.
   not go through a package manager's lockfile (an installer, a script or a
   binary) names a fixed version, and the file is checked against a checksum or
   signature before it is used. CI components and container images are left to
-  USS-SUP-004 and USS-SUP-005.
+  USS-SUP-003 and USS-SUP-004.
 - **References:** NIST SP 800-218 (SSDF 1.1) PW.4.4 (notional example on
   confirming integrity through digital signatures or other mechanisms)
 
 Every file that the build or CI downloads outside a package manager's lockfile
 (installers, scripts, binaries) MUST be pinned to a version and checked against
-a checksum or signature. USS-SUP-004 and USS-SUP-005 cover CI components and
+a checksum or signature. USS-SUP-003 and USS-SUP-004 cover CI components and
 container images.
 
 **Rationale:** A download that is not checked runs whatever the server returns
 at that moment, so a compromised server or a changed file becomes part of the
 build.
 
-### USS-SUP-007: No end-of-life platforms
+### USS-SUP-006: No end-of-life platforms
 
 - **Level:** MUST NOT
 - **Applies when:** always
@@ -158,7 +145,7 @@ project that uses it keeps the flaw.
 
 ## Source and CI protection
 
-### USS-SUP-008: Protect the default branch
+### USS-SUP-007: Protect the default branch
 
 - **Level:** MUST
 - **Applies when:** always
@@ -166,9 +153,7 @@ project that uses it keeps the flaw.
 - **Verify:** The repository host's settings (for example GitHub branch
   protection or rulesets, or GitLab protected branches and protected tags,
   read through the host's settings or API) block force-pushes and deletion of
-  the default branch and of release tags. OpenSSF Scorecard Branch-Protection
-  is evidence for the default and release branches only, so it is partial
-  evidence: it does not cover tags. Without access to the settings, the
+  the default branch and of release tags. Without access to the settings, the
   auditor records `unverified`.
 - **References:** OpenSSF Scorecard v5.7.0 (Branch-Protection)
 
@@ -178,7 +163,7 @@ deletion.
 **Rationale:** History that can be rewritten or deleted cannot be trusted as
 the record of what was released.
 
-### USS-SUP-009: Require CI checks before merge
+### USS-SUP-008: Require CI checks before merge
 
 - **Level:** MUST
 - **Applies when:** always
@@ -187,9 +172,8 @@ the record of what was released.
   protection or rulesets, or GitLab merge request settings, read through the
   host's settings or API) require CI checks to pass before a change merges
   into the default branch, and those checks include every CI check that this
-  standard's rules require, such as the scans of USS-SEC-005, USS-SEC-026 and
-  USS-DEP-007. OpenSSF Scorecard Branch-Protection (required status checks)
-  is evidence. Without access to the settings, the auditor records
+  standard's rules require, such as the scans of USS-SEC-005, USS-SEC-028 and
+  USS-DEP-007. Without access to the settings, the auditor records
   `unverified`.
 - **References:** OpenSSF Scorecard v5.7.0 (Branch-Protection)
 
@@ -199,32 +183,30 @@ The required checks include every CI check that this standard's rules require.
 **Rationale:** A check that a change can skip does not protect the default
 branch.
 
-### USS-SUP-010: Review changes before merge
+### USS-SUP-009: Review changes before merge
 
-- **Level:** SHOULD
-- **Applies when:** always
+- **Level:** MUST
+- **Applies when:** has-multiple-maintainers
 - **Category:** Safety
-- **Verify:** Every merged change shows an approval from someone other than
-  its author. The repository host's settings (for example GitHub branch
-  protection or rulesets that require approving reviews, or GitLab merge
-  request approval rules, read through the host's settings or API) are
-  evidence of whether that holds for every change: a setting that requires an
-  approval before merge supports it, and its absence leaves open that a change
-  merged without one. OpenSSF Scorecard Code-Review is evidence, but only
-  partial: it samples recent commits, and it can accept a merger who differs
-  from the committer in place of an explicit approval. Without access to the
-  settings, the auditor records `unverified`.
-- **References:** OpenSSF Scorecard v5.7.0 (Code-Review)
+- **Verify:** The repository host's settings (for example a GitHub ruleset or
+  branch protection that requires an approving review, or a GitLab merge
+  request approval rule, read through the host's settings or API) require an
+  approval from someone other than the author before a change merges into the
+  default branch. Without such a setting, every change merged since the last
+  recorded audit (or in the last 12 months when there is no earlier audit)
+  shows such an approval. Without access to either, the auditor records
+  `unverified`.
+- **References:** OpenSSF Scorecard v5.7.0 (Code-Review); SLSA v1.2, Source
+  track (two-party review)
 
-Each change SHOULD be reviewed and approved by someone other than its author
-before it merges.
+Each change MUST be approved by someone other than its author before it
+merges.
 
 **Rationale:** A second person catches mistakes and malicious changes that the
-author misses. A project with one maintainer cannot meet this rule, because
-nobody else can approve. It records a Standard Deviation instead and relies on
-its other controls.
+author misses. A project with one maintainer is outside this rule, because
+nobody else can approve.
 
-### USS-SUP-011: Limit CI token permissions
+### USS-SUP-010: Limit CI token permissions
 
 - **Level:** MUST
 - **Applies when:** always
@@ -232,11 +214,8 @@ its other controls.
 - **Verify:** The CI configuration sets read-only token permissions by default
   (for GitHub, a top-level `permissions` block, or the repository's default
   workflow permissions setting), and each job that needs more declares only
-  those permissions. OpenSSF Scorecard Token-Permissions is evidence, but only
-  partial: it cannot see the repository-level setting. Where a workflow has no
-  top-level `permissions` block, its default comes from the repository-level
-  setting, and without access to that setting the auditor records
-  `unverified`.
+  those permissions. Where a default comes from a repository setting that the
+  auditor cannot read, the auditor records `unverified`.
 - **References:** OpenSSF Scorecard v5.7.0 (Token-Permissions); GitHub Docs,
   Secure use reference (read 2026-11-23), Use secrets for sensitive
   information (Principle of least privilege) and Restricting permissions for
@@ -248,7 +227,7 @@ default.
 **Rationale:** A job that is compromised can do what its token allows. A token
 with fewer permissions limits the damage.
 
-### USS-SUP-012: Keep untrusted code away from secrets
+### USS-SUP-011: Keep untrusted code away from secrets
 
 - **Level:** MUST NOT
 - **Applies when:** always
@@ -257,8 +236,7 @@ with fewer permissions limits the damage.
   write token runs code from an untrusted change (a pull request from a fork,
   for example). Look at triggers that run with the target repository's
   privileges (such as `pull_request_target` or `workflow_run` on GitHub) for a
-  checkout of the change's code. Scorecard Dangerous-Workflow reports this
-  pattern, but it does not decide whether a given checkout is safe.
+  checkout of the change's code.
 - **References:** OpenSSF Scorecard v5.7.0 (Dangerous-Workflow); GitHub
   Security Lab, Keeping your GitHub Actions and workflows secure Part 1:
   Preventing pwn requests (read 2026-11-23)
@@ -269,7 +247,7 @@ fork) in a job that has secrets or a write token.
 **Rationale:** Code from an untrusted change can read every secret and use
 every permission of the job that runs it.
 
-### USS-SUP-013: Keep untrusted data out of CI scripts
+### USS-SUP-012: Keep untrusted data out of CI scripts
 
 - **Level:** MUST NOT
 - **Applies when:** always
@@ -277,8 +255,7 @@ every permission of the job that runs it.
 - **Verify:** In the CI configuration, no script text contains an expression
   that inserts untrusted event data (titles, branch names, commit messages,
   comments) directly. Such data reaches a script only through an environment
-  variable or a file. Scorecard Dangerous-Workflow reports script injection
-  for GitHub workflows.
+  variable or a file.
 - **References:** OpenSSF Scorecard v5.7.0 (Dangerous-Workflow); GitHub Docs,
   Secure use reference (read 2026-11-23), Good practices for mitigating script
   injection attacks; CWE-78
@@ -293,7 +270,7 @@ the job.
 
 ## Release artifacts
 
-### USS-SUP-014: Publish an SBOM
+### USS-SUP-013: Publish an SBOM
 
 - **Level:** SHOULD
 - **Applies when:** distributed-as-package or ships-container-image
@@ -313,23 +290,23 @@ direct dependencies of the release.
 **Rationale:** Users and downstream projects need to know what a release
 contains to find out whether a newly disclosed flaw affects them.
 
-### USS-SUP-015: Sign release artifacts
+### USS-SUP-014: Sign release artifacts
 
 - **Level:** SHOULD
 - **Applies when:** distributed-as-package or ships-container-image
 - **Category:** Safety
 - **Verify:** Each release artifact has a signature published with it or in a
-  registry (a Sigstore signature, for example). The release documentation says
-  how to verify the signature.
+  registry (a Sigstore signature, for example).
 - **References:** NIST SP 800-218 (SSDF 1.1) PS.2.1
 
-Release artifacts SHOULD be signed, and the release documentation SHOULD say
-how to verify the signature.
+Release artifacts SHOULD be signed. This is the standard's one rule for
+signing release artifacts; instructions for verifying a signature are a
+Distribution (DST) rule.
 
 **Rationale:** A signature lets users check that an artifact comes from the
 project and was not changed after the release.
 
-### USS-SUP-016: Meet SLSA Build Level 2
+### USS-SUP-015: Meet SLSA Build Level 2
 
 - **Level:** SHOULD
 - **Applies when:** distributed-as-package or ships-container-image
@@ -346,7 +323,7 @@ provenance, meeting SLSA Build Level 2.
 **Rationale:** Provenance signed by the build platform lets users check which
 source and which build produced an artifact.
 
-### USS-SUP-017: Meet SLSA Build Level 3
+### USS-SUP-016: Meet SLSA Build Level 3
 
 - **Level:** SHOULD
 - **Applies when:** (distributed-as-package or ships-container-image) and

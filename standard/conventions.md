@@ -364,7 +364,7 @@ module points to it.
 - Keep small projects light through applicability. A level MUST NOT be
   weakened for that purpose.
 - Scale the levels of an external standard with facts, not tiers. For OWASP
-  ASVS: Level 1 is a MUST when `has-web-ui or exposes-network-api`; Level 2 is
+  ASVS: Level 1 is a MUST when `has-web-ui or exposes-web-api`; Level 2 is
   a MUST when, in addition, `handles-authentication or
   handles-sensitive-data`; Level 3 is a SHOULD when, in addition,
   `high-assurance`. SLSA build levels and CIS profiles follow the same

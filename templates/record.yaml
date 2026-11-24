@@ -55,6 +55,9 @@ facts:
   # Does it accept requests over a network?
   # Answer this. false is not a default.
   exposes-network-api: false
+  # Does it accept HTTP-based requests from other software?
+  # Answer this. false is not a default.
+  exposes-web-api: false
   # Does it run as a long-lived network service?
   # Answer this. false is not a default.
   is-network-service: false
@@ -76,6 +79,9 @@ facts:
   # Does it use cryptography?
   # Answer this. false is not a default.
   uses-cryptography: false
+  # Is implementing cryptography for other software a purpose of the project?
+  # Answer this. false is not a default.
+  implements-cryptography: false
   # Must it run in a FIPS 140-3 validated configuration?
   # Answer this. false is not a default.
   requires-fips: false
@@ -106,6 +112,9 @@ facts:
   # Can people outside the core team contribute?
   # Answer this. false is not a default.
   accepts-external-contributions: false
+  # Can more than one person approve and merge changes?
+  # Answer this. false is not a default.
+  has-multiple-maintainers: false
   # Does it call or run AI models?
   # Answer this. false is not a default.
   uses-ai-models: false
