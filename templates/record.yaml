@@ -40,6 +40,9 @@ facts:
   # Does it send or receive data over a network?
   # Answer this. false is not a default.
   uses-network: false
+  # Does it send usage or diagnostic data to the project or a third party?
+  # Answer this. false is not a default.
+  collects-telemetry: false
   # Does it keep data across restarts?
   # Answer this. false is not a default.
   stores-persistent-data: false
@@ -70,12 +73,24 @@ facts:
   # Does it handle sensitive data?
   # Answer this. false is not a default.
   handles-sensitive-data: false
+  # Does it handle personal data?
+  # Answer this. false is not a default.
+  handles-personal-data: false
   # Does it need secrets to run?
   # Answer this. false is not a default.
   uses-secrets: false
   # Could a failure cause serious harm?
   # Answer this. false is not a default.
   high-assurance: false
+  # Does any of its own code run without memory safety?
+  # Answer this. false is not a default.
+  has-memory-unsafe-code: false
+  # Does its code run in parallel and share data?
+  # Answer this. false is not a default.
+  uses-concurrency: false
+  # Does it parse data that an untrusted source could have written?
+  # Answer this. false is not a default.
+  parses-untrusted-input: false
   # Does it use cryptography?
   # Answer this. false is not a default.
   uses-cryptography: false
@@ -97,9 +112,15 @@ facts:
   # Do others use it as a library or SDK?
   # Answer this. false is not a default.
   is-library: false
+  # Is it a tool that software developers use in their work?
+  # Answer this. false is not a default.
+  is-developer-tool: false
   # Is it released as an installable package or binary?
   # Answer this. false is not a default.
   distributed-as-package: false
+  # Does it publish versioned releases?
+  # Answer this. false is not a default.
+  publishes-releases: false
   # Does it use third-party code?
   # Answer this. false is not a default.
   has-dependencies: false
@@ -121,6 +142,9 @@ facts:
   # Does it provide an MCP server?
   # Answer this. false is not a default.
   exposes-mcp-server: false
+  # Can an AI model make it take actions?
+  # Answer this. false is not a default.
+  has-ai-tool-use: false
   # Does more than one person or account use one installation?
   # Answer this. false is not a default.
   has-multiple-users: false

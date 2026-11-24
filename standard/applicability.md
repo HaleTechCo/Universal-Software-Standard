@@ -27,6 +27,12 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 - **Question:** Does it send or receive data over a network?
 - **Definition:** Yes when it opens network connections or accepts them.
 
+### collects-telemetry
+
+- **Question:** Does it send usage or diagnostic data to the project or a third party?
+- **Definition:** Yes when it sends data about how it is used, or crash and diagnostic reports, to the project or to a third party, rather than only to its own operator's systems.
+- **Implies:** uses-network
+
 ### stores-persistent-data
 
 - **Question:** Does it keep data across restarts?
@@ -83,6 +89,12 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 - **Question:** Does it handle sensitive data?
 - **Definition:** Yes when it handles personal, financial, health or credential data, or data of similar sensitivity.
 
+### handles-personal-data
+
+- **Question:** Does it handle personal data?
+- **Definition:** Yes when it collects, stores or processes information about an identified or identifiable person, such as a name, an email address, an account identifier or a location.
+- **Implies:** handles-sensitive-data
+
 ### uses-secrets
 
 - **Question:** Does it need secrets to run?
@@ -92,6 +104,21 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 
 - **Question:** Could a failure cause serious harm?
 - **Definition:** Yes when a failure could cause serious harm, such as to safety, to critical infrastructure or through a large financial loss.
+
+### has-memory-unsafe-code
+
+- **Question:** Does any of its own code run without memory safety?
+- **Definition:** Yes when the project's own code includes a language that does not guarantee memory safety (such as C, C++ or assembly), or uses the unsafe features of a memory-safe language (such as Rust `unsafe` blocks, Go's `unsafe` package or C# `unsafe` code). Code in dependencies does not count.
+
+### uses-concurrency
+
+- **Question:** Does its code run in parallel and share data?
+- **Definition:** Yes when its own code runs threads, goroutines, parallel tasks or processes that share memory or other mutable data. Asynchronous code on a single thread does not count.
+
+### parses-untrusted-input
+
+- **Question:** Does it parse data that an untrusted source could have written?
+- **Definition:** Yes when it parses files, documents, images, archives, network messages or other structured input that a person or system it does not trust could have written. Configuration that only its operator writes does not count.
 
 ### uses-cryptography
 
@@ -114,7 +141,7 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 
 - **Question:** Does it publish a container image?
 - **Definition:** Yes when it publishes an OCI container image.
-- **Implies:** uses-container-images
+- **Implies:** uses-container-images, publishes-releases
 
 ### deploys-to-kubernetes
 
@@ -132,10 +159,21 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 - **Question:** Do others use it as a library or SDK?
 - **Definition:** Yes when other projects use it as a library or an SDK.
 
+### is-developer-tool
+
+- **Question:** Is it a tool that software developers use in their work?
+- **Definition:** Yes when its main users are software developers, who use it while they write, build, test or ship code, such as a compiler, a linter, a build tool, a test framework or a command-line tool for a developer service.
+
 ### distributed-as-package
 
 - **Question:** Is it released as an installable package or binary?
 - **Definition:** Yes when it is released as a package or a binary that people install.
+- **Implies:** publishes-releases
+
+### publishes-releases
+
+- **Question:** Does it publish versioned releases?
+- **Definition:** Yes when the project publishes numbered versions of its software for others to install, run or build on, such as packages, binaries, container images, charts or tagged source releases. A service that only the project itself deploys does not count.
 
 ### has-dependencies
 
@@ -173,6 +211,12 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 
 - **Question:** Does it provide an MCP server?
 - **Definition:** Yes when it provides a Model Context Protocol (MCP) server.
+- **Implies:** has-ai-tool-use
+
+### has-ai-tool-use
+
+- **Question:** Can an AI model make it take actions?
+- **Definition:** Yes when output from an AI model can make the software take an action, such as calling a tool, a function or an API, running a command or changing data, rather than only being shown to a person. This includes software that runs the model itself and software that offers tools to an outside agent, such as an MCP server.
 
 ### has-multiple-users
 
@@ -198,3 +242,4 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 
 - **Question:** Does it process personal data of people in the EU?
 - **Definition:** Yes when it processes personal data of people who are in the European Union.
+- **Implies:** handles-personal-data

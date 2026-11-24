@@ -261,6 +261,7 @@ mod tests {
             "has-web-ui",
             "has-cli",
             "uses-network",
+            "collects-telemetry",
             "stores-persistent-data",
             "stores-user-data",
             "uses-database",
@@ -271,8 +272,12 @@ mod tests {
             "operates-service",
             "handles-authentication",
             "handles-sensitive-data",
+            "handles-personal-data",
             "uses-secrets",
             "high-assurance",
+            "has-memory-unsafe-code",
+            "uses-concurrency",
+            "parses-untrusted-input",
             "uses-cryptography",
             "implements-cryptography",
             "requires-fips",
@@ -280,7 +285,9 @@ mod tests {
             "deploys-to-kubernetes",
             "uses-container-images",
             "is-library",
+            "is-developer-tool",
             "distributed-as-package",
+            "publishes-releases",
             "has-dependencies",
             "uses-private-packages",
             "vendors-dependencies",
@@ -288,13 +295,14 @@ mod tests {
             "has-multiple-maintainers",
             "uses-ai-models",
             "exposes-mcp-server",
+            "has-ai-tool-use",
             "has-multiple-users",
             "is-commercial",
             "is-foss",
             "sold-in-eu",
             "processes-eu-personal-data",
         ];
-        assert_eq!(want.len(), 36);
+        assert_eq!(want.len(), 44);
         let mut got: Vec<&str> = facts
             .values()
             .filter(|f| matches!(f.source, FactSource::Question(_)))
