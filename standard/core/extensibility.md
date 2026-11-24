@@ -30,8 +30,8 @@ ideas to plugins.
   party wrote against it, without a change to the software's own source. Write
   a minimal plugin from the documentation and load it: it adds a feature. An
   interface that exists in the code but that the documentation does not
-  describe fails once the MAY is adopted. When the project adopts this rule,
-  the record answers `has-plugin-interface` as true.
+  describe fails once the MAY is adopted. Adoption (`adopt: true`) enables
+  `has-plugin-interface`; the record does not answer it.
 - **References:** none
 - **Enables:** has-plugin-interface
 
@@ -189,8 +189,8 @@ their users do.
   operator runs) and the host can list plugins from it and install one with no
   manual file transfer. Install a listed plugin through the host: it works. A
   marketplace that the documentation does not describe fails once the MAY is
-  adopted. When the project adopts this rule, the record answers
-  `has-plugin-marketplace` as true.
+  adopted. Adoption (`adopt: true`) enables `has-plugin-marketplace`; the
+  record does not answer it.
 - **References:** none
 - **Enables:** has-plugin-marketplace
 

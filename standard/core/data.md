@@ -113,16 +113,21 @@ they cannot read, as long as the keys are kept apart from the data.
   procedure that deletes all the data of one user. Run it on a test user in a
   test instance, and then search each store (the primary database, search
   indexes and caches, and the files) for the user's identifier and name: no
-  record remains. Backups are covered by their expiry, which the
-  documentation states. An operator, acting for the user, can start it.
+  record remains outside the backups and the audit records (USS-AUD-002).
+  Backups are covered by their expiry, which the documentation states, and
+  audit records by their retention period (USS-AUD-007), until which they are
+  kept. An operator, acting for the user, can start it.
 - **References:** none
 
 The software MUST be able to delete all the data of one user, including copies
 in indexes and caches, when the user, or an operator acting for them, asks.
+Audit records (USS-AUD-002) are kept until their retention period ends
+(USS-AUD-007), as backups are kept until they expire.
 
 **Rationale:** Data that was given to the software belongs to the user. A
 delete that leaves copies in an index or a cache gives only the look of
-deletion.
+deletion. An audit record that vanished on request would no longer show who
+did what, so it leaves with its retention period instead.
 
 ### USS-DAT-006: Offer data export
 
