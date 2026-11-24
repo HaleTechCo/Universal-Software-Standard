@@ -99,7 +99,8 @@ the workflow cannot reach.
 
 Every reference in the repository to a container image that the project does
 not build MUST include its content digest. How the project's published charts
-and manifests name its own images is a Distribution (DST) rule.
+and manifests name its own images is a Distribution (DST) rule
+(USS-DST-016).
 
 **Rationale:** A tag names whatever image its owner last pushed to it. A digest
 names one image, so the build gets the image that was reviewed.
@@ -302,7 +303,7 @@ contains to find out whether a newly disclosed flaw affects them.
 
 Release artifacts SHOULD be signed. This is the standard's one rule for
 signing release artifacts; instructions for verifying a signature are a
-Distribution (DST) rule.
+Distribution (DST) rule (USS-DST-015).
 
 **Rationale:** A signature lets users check that an artifact comes from the
 project and was not changed after the release.
