@@ -243,3 +243,13 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 - **Question:** Does it process personal data of people in the EU?
 - **Definition:** Yes when it processes personal data of people who are in the European Union.
 - **Implies:** handles-personal-data
+
+### has-plugin-interface
+
+- **Enabled by:** USS-EXT-001
+- **Definition:** Yes when the project adopts USS-EXT-001: the software offers an interface through which plugins add features.
+
+### has-plugin-marketplace
+
+- **Enabled by:** USS-EXT-008
+- **Definition:** Yes when the project adopts USS-EXT-008: the project runs or ships a marketplace through which users find and install plugins.
