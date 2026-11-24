@@ -37,6 +37,9 @@ facts:
   # Does it have a command-line interface?
   # Answer this. false is not a default.
   has-cli: false
+  # Does it send or receive data over a network?
+  # Answer this. false is not a default.
+  uses-network: false
   # Does it keep data across restarts?
   # Answer this. false is not a default.
   stores-persistent-data: false
@@ -64,6 +67,9 @@ facts:
   # Does it handle sensitive data?
   # Answer this. false is not a default.
   handles-sensitive-data: false
+  # Does it need secrets to run?
+  # Answer this. false is not a default.
+  uses-secrets: false
   # Could a failure cause serious harm?
   # Answer this. false is not a default.
   high-assurance: false
@@ -79,12 +85,24 @@ facts:
   # Does it ship Kubernetes manifests or Helm charts?
   # Answer this. false is not a default.
   deploys-to-kubernetes: false
+  # Does the repository use container images?
+  # Answer this. false is not a default.
+  uses-container-images: false
   # Do others use it as a library or SDK?
   # Answer this. false is not a default.
   is-library: false
   # Is it released as an installable package or binary?
   # Answer this. false is not a default.
   distributed-as-package: false
+  # Does it use third-party code?
+  # Answer this. false is not a default.
+  has-dependencies: false
+  # Does it use packages from a private registry or repository?
+  # Answer this. false is not a default.
+  uses-private-packages: false
+  # Does it keep copies of third-party code in its repository?
+  # Answer this. false is not a default.
+  vendors-dependencies: false
   # Can people outside the core team contribute?
   # Answer this. false is not a default.
   accepts-external-contributions: false

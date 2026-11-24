@@ -15,12 +15,17 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 
 - **Question:** Does it serve a UI in a web browser?
 - **Definition:** Yes when it serves a UI that people open in a web browser.
-- **Implies:** has-ui
+- **Implies:** has-ui, uses-network
 
 ### has-cli
 
 - **Question:** Does it have a command-line interface?
 - **Definition:** Yes when people or scripts run it from a command line.
+
+### uses-network
+
+- **Question:** Does it send or receive data over a network?
+- **Definition:** Yes when it opens network connections or accepts them.
 
 ### stores-persistent-data
 
@@ -49,6 +54,7 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 
 - **Question:** Does it accept requests over a network?
 - **Definition:** Yes when other programs can send it requests over a network.
+- **Implies:** uses-network
 
 ### is-network-service
 
@@ -71,6 +77,11 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 - **Question:** Does it handle sensitive data?
 - **Definition:** Yes when it handles personal, financial, health or credential data, or data of similar sensitivity.
 
+### uses-secrets
+
+- **Question:** Does it need secrets to run?
+- **Definition:** Yes when it needs passwords, API keys, tokens, private keys or similar secrets at run time.
+
 ### high-assurance
 
 - **Question:** Could a failure cause serious harm?
@@ -91,11 +102,18 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 
 - **Question:** Does it publish a container image?
 - **Definition:** Yes when it publishes an OCI container image.
+- **Implies:** uses-container-images
 
 ### deploys-to-kubernetes
 
 - **Question:** Does it ship Kubernetes manifests or Helm charts?
 - **Definition:** Yes when it ships Kubernetes manifests or Helm charts.
+- **Implies:** uses-container-images
+
+### uses-container-images
+
+- **Question:** Does the repository use container images?
+- **Definition:** Yes when its Dockerfiles, Compose files, Kubernetes manifests, Helm charts or CI jobs name a container image.
 
 ### is-library
 
@@ -106,6 +124,23 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 
 - **Question:** Is it released as an installable package or binary?
 - **Definition:** Yes when it is released as a package or a binary that people install.
+
+### has-dependencies
+
+- **Question:** Does it use third-party code?
+- **Definition:** Yes when it uses code that it does not maintain itself, such as packages from a registry, libraries from other repositories, or vendored code.
+
+### uses-private-packages
+
+- **Question:** Does it use packages from a private registry or repository?
+- **Definition:** Yes when any of its dependencies comes from a package registry or repository that is not public.
+- **Implies:** has-dependencies
+
+### vendors-dependencies
+
+- **Question:** Does it keep copies of third-party code in its repository?
+- **Definition:** Yes when its repository holds third-party source or binaries that it builds or ships.
+- **Implies:** has-dependencies
 
 ### accepts-external-contributions
 
