@@ -53,13 +53,18 @@ leave the other software on the machine alone.
 - **Level:** MUST NOT
 - **Applies when:** always
 - **Category:** Safety
-- **Verify:** No build, setup or test script installs, upgrades or removes a system-wide runtime,
-  package manager or global package. Look for system package manager commands,
-  global install flags and changes to system paths.
+- **Verify:** No build, setup or test script installs, upgrades or removes a
+  runtime, package manager or global package on the host it runs on. Look for
+  system package manager commands, global install flags and changes to system
+  paths. An install into a container image that the build creates, or onto a CI
+  runner that is discarded after the job, is not on the host.
 - **References:** none
 
 A build, setup or test script MUST NOT install, upgrade or remove a
-system-wide runtime, package manager or global package.
+system-wide runtime, package manager or global package. System-wide means the
+host the script runs on: an install into a container image that the build
+creates, or onto a CI runner that is discarded after the job, is not
+system-wide.
 
 **Rationale:** A script that changes the machine can break other projects and
 the system itself, and it makes the result depend on the state of the machine.
@@ -70,15 +75,17 @@ the system itself, and it makes the result depend on the state of the machine.
 - **Applies when:** always
 - **Category:** Safety
 - **Verify:** Every third-party CI component in the CI configuration (a GitHub
-  Action, a GitLab CI include, a CircleCI orb or the like) is referenced by a
+  Action, a GitLab CI include or component, or the like) is referenced by a
   full commit SHA or a content digest, and a comment gives its version.
   Scorecard Pinned-Dependencies reports unpinned GitHub Actions, as evidence
-  for GitHub Actions only.
+  for GitHub Actions only. It does not flag a reference to a tag that is
+  backed by a published immutable release, so the auditor checks such
+  references directly.
 - **References:** GitHub Docs, Secure use reference (Pin actions to a
   full-length commit SHA); OpenSSF Scorecard v5.7.0 (Pinned-Dependencies)
 
 Every third-party CI component (such as a GitHub Action, a GitLab CI include or
-a CircleCI orb) MUST be referenced by a full commit SHA or content digest, with
+component) MUST be referenced by a full commit SHA or content digest, with
 its version in a comment.
 
 **Rationale:** A tag or a branch can be moved to different code after the
@@ -89,10 +96,11 @@ project has reviewed it. A commit SHA or digest always names the same code.
 - **Level:** MUST
 - **Applies when:** uses-container-images
 - **Category:** Safety
-- **Verify:** Each container image reference in Dockerfiles, Compose files,
-  Kubernetes manifests, Helm charts and CI jobs includes a content digest
-  (`@sha256:` followed by the digest). Scorecard Pinned-Dependencies covers
-  Dockerfiles and workflows, so it is partial evidence.
+- **Verify:** Each container image reference in the repository (such as in
+  Dockerfiles, Compose files, Kubernetes manifests, Helm charts and CI jobs)
+  includes a content digest (for example `@sha256:...`). Scorecard
+  Pinned-Dependencies covers Dockerfiles and workflows, so it is partial
+  evidence.
 - **References:** OpenSSF Scorecard v5.7.0 (Pinned-Dependencies)
 
 Every container image reference in the repository MUST include its content
@@ -108,8 +116,8 @@ names one image, so the build gets the image that was reviewed.
 - **Category:** Safety
 - **Verify:** Each download in build scripts and CI configuration that does
   not go through a package manager's lockfile (an installer, a script or a
-  binary) names a fixed version, and the same step checks the file against a
-  checksum or signature.
+  binary) names a fixed version, and the file is checked against a checksum or
+  signature before it is used.
 - **References:** NIST SP 800-218 (SSDF 1.1) PW.4.4 (notional example on
   confirming integrity through digital signatures or other mechanisms)
 
@@ -128,8 +136,9 @@ build.
 - **Category:** Safety
 - **Verify:** The versions of the runtimes, compilers, build tools and base
   images that the project builds with or runs on (from the version files,
-  Dockerfiles and CI configuration) are all within the supplier's published
-  support period for security fixes at the audit date.
+  Dockerfiles and CI configuration) all still receive security fixes from their
+  supplier at the audit date, as the supplier's support policy or release
+  history shows. Where neither shows it, the auditor records `unverified`.
 - **References:** The supplier's support policy for each platform; CWE-1104
   (a runtime or base image is a third-party component that the product relies
   on)
@@ -185,14 +194,16 @@ branch.
 - **Level:** SHOULD
 - **Applies when:** always
 - **Category:** Safety
-- **Verify:** The repository host's settings (for example GitHub branch
+- **Verify:** Every merged change shows an approval from someone other than
+  its author. The repository host's settings (for example GitHub branch
   protection or rulesets that require approving reviews, or GitLab merge
-  request approval rules, read through the host's settings or API) require
-  each change to be approved before it merges, and the merged changes show an
-  approval from someone other than the author. OpenSSF Scorecard Code-Review
-  is evidence, but only partial: it samples recent commits, and it can accept
-  a merger who differs from the committer in place of an explicit approval.
-  Without access to the settings, the auditor records `unverified`.
+  request approval rules, read through the host's settings or API) are
+  evidence of whether that holds for every change: a setting that requires an
+  approval before merge supports it, and its absence leaves open that a change
+  merged without one. OpenSSF Scorecard Code-Review is evidence, but only
+  partial: it samples recent commits, and it can accept a merger who differs
+  from the committer in place of an explicit approval. Without access to the
+  settings, the auditor records `unverified`.
 - **References:** OpenSSF Scorecard v5.7.0 (Code-Review)
 
 Each change SHOULD be reviewed and approved by someone other than its author
@@ -215,7 +226,8 @@ its other controls.
   partial: it cannot see the repository-level setting. Without access to the
   settings, the auditor records `unverified`.
 - **References:** OpenSSF Scorecard v5.7.0 (Token-Permissions); GitHub Docs,
-  Secure use reference (Use of the GITHUB_TOKEN with least privilege)
+  Secure use reference (Use secrets for sensitive information, Principle of
+  least privilege; Restricting permissions for tokens)
 
 Each CI job MUST run with the least token permissions it needs, read-only by
 default.
@@ -254,8 +266,9 @@ every permission of the job that runs it.
   comments) directly. Such data reaches a script only through an environment
   variable or a file. Scorecard Dangerous-Workflow reports script injection
   for GitHub workflows.
-- **References:** GitHub Docs, Secure use reference (Understanding the risk of
-  script injections); CWE-78
+- **References:** OpenSSF Scorecard v5.7.0 (Dangerous-Workflow); GitHub Docs,
+  Secure use reference (Good practices for mitigating script injection
+  attacks); CWE-78
 
 CI MUST NOT insert untrusted event data (titles, branch names, commit
 messages, comments) into a script it runs, and it passes such data through
