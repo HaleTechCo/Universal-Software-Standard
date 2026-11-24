@@ -116,9 +116,12 @@ applies to each credential; this rule adds the ceiling of the user's rights.
   tool call (the documentation says so, and says that clients confirm
   tool calls, as the specification expects), or its tool sends an elicitation
   request that the person has to accept before the action runs (MCP
-  Specification 2026-07-28, Elicitation). Run the check with a client that
-  confirms, or with the elicitation declined: the action does not run. An
-  action that runs with no person's approval fails.
+  Specification 2026-07-28, Elicitation). For the first route, the
+  documentation also names the confirming clients that the server supports (or
+  says that it serves only clients that confirm). Run the check with a
+  confirming client where the person declines, or with the elicitation
+  declined: the action does not run. An action that runs with no person's
+  approval fails.
 - **References:** OWASP Top 10 for LLM Applications 2025, LLM06; MCP
   Specification 2026-07-28, Server, Tools (User Interaction Model) and Client,
   Elicitation
@@ -247,14 +250,16 @@ for it later.
   the person is dealing with an AI system, and the generated content carries a
   visible mark (such as a label or an icon with a text alternative). A
   screen that does either with no statement or mark fails.
-- **References:** Regulation (EU) 2024/1689 (AI Act), Article 50
+- **References:** Regulation (EU) 2024/1689 (AI Act), Article 50(1) and 50(4)
 
 The interface MUST tell people when they are interacting with an AI system, and
 MUST mark content that AI generated.
 
 **Rationale:** People judge a message differently when they know that a machine
-wrote it. Some jurisdictions require the notice, and a project that gives it
-everywhere does not have to work out where the duty starts.
+wrote it. Article 50 of the AI Act requires the notice for systems that
+interact with people and for deep fakes; this rule is wider than the law, and
+a project that gives the notice and the mark everywhere does not have to work
+out where the duty starts.
 
 ### USS-AI-010: Authenticate MCP clients
 

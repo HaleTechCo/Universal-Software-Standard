@@ -161,8 +161,8 @@ cache among the data is backed up for nothing.
   the command line against it by running it. A command line that contradicts a
   guideline about a feature that it has fails. Guidelines about features that
   it does not have (such as subcommands in a single-command tool) are not
-  checked. The guidelines that a rule of this area already holds (UX-007 to
-  UX-011) are decided by those rules.
+  checked. The guidelines that a rule of this area already holds (USS-UX-007
+  to USS-UX-011) are decided by those rules.
 - **References:** Command Line Interface Guidelines (clig.dev, read
   2026-11-24)
 
@@ -241,9 +241,8 @@ scripts can rely on.
   software would use colour by default), first with `NO_COLOR` unset and then
   with `NO_COLOR=1`. With it set, the output has no ANSI escape sequences that
   set colour (for example, the sequences that set the foreground or
-  background colour). Run it once more with `NO_COLOR` set to an empty string:
-  this case is not checked. Colour in the output when `NO_COLOR` is set to a
-  value that is not empty fails.
+  background colour). Colour in the output when `NO_COLOR` is set to a value
+  that is not empty fails. When it is unset or empty, colour is permitted.
 - **References:** NO_COLOR (no-color.org, read 2026-11-24)
 
 The interface MUST print no ANSI colour when the `NO_COLOR` environment
