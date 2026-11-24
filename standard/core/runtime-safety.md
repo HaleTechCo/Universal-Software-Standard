@@ -91,9 +91,10 @@ CI MUST run the tests with the memory-error and undefined-behaviour
 sanitizers that the toolchain offers (such as AddressSanitizer and
 UndefinedBehaviorSanitizer, or Miri for Rust).
 
-**Rationale:** A memory error often does not fail a test: it corrupts memory
-and the program goes on. A sanitizer turns it into a failure at the line
-where it happens.
+**Rationale:** A memory error often does not fail a test: it corrupts memory and
+the program goes on. A sanitizer turns it into a failure at the line where it
+happens. The weekly limit, for a project that runs the sanitizers on a schedule
+instead of on each pull request, is a number that USS adds.
 
 ### USS-SAF-005: Publish a memory-safety roadmap
 
@@ -151,6 +152,7 @@ the project has to carry. New code in a memory-safe language does not.
 CI SHOULD run the tests of concurrent code with a data-race detector where the
 toolchain offers one (such as Go's `-race` or ThreadSanitizer).
 
-**Rationale:** A data race shows up only under some timings, so a test can
-pass a hundred times and fail in production. A detector finds the race that
-did not happen to hurt.
+**Rationale:** A data race shows up only under some timings, so a test can pass
+a hundred times and fail in production. A detector finds the race that did not
+happen to hurt. The weekly limit, for a project that runs the detector on a
+schedule instead of on each pull request, is a number that USS adds.

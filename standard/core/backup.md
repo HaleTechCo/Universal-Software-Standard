@@ -4,12 +4,11 @@
 - **Kind:** area
 
 This area covers getting data back after a loss, in three scopes: what the
-software offers its operators, the deployments that the project runs itself,
-and the project's source. Its rules count toward Reliability. The Data (DAT)
-area holds the migrations that an upgrade runs (USS-DAT-001), the Privacy
-(PRV) area holds when personal data is deleted (USS-PRV-003), and the
-Distribution (DST) area points to the backup before an upgrade
-(USS-BAK-003).
+software offers its operators, the deployments that the project runs itself, and
+the project's source. Its rules count toward Reliability. The Data (DAT) area
+holds the migrations that an upgrade runs (USS-DAT-001), the Privacy (PRV) area
+holds when personal data is deleted (USS-PRV-003), and the Distribution and
+install (DST) area points to the backup before an upgrade (USS-BAK-003).
 
 ## What the software offers its operators
 
@@ -160,9 +159,10 @@ Backups MUST follow the 3-2-1 rule (three copies, counting the production
 data, on two kinds of storage, one off-site), and one copy MUST be immutable or
 offline.
 
-**Rationale:** Attackers who reach production look for the backups and delete
-or encrypt them. A copy that nobody can change, wherever the attacker is,
-leaves a way back.
+**Rationale:** Attackers who reach production look for the backups and delete or
+encrypt them. A copy that nobody can change, wherever the attacker is, leaves a
+way back. Counting the production data as one of the three copies is USS's own
+reading; the CISA page does not say whether it counts.
 
 ### USS-BAK-008: Encrypt backups
 
@@ -242,10 +242,10 @@ safety. The failure is found on the day the restore is needed.
 A restore from backup MUST be tested on a documented schedule, at least once a
 quarter, and the results MUST be recorded.
 
-**Rationale:** A backup that has never been restored is a hope and not a
-backup. The quarterly floor is a number that USS adds, as CIS safeguard 11.5
-does, because the safeguard sets quarterly or more often for a sample of
-assets.
+**Rationale:** A backup that has never been restored is a hope and not a backup.
+The quarterly floor is that of CIS safeguard 11.5, which asks for a test
+quarterly or more often for a sample of assets; applying it to every production
+data store is USS's own.
 
 ### USS-BAK-012: Expire personal data from backups
 

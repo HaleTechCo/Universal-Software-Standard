@@ -8,11 +8,12 @@ command line, without confusion. Its rules count toward Accessibility &
 Usability, except the rule on deceptive design, which counts toward Fairness
 because it is about honesty toward users. Access for people with disabilities
 belongs to the Accessibility (ACC) area, and the language and locale of the
-interface to the Internationalization (I18N) area. The documentation of
-settings belongs to the Documentation area (USS-DOC-003), and the log-level
-option to the Observability area (USS-OBS-002). Confirmation of an action that
-a model starts is in the AI features area (USS-AI-004); the confirmation in
-this area is for actions that a user starts.
+interface to the Internationalization (I18N) area. The documentation of settings
+belongs to the Documentation area (USS-DOC-003), and the log-level option to the
+Observability area (USS-OBS-002). Confirmation of an action that a model starts
+is in the AI features area (USS-AI-004); the confirmation in this area is for
+actions that a user starts. USS-UX-001 and USS-UX-002 cite WCAG success criteria
+that USS-ACC-001 also requires, and that overlap is accepted.
 
 ## All interfaces
 
@@ -59,9 +60,9 @@ recover alone, without the support line or the source code.
   Prevention (Legal, Financial, Data); Command Line Interface Guidelines
   (clig.dev, read 2026-11-24), Arguments and flags
 
-An action that deletes or overwrites user data MUST ask for confirmation first
-or be undoable; a command-line option such as `--force` counts as
-confirmation.
+An action that a user starts and that deletes or overwrites user data MUST ask
+for confirmation first or be undoable; a command-line option such as `--force`
+counts as confirmation.
 
 **Rationale:** Users click and type by habit, and a mistake that cannot be
 taken back costs their work. A confirmation or an undo turns a disaster into a

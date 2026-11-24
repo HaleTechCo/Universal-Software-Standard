@@ -7,8 +7,8 @@ This area covers how a project records and keeps its structure: decision
 records, configuration kept out of code, stateless service instances, service
 boundaries and module boundaries. Its rules count toward Maintainability by
 default. The Documentation (DOC) area holds the architecture document that
-describes the result, and the Hardening and Operations areas hold how a
-deployed service runs.
+describes the result, and the Deployment hardening and Operations areas hold how
+a deployed service runs.
 
 ### USS-ARC-001: Record significant decisions
 

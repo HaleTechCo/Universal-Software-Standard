@@ -5,10 +5,10 @@
 
 This area covers how the software behaves when what it depends on is slow,
 broken or too busy: timeouts, retries, load limits and writes that survive a
-crash. Its rules count toward Reliability. The API (API) area holds making the
-server side of a write safe to retry (USS-API-006), and the Security (SEC)
-area holds failing closed (USS-SEC-012); the atomic writes here are about
-stored data and not about security.
+crash. Its rules count toward Reliability. The APIs (API) area holds making the
+server side of a write safe to retry (USS-API-006), and the Security (SEC) area
+holds failing closed (USS-SEC-012); the atomic writes here are about stored data
+and not about security.
 
 ### USS-RES-001: Time out every network call
 

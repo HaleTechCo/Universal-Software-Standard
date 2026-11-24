@@ -106,8 +106,9 @@ The contributing guide SHOULD state how long the one-command checks take on a
 typical machine, and the checks SHOULD stay within that time.
 
 **Rationale:** A contributor who knows that the checks take ten minutes starts
-them and waits, while one who does not may stop a run that is working. A
-stated time also shows when the checks have become too slow.
+them and waits, while one who does not may stop a run that is working. A stated
+time also shows when the checks have become too slow. The margin of 25% is a
+number that USS adds, to allow for differences between machines.
 
 ## Guides
 

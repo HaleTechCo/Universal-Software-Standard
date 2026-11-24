@@ -321,12 +321,11 @@ after a revocation.
 - **Level:** MUST
 - **Applies when:** has-plugin-marketplace
 - **Category:** Safety
-- **Verify:** Find the revocation process in the documentation: how a version
-  is marked as revoked, and how hosts learn of it. In a test
-  instance, revoke a version of a test plugin that is installed: the
-  marketplace stops offering it, and the host, at its next check, disables
-  it. A marketplace with no way to revoke, or a host that keeps running a
-  revoked version, fails.
+- **Verify:** Find the revocation process in the documentation: how a version is
+  marked as revoked, and how hosts learn of it. In a test instance, revoke a
+  version of a test plugin that is installed: the marketplace stops offering it,
+  and the host, at its next check, disables it. A marketplace with no way to
+  revoke, or a host that keeps running a revoked version, fails.
 - **References:** none
 
 The marketplace MUST be able to revoke a plugin version, and hosts MUST then

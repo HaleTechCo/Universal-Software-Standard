@@ -7,9 +7,9 @@ This area covers the licence of the software and the licences of what it
 includes: declaring the licence, choosing one that others can rely on, and
 keeping the licences of dependencies compatible and their notices intact. Its
 rules count toward Compatibility by default, because a licence decides whether
-others can use and integrate the software. The Dependencies (DEP) area holds
-the choice and health of each dependency, and the Distribution (DST) area
-holds how releases reach users.
+others can use and integrate the software. The Dependencies (DEP) area holds the
+choice and health of each dependency, and the Distribution and install (DST)
+area holds how releases reach users.
 
 ### USS-LIC-001: Declare the licence
 

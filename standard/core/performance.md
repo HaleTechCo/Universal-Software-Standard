@@ -121,7 +121,8 @@ when idle, it waits on events or timers.
 
 **Rationale:** A spinning loop wastes energy, heats a laptop, drains a battery
 and takes processor time from other programs, for no work. Waiting on an event
-costs nothing until the event comes.
+costs nothing until the event comes. The limit of 1 percent of one core over 60
+seconds is a number that USS adds, to make "idle" measurable.
 
 ### USS-PRF-006: Measure carbon intensity
 

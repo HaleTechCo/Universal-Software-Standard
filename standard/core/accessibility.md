@@ -68,23 +68,24 @@ of a few seconds. The manual tests of the next rule cover the rest.
 - **Category:** Accessibility & Usability
 - **Verify:** List the main workflows: those that the user documentation
   describes. Find the records of manual tests: each is dated, names the
-  workflow, the method (keyboard only, or a named screen reader) and the
-  result. Take the
-  period since the last audit, or the last 12 months when there is none. The
-  project passes when, for every release in the period, or for every calendar
-  quarter in it, a record exists for every main workflow with both methods.
-  A workflow with no record for a release or quarter, a record with no date,
-  or a record of only one of the two methods fails.
+  workflow, the method (keyboard only, or a named screen reader) and the result.
+  Take the period since the last audit, or the last 12 months when there is
+  none. The project passes when, for every release in the period, or for every
+  calendar quarter in it, a record exists for every main workflow with both
+  methods. A workflow with no record for a release or quarter, a record with no
+  date, or a record of only one of the two methods fails.
 - **References:** WCAG 2.2 (W3C Recommendation, 12 December 2024)
 
 The main workflows MUST be tested by hand, with a keyboard only and with a
 screen reader, at least once per release or once a quarter, and the dated
 results MUST be recorded.
 
-**Rationale:** Tools cannot judge whether the focus order makes sense, whether
-a label says what a control does, or whether a screen reader user can finish a
+**Rationale:** Tools cannot judge whether the focus order makes sense, whether a
+label says what a control does, or whether a screen reader user can finish a
 task. Only a person with the keyboard or the screen reader can. A dated record
-shows that the test happened and lets the next tester see what changed.
+shows that the test happened and lets the next tester see what changed. The
+frequency, once per release or once a quarter, is a number that USS adds; WCAG
+sets no schedule for testing.
 
 ### USS-ACC-004: Respect reduced-motion settings
 

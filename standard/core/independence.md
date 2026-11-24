@@ -3,16 +3,15 @@
 - **Prefix:** IND
 - **Kind:** area
 
-This area covers whether users can run the software on their own terms: on
-their own infrastructure, without a commercial product, without one cloud
-provider, and with the database they already have. Its rules count toward
-Compatibility. The Distribution (DST) area holds installing without internet
-access (USS-DST-013); this area holds running without it. The Testing (TST)
-area holds tests in CI (USS-TST-001) and tests against real services
-(USS-TST-004), and the Data (DAT) area holds versioned migrations
-(USS-DAT-001). The Architecture (ARC) area holds the rule that configuration
-stays out of code (USS-ARC-002), which is what lets a deployment swap one
-service for another.
+This area covers whether users can run the software on their own terms: on their
+own infrastructure, without a commercial product, without one cloud provider,
+and with the database they already have. Its rules count toward Compatibility.
+The Distribution and install (DST) area holds installing without internet access
+(USS-DST-013); this area holds running without it. The Testing (TST) area holds
+tests in CI (USS-TST-001) and tests against real services (USS-TST-004), and the
+Data (DAT) area holds versioned migrations (USS-DAT-001). The Architecture (ARC)
+area holds the rule that configuration stays out of code (USS-ARC-002), which is
+what lets a deployment swap one service for another.
 
 ## Self-hosting
 
@@ -23,15 +22,15 @@ service for another.
 - **Category:** Compatibility
 - **Verify:** Find the self-hosting guide in the documentation. It lists
   everything that a self-hosted installation needs, and each item is something
-  that the operator runs or controls (the software's own components, a
-  database, a proxy). Install the software by the guide on infrastructure
-  that you control. Then run it with no connection to a service that the
-  project or a vendor runs: it starts and does its main job as the guide
-  describes. Search the code and the configuration for such
-  connections (a licence server, a phone-home call, a required sign-in to a
-  hosted service): each is optional and off by default, or the guide names it
-  as an optional integration. A required connection to a service outside the
-  operator's control while running, or a missing guide, fails.
+  that the operator runs or controls (the software's own components, a database,
+  a proxy). Install the software by the guide on infrastructure that you
+  control. Then run it with no connection to a service that the project or a
+  vendor runs: it starts and does its main job as the guide describes. Search
+  the code and the configuration for such connections (a licence server, a
+  phone-home call, a required sign-in to a hosted service): each is optional and
+  off by default, or the guide names it as an optional integration. A required
+  connection to a service outside the operator's control while running, or a
+  missing guide, fails.
 - **References:** none
 
 The software SHOULD run entirely on the user's own infrastructure, with a
@@ -46,13 +45,12 @@ ability: software that only the maker knows how to run is not self-hostable.
 - **Level:** SHOULD NOT
 - **Applies when:** is-network-service and operates-service
 - **Category:** Compatibility
-- **Verify:** The project runs a hosted edition. Compare the feature list of
-  the hosted edition (its documentation, pricing page or settings) with that of
-  the self-hosted edition. Every feature of the hosted edition is in the
-  self-hosted edition. A hosted feature that is not in
-  the self-hosted edition fails. The comparison is of what the software does;
-  the operator's own capacity, support and the hosting itself are not
-  features.
+- **Verify:** The project runs a hosted edition. Compare the feature list of the
+  hosted edition (its documentation, pricing page or settings) with that of the
+  self-hosted edition. Every feature of the hosted edition is in the self-hosted
+  edition. A hosted feature that is not in the self-hosted edition fails. The
+  comparison is of what the software does; the operator's own capacity, support
+  and the hosting itself are not features.
 - **References:** none
 
 The self-hosted edition SHOULD NOT lack features of the software that the
@@ -161,9 +159,9 @@ The software SHOULD support SQLite, PostgreSQL, and MariaDB or MySQL.
 
 **Rationale:** Users run the database that they already know and operate.
 Software for one database only forces them to run a second one. A project that
-depends on one database's distinctive features, such as PostGIS, JSONB
-operators or LISTEN/NOTIFY, records a Standard Deviation (spec §6.1); the
-deviation states the feature and why it cannot be had elsewhere.
+depends on one database's distinctive features, such as PostGIS, JSONB operators
+or LISTEN/NOTIFY, records a Standard Deviation; the deviation states the feature
+and why it cannot be had elsewhere.
 
 ### USS-IND-007: Test every supported database in CI
 

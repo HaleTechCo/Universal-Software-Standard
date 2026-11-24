@@ -3,16 +3,16 @@
 - **Prefix:** DOC
 - **Kind:** area
 
-This area covers the documents that tell people what the software is, how it
-is built and how to use and configure it: the README, the architecture
-document, the configuration reference, the API reference, the troubleshooting
-guide and the language of instructions. Its rules count toward Maintainability
-by default; the rule on instructions counts toward Accessibility & Usability.
-Other areas hold the documents that they own: the Contributability (CTB) area
-holds the development setup and how to run the checks, the Releases (REL)
-area holds the changelog and migration guides, the Distribution (DST) area
-holds the install, upgrade and uninstall steps, and the Security (SEC) area
-holds the security policy.
+This area covers the documents that tell people what the software is, how it is
+built and how to use and configure it: the README, the architecture document,
+the configuration reference, the API reference, the troubleshooting guide and
+the language of instructions. Its rules count toward Maintainability by default;
+the rule on instructions counts toward Accessibility & Usability. Other areas
+hold the documents that they own: the Contributability (CTB) area holds the
+development setup and how to run the checks, the Release (REL) area holds the
+changelog and migration guides, the Distribution and install (DST) area holds
+the install, upgrade and uninstall steps, and the Security (SEC) area holds the
+security policy.
 
 ### USS-DOC-001: Keep a README
 
@@ -125,9 +125,10 @@ and a caller cannot rely on a contract that is not written down.
 The user documentation SHOULD list common errors and failure modes, each with
 its cause and its fix.
 
-**Rationale:** A guide that answers the same question once saves it from
-being asked again in every issue, and the answer reaches users who never
-file one.
+**Rationale:** A guide that answers the same question once saves it from being
+asked again in every issue, and the answer reaches users who never file one.
+Counting an error as common once closed reports name it more than once is a
+threshold that USS adds, to make "common" checkable.
 
 ### USS-DOC-007: Write instructions in Simplified Technical English
 

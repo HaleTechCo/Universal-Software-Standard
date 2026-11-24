@@ -151,5 +151,5 @@ changelog before it takes effect.
 
 **Rationale:** Customers plan budgets and contracts ahead. A change that they
 learn of after it applies leaves them no time to decide. The format of the
-changelog is held by the Releases area (USS-REL-005); the notice period of a
+changelog is held by the Release area (USS-REL-005); the notice period of a
 price increase is held by the Commercial licensing area (USS-COM-008).

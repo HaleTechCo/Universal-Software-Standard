@@ -5,12 +5,12 @@
 - **Applies when:** publishes-releases
 
 This area covers how the project numbers, tags, supports and describes its
-releases, how it handles breaking changes, and how each release is audited.
-Its rules count toward Maintainability by default; the rules on breaking
-changes count toward Compatibility. Signing release artifacts is
-USS-SUP-014, in the Supply chain (SUP) area. The Distribution (DST) area
-holds how releases are installed and upgraded, and the Security (SEC) area
-holds the security policy and its advisories (USS-SEC-031).
+releases, how it handles breaking changes, and how each release is audited. Its
+rules count toward Maintainability by default; the rules on breaking changes
+count toward Compatibility. Signing release artifacts is USS-SUP-014, in the
+Supply chain (SUP) area. The Distribution and install (DST) area holds how
+releases are installed and upgraded, and the Security (SEC) area holds the
+security policy and its advisories (USS-SEC-031).
 
 ## Versions
 

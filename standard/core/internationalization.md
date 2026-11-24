@@ -3,12 +3,11 @@
 - **Prefix:** I18N
 - **Kind:** area
 
-This area covers how the software handles text, numbers and points in time
-for people in different languages and places. Its rules count toward
-Accessibility & Usability. The timestamps of audit records belong to the Audit
-logging area (USS-AUD-005), and the contract of an API to the API area
-(USS-API-001). Reading a UI with assistive technology belongs to the
-Accessibility (ACC) area.
+This area covers how the software handles text, numbers and points in time for
+people in different languages and places. Its rules count toward Accessibility &
+Usability. The timestamps of audit records belong to the Audit logging area
+(USS-AUD-005), and the contract of an API to the APIs area (USS-API-001).
+Reading a UI with assistive technology belongs to the Accessibility (ACC) area.
 
 ### USS-I18N-001: Use Unicode throughout
 

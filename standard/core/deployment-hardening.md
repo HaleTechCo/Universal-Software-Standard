@@ -4,14 +4,14 @@
 - **Kind:** area
 - **Applies when:** ships-container-image or deploys-to-kubernetes
 
-This area covers how the images, Compose files and Kubernetes manifests that
-the project publishes are configured for safe operation. Its rules count toward
+This area covers how the images, Compose files and Kubernetes manifests that the
+project publishes are configured for safe operation. Its rules count toward
 Safety by default; the probes rule counts toward Reliability. Running without
 elevated privileges is USS-SEC-003, and the benchmarks that this area requires
 cover it for containers. The Observability (OBS) area holds the health and
 readiness endpoints of the service itself (USS-OBS-003); this area holds the
-probes that call them in the manifests. The Distribution (DST) area holds how
-the project's own images are named in what it publishes (USS-DST-016).
+probes that call them in the manifests. The Distribution and install (DST) area
+holds how the project's own images are named in what it publishes (USS-DST-016).
 
 ## Container images
 
