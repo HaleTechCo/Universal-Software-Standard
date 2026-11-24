@@ -109,6 +109,6 @@ mod tests {
             .into_iter()
             .filter(|rule| is_core(rule))
             .count();
-        assert_eq!((floor, core), (54, 123));
+        assert_eq!((floor, core), (58, 154));
     }
 }
