@@ -108,8 +108,7 @@ where it happens.
   the component records that date and passes.
 - **References:** CISA and partners, The Case for Memory Safe Roadmaps
   (2023-12-06); CISA and FBI, Product Security Bad Practices (Version 2.0,
-  2025-01-17); NSA, Software Memory Safety (Version 1.1, April 2023); CWE-119;
-  CWE-787; CWE-416
+  2025-01-17); CWE-119; CWE-787; CWE-416
 
 A published roadmap SHOULD name the memory-unsafe components, and the plan and
 dates to move them to a memory-safe language or to isolate them.
@@ -129,8 +128,7 @@ reviewers see that the risk is being reduced.
   component that is not has a written reason (such as a platform interface that
   has no memory-safe binding) in the repository.
 - **References:** CISA and FBI, Product Security Bad Practices (Version 2.0,
-  2025-01-17); NSA, Software Memory Safety (Version 1.1, April 2023); CWE-119;
-  CWE-787; CWE-416
+  2025-01-17); CWE-119; CWE-787; CWE-416
 
 Each new component SHOULD be written in a memory-safe language.
 
