@@ -113,7 +113,7 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 ### uses-container-images
 
 - **Question:** Does the repository use container images?
-- **Definition:** Yes when its Dockerfiles, Compose files, Kubernetes manifests, Helm charts or CI jobs name a container image.
+- **Definition:** Yes when the repository names a container image anywhere, such as in Dockerfiles, Compose files, dev container definitions, Kubernetes manifests, Helm charts, CI jobs or test code (for example with Testcontainers).
 
 ### is-library
 
@@ -128,7 +128,7 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 ### has-dependencies
 
 - **Question:** Does it use third-party code?
-- **Definition:** Yes when it uses code that it does not maintain itself, such as packages from a registry, libraries from other repositories, or vendored code.
+- **Definition:** Yes when it uses code that it does not maintain itself, such as packages from a registry, libraries from other repositories, or vendored code. The language's standard library and runtime, toolchains and CI components do not count; the Supply chain area covers them.
 
 ### uses-private-packages
 

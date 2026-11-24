@@ -188,11 +188,11 @@ To retire a rule:
    it, or write `none`.
 
 ```markdown
-### USS-SEC-005: Old rule title
+### USS-EXA-005: Old rule title
 
 - **Status:** Retired
 - **Retired in:** 0.2.0
-- **Replaced by:** USS-SEC-006
+- **Replaced by:** USS-EXA-006
 ```
 
 `Retired in` MUST be a semantic version, and a `Replaced by` rule MUST exist.
@@ -333,6 +333,9 @@ name, in this order. Reports show them in this order.
 - References MUST be checked against the current source when the rule is
   written, not cited from memory, and MUST pin a version, such as WCAG 2.2 or
   OWASP ASVS 5.0.
+- A document without a version is pinned by its publication date or, for a
+  page that changes in place, by the date it was read, written
+  `(read YYYY-MM-DD)`. A CWE entry is cited by its ID alone, such as CWE-89.
 - Each release of the standard MUST review whether to adopt newer versions of
   the standards that its rules reference.
 
@@ -616,19 +619,19 @@ refuse a record that fails them. The report shows the compliance statement
 and the category scores first. Then it shows every applicable rule with its
 outcome and evidence, grouped by outcome in the order fail, unverified,
 deviation, declined and pass. In each group, the rules are sorted by level,
-from MUST to MAY, then by ID. Then it lists the
-deviations and the suppressions. Scores and reports MUST NOT be computed or
-written by hand.
+from MUST to MAY, then by ID. Then it lists the deviations and the
+suppressions. Scores and reports MUST NOT be computed or written by hand.
 
 To record an audit:
 
-1. Write the results to `.uss/audits/<date>.yaml`.
-2. Add the audit to `audits` in `.uss/record.yaml`.
-3. Go to the project root.
-4. Run `uss check .uss/record.yaml`. Correct each problem that it reports.
-5. Run `uss report .uss/audits/<date>.yaml`. It writes
+1. Go to the project root.
+2. Write the results to `.uss/audits/<date>.yaml`.
+3. Add the audit to `audits` in `.uss/record.yaml`.
+4. Run `uss check .uss/record.yaml`.
+5. Correct each problem that it reports.
+6. Run `uss report .uss/audits/<date>.yaml`. It writes
    `.uss/audits/<date>.md`, then prints the statement and the score line.
-6. Commit the record, the results and the report together.
+7. Commit the record, the results and the report together.
 
 ### Components
 

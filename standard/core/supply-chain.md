@@ -7,7 +7,10 @@ This area covers the inputs to a build and the path from source to release:
 toolchains and build inputs, protection of the source and of CI, and the SBOM,
 signatures and provenance of release artifacts. Its rules count toward Safety
 by default. Library and package dependencies are in the Dependencies area
-(DEP), and this area has no rule for them.
+(DEP), and this area has no rule for them. A tool that a dependency manifest
+declares (such as `typescript` in `devDependencies`, or a Maven or Gradle
+plugin) belongs to the Dependencies area; a tool installed outside a manifest
+belongs to this area.
 
 ## Toolchains and build inputs
 
@@ -21,7 +24,7 @@ by default. Library and package dependencies are in the Dependencies area
   version of each compiler, runtime and build tool that the build uses. The
   build configuration of local builds and of CI reads that file or names the
   same versions.
-- **References:** NIST SP 800-218 (SSDF 1.1) PO.3
+- **References:** NIST SP 800-218 (SSDF 1.1) PO.3.2
 
 The version of every compiler, runtime and build tool that the build uses MUST
 be pinned in a file in the repository, and local builds and CI MUST use that
@@ -37,13 +40,16 @@ upgrade a reviewed change.
 - **Level:** SHOULD
 - **Applies when:** always
 - **Category:** Safety
-- **Verify:** The setup instructions and scripts install each toolchain and
-  build tool into the project (through a version manager, a wrapper script, a
-  dev container or the like), not into the system.
+- **Verify:** The setup instructions and other documentation have each
+  toolchain and build tool installed into the project (through a version
+  manager, a wrapper script, a dev container or the like), not into the
+  system. A script that installs system-wide is left to USS-SUP-003, so it
+  does not also fail this rule.
 - **References:** none
 
 Toolchains and build tools SHOULD be installed per project (such as through a
 version manager, a wrapper script or a dev container), not system-wide.
+USS-SUP-003 covers scripts that install system-wide.
 
 **Rationale:** Per-project installs let each project pin its own versions and
 leave the other software on the machine alone.
@@ -81,8 +87,9 @@ the system itself, and it makes the result depend on the state of the machine.
   for GitHub Actions only. It does not flag a reference to a tag that is
   backed by a published immutable release, so the auditor checks such
   references directly.
-- **References:** GitHub Docs, Secure use reference (Pin actions to a
-  full-length commit SHA); OpenSSF Scorecard v5.7.0 (Pinned-Dependencies)
+- **References:** GitHub Docs, Secure use reference (read 2026-11-23), Pin
+  actions to a full-length commit SHA; OpenSSF Scorecard v5.7.0
+  (Pinned-Dependencies)
 
 Every third-party CI component (such as a GitHub Action, a GitLab CI include or
 component) MUST be referenced by a full commit SHA or content digest, with
@@ -117,13 +124,15 @@ names one image, so the build gets the image that was reviewed.
 - **Verify:** Each download in build scripts and CI configuration that does
   not go through a package manager's lockfile (an installer, a script or a
   binary) names a fixed version, and the file is checked against a checksum or
-  signature before it is used.
+  signature before it is used. CI components and container images are left to
+  USS-SUP-004 and USS-SUP-005.
 - **References:** NIST SP 800-218 (SSDF 1.1) PW.4.4 (notional example on
   confirming integrity through digital signatures or other mechanisms)
 
 Every file that the build or CI downloads outside a package manager's lockfile
 (installers, scripts, binaries) MUST be pinned to a version and checked against
-a checksum or signature.
+a checksum or signature. USS-SUP-004 and USS-SUP-005 cover CI components and
+container images.
 
 **Rationale:** A download that is not checked runs whatever the server returns
 at that moment, so a compromised server or a changed file becomes part of the
@@ -140,8 +149,6 @@ build.
   supplier at the audit date, as the supplier's support policy or release
   history shows. Where neither shows it, the auditor records `unverified`.
 - **References:** The supplier's support policy for each platform; CWE-1104
-  (a runtime or base image is a third-party component that the product relies
-  on)
 
 The project MUST NOT build with or run on a runtime, compiler, build tool or
 base image that its supplier no longer supports with security fixes.
@@ -178,13 +185,16 @@ the record of what was released.
 - **Category:** Safety
 - **Verify:** The repository host's settings (for example GitHub branch
   protection or rulesets, or GitLab merge request settings, read through the
-  host's settings or API) list the CI checks that must pass before a change
-  merges into the default branch. OpenSSF Scorecard Branch-Protection
-  (required status checks) is evidence. Without access to the settings, the
-  auditor records `unverified`.
+  host's settings or API) require CI checks to pass before a change merges
+  into the default branch, and those checks include every CI check that this
+  standard's rules require, such as the scans of USS-SEC-005, USS-SEC-026 and
+  USS-DEP-007. OpenSSF Scorecard Branch-Protection (required status checks)
+  is evidence. Without access to the settings, the auditor records
+  `unverified`.
 - **References:** OpenSSF Scorecard v5.7.0 (Branch-Protection)
 
 A change MUST reach the default branch only after the required CI checks pass.
+The required checks include every CI check that this standard's rules require.
 
 **Rationale:** A check that a change can skip does not protect the default
 branch.
@@ -223,11 +233,14 @@ its other controls.
   (for GitHub, a top-level `permissions` block, or the repository's default
   workflow permissions setting), and each job that needs more declares only
   those permissions. OpenSSF Scorecard Token-Permissions is evidence, but only
-  partial: it cannot see the repository-level setting. Without access to the
-  settings, the auditor records `unverified`.
+  partial: it cannot see the repository-level setting. Where a workflow has no
+  top-level `permissions` block, its default comes from the repository-level
+  setting, and without access to that setting the auditor records
+  `unverified`.
 - **References:** OpenSSF Scorecard v5.7.0 (Token-Permissions); GitHub Docs,
-  Secure use reference (Use secrets for sensitive information, Principle of
-  least privilege; Restricting permissions for tokens)
+  Secure use reference (read 2026-11-23), Use secrets for sensitive
+  information (Principle of least privilege) and Restricting permissions for
+  tokens
 
 Each CI job MUST run with the least token permissions it needs, read-only by
 default.
@@ -248,7 +261,7 @@ with fewer permissions limits the damage.
   pattern, but it does not decide whether a given checkout is safe.
 - **References:** OpenSSF Scorecard v5.7.0 (Dangerous-Workflow); GitHub
   Security Lab, Keeping your GitHub Actions and workflows secure Part 1:
-  Preventing pwn requests
+  Preventing pwn requests (read 2026-11-23)
 
 CI MUST NOT run code from an untrusted change (such as a pull request from a
 fork) in a job that has secrets or a write token.
@@ -267,8 +280,8 @@ every permission of the job that runs it.
   variable or a file. Scorecard Dangerous-Workflow reports script injection
   for GitHub workflows.
 - **References:** OpenSSF Scorecard v5.7.0 (Dangerous-Workflow); GitHub Docs,
-  Secure use reference (Good practices for mitigating script injection
-  attacks); CWE-78
+  Secure use reference (read 2026-11-23), Good practices for mitigating script
+  injection attacks; CWE-78
 
 CI MUST NOT insert untrusted event data (titles, branch names, commit
 messages, comments) into a script it runs, and it passes such data through
@@ -286,14 +299,16 @@ the job.
 - **Applies when:** distributed-as-package or ships-container-image
 - **Category:** Safety
 - **Verify:** Each release has an SBOM in SPDX or CycloneDX format, published
-  with the release. The SBOM lists the components of the release, and each
-  entry shows whether the component is a direct or a transitive dependency.
+  with the release. The SBOM lists the components of the release, and its
+  dependency relationships show which components are direct dependencies of
+  the release.
 - **References:** SPDX 3.0.1; CycloneDX 1.7; NTIA, The Minimum Elements For a
   Software Bill of Materials (SBOM) (2021), Data Fields (Dependency
   Relationship)
 
 Each release SHOULD publish an SBOM in SPDX or CycloneDX format that lists
-every component and marks each as direct or transitive.
+every component, with dependency relationships that show which components are
+direct dependencies of the release.
 
 **Rationale:** Users and downstream projects need to know what a release
 contains to find out whether a newly disclosed flaw affects them.
@@ -306,7 +321,7 @@ contains to find out whether a newly disclosed flaw affects them.
 - **Verify:** Each release artifact has a signature published with it or in a
   registry (a Sigstore signature, for example). The release documentation says
   how to verify the signature.
-- **References:** Sigstore (Cosign signing and verification, docs.sigstore.dev)
+- **References:** NIST SP 800-218 (SSDF 1.1) PS.2.1
 
 Release artifacts SHOULD be signed, and the release documentation SHOULD say
 how to verify the signature.
@@ -334,7 +349,8 @@ source and which build produced an artifact.
 ### USS-SUP-017: Meet SLSA Build Level 3
 
 - **Level:** SHOULD
-- **Applies when:** (distributed-as-package or ships-container-image) and high-assurance
+- **Applies when:** (distributed-as-package or ships-container-image) and
+  high-assurance
 - **Category:** Safety
 - **Verify:** The release build platform and its provenance meet the SLSA v1.2
   Build Level 3 requirements, as the platform's documentation or an
