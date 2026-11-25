@@ -1,0 +1,212 @@
+standard:
+  version: 0.1.0
+commit: 0adeb2b4783a1866e161a9f9e41e4bc2637f1bd7
+date: 2026-11-25
+auditor: claude
+results:
+  USS-BAK-013:
+    result: fail
+    evidence: 'No automatic mirror: .github/workflows/ci.yml:11-28 has one job (check) and no mirror step; `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/hooks` -> HTTP 200 [] (no webhook); `git remote -v` lists only origin (github.com); no file outside standard/ names a mirror (`git grep -i mirror`: no match). A pull mirror on another host would not show here; the developer''s answers name none.'
+  USS-DEP-001:
+    result: pass
+    evidence: 'tools/uss/Cargo.toml:20-26 and :32 use Cargo''s default caret form (clap 4.6, jsonschema 0.63.0, minijinja 3.1.0, regex 1.13.2, serde 1.0.229, serde-saphyr 2.2, serde_json 1.0.154, tempfile 3.27.0), each below the next major (or next minor for 0.x); tools/xtask/Cargo.toml has no dependencies; no *, branch or unbounded >=.'
+  USS-DEP-002:
+    result: pass
+    evidence: 'Cargo.lock is tracked (`git ls-files Cargo.lock`); lockfile version 4 with 114 crates.io packages, each with a checksum (parsed with tomllib: 0 missing); the 2 without a source are the workspace crates uss and xtask.'
+  USS-DEP-003:
+    result: pass
+    evidence: 'CI runs `cargo xtask check` (.github/workflows/ci.yml:28), alias `run --locked` (.cargo/config.toml:2); every build, test and run step passes --locked (tools/xtask/src/main.rs:142, 155, 163, 181, 196, 204) and cargo-deny is installed with --locked (main.rs:113-118); --locked stops when Cargo.lock is out of date.'
+  USS-DEP-004:
+    result: pass
+    evidence: 'External crates that the code imports or calls: clap (tools/uss/src/cli/mod.rs:6), jsonschema (record/mod.rs:179), minijinja (report.rs:3-4), regex (catalog/rules.rs:7), serde (report.rs:5), serde_saphyr (yaml.rs:4), serde_json (record/mod.rs:171), tempfile (tests); all declared in tools/uss/Cargo.toml:19-32. tools/uss/build.rs:7-9 and tools/xtask/src/main.rs:3-4 use std only.'
+  USS-DEP-005:
+    result: pass
+    evidence: 'tools/uss/Cargo.toml:19-26 lists runtime crates, each used outside tests (regex catalog/markdown.rs:6, minijinja report.rs:3, jsonschema record/mod.rs:179, serde_saphyr yaml.rs:19, serde_json record/mod.rs:171, clap cli/mod.rs:6 behind the cli feature); the test-only crate tempfile is in [dev-dependencies] (:31-32).'
+  USS-DEP-006:
+    result: fail
+    evidence: 'nohash-hasher 0.2.0 (in Cargo.lock through serde-saphyr 2.2.0, `cargo tree -i nohash-hasher`) has an archive notice: `gh api -X GET repos/paritytech/nohash-hasher` -> archived: true, last push 2020-09-08. cfg-if 1.0.5 (through ahash, encoding_rs): repos/rust-lang/cfg-if -> archived: true, README says it is replaced by cfg_select! and will no longer be updated, barring breakages and security fixes. `.tools/bin/cargo-deny check` (0.22.0) on this commit: exit 0, advisories ok (no unmaintained or yanked flag); the other 82 GitHub repositories of the lockfile are not archived.'
+  USS-DEP-007:
+    result: fail
+    evidence: 'cargo-deny scans Cargo.lock (all transitive crates) in CI through `cargo xtask check` (tools/xtask/src/main.rs:190-191, 123), but .github/workflows/ci.yml:3-6 triggers only on push to main and pull_request: no schedule trigger. Dependabot alerts are off (`gh api -X GET .../dependabot/alerts` -> HTTP 403 ''Dependabot alerts are disabled for this repository'').'
+  USS-DEP-008:
+    result: pass
+    evidence: '`.tools/bin/cargo-deny check` on 0adeb2b: exit 0, ''advisories ok, bans ok, licenses ok, sources ok''; no finding to fix or assess, and deny.toml:1-3 has no ignore entry.'
+  USS-DEP-011:
+    result: fail
+    evidence: 'docs/dependencies.md:10-19 now gives the purpose of each direct dependency, but it was first added in 80fc996 (2026-11-25); the changes that added the dependencies in the last 12 months (8336df2 clap, 156616f regex/serde/serde-saphyr/serde_json, 380e755 tempfile, b53c316 jsonschema, f47a1af minijinja, all 2026-11-22) changed no dependency list and no manifest comment.'
+  USS-DEP-012:
+    result: fail
+    evidence: 'No change that added a dependency (8336df2, 156616f, 380e755, b53c316, f47a1af) carries a health record covering maintenance, deprecation or archive, more than one maintainer and the standard library; the commit messages give a purpose only. ADR 0002 (docs/adr/0002-yaml-crate.md:15-55, in 156616f) covers serde-saphyr''s releases and advisories but not its number of maintainers.'
+  USS-DEP-014:
+    result: pass
+    evidence: '.github/dependabot.yml:3-14 configures cargo at / (the workspace manifests Cargo.toml, tools/uss/Cargo.toml, tools/xtask/Cargo.toml) and github-actions at / (.github/workflows). No dependency update was merged in the window: Cargo.lock history (5 commits, 2026-11-22) only adds packages, and `gh api -X GET .../pulls?state=all` -> HTTP 200 [].'
+  USS-DEP-015:
+    result: pass
+    evidence: '.github/dependabot.yml:7-8 and :13-14 set cooldown default-days: 3 for cargo and github-actions.'
+  USS-OBS-002:
+    result: fail
+    evidence: 'No setting sets a log level: docs/cli.md:12-20 says uss reads no environment variable or configuration file and lists the options, none for logging; the Cli and Command definitions (tools/uss/src/cli/mod.rs:33-99) have no log-level option.'
+  USS-PRF-001:
+    result: fail
+    evidence: 'No written performance budget: no document or configuration outside standard/ names a start-up time or other measure with a limit (`git grep -i -E ''budget|benchmark|startup time''` finds only the rule-count budget in tools/uss/src/evaluate/mod.rs:115).'
+  USS-PRF-002:
+    result: pass
+    evidence: 'The project has budgeted no measure (USS-PRF-001 fails), so no budgeted measure is without a CI job; .github/workflows/ci.yml:11-28 has no benchmark job. This pass follows the Verify text, which has nothing to judge when there is no budget.'
+  USS-PRF-005:
+    result: pass
+    evidence: 'uss has no idle state: each command runs to completion and exits (`target/debug/uss.exe check .uss/record.yaml` exits 0 after 158 ms; `uss` with no arguments prints help and exits 2 after 22 ms), so no process stays at rest. Code search for loops: catalog/markdown.rs:260, catalog/mod.rs:543, evaluate/facts.rs:32, expr.rs:177 and :186, source.rs:47, cli/mod.rs:1630 and :1638 (test code); each consumes input or stops at a fixed point, none polls a condition.'
+  USS-QLT-008:
+    result: pass
+    evidence: 'No security rule is off for the whole project: Cargo.toml:13-24 turns no lint off; clippy.toml:1-3 relaxes clippy::unwrap_used, expect_used and panic only in tests, and Clippy has no security group; deny.toml:1-3 keeps the advisories check on with no ignore.'
+  USS-RUST-003:
+    result: pass
+    evidence: 'Cargo.toml:13-14 [workspace.lints.rust] unsafe_code = "forbid"; both crates inherit it with [lints] workspace = true (tools/uss/Cargo.toml:28-29, tools/xtask/Cargo.toml:10-11).'
+  USS-RUST-004:
+    result: fail
+    evidence: 'Cargo.toml has no [profile.release], so overflow-checks keeps its release default false; .cargo/config.toml:1-2 holds only an alias, and .github/workflows/ci.yml sets no CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS.'
+  USS-RUST-007:
+    result: pass
+    evidence: 'rust-toolchain.toml:2 channel = "1.100.0"; :3 components = ["rustfmt", "clippy"], which the CI steps cargo fmt and cargo clippy use (tools/xtask/src/main.rs:134-150); :4 adds the wasm32 target that CI builds.'
+  USS-RUST-008:
+    result: pass
+    evidence: 'Cargo.lock is tracked at the workspace root; the CI step `cargo xtask check` (.github/workflows/ci.yml:28) runs with --locked (.cargo/config.toml:2) and builds and tests with --locked (tools/xtask/src/main.rs:142, 155, 163, 181, 196, 204).'
+  USS-RUST-009:
+    result: pass
+    evidence: 'Every requirement in tools/uss/Cargo.toml:20-26 and :32 is the caret form with an implied bound below the next incompatible version (for example 0.63.0 -> <0.64.0, 4.6 -> <5.0.0); there is no [workspace.dependencies], no target table and no git dependency; tools/xtask/Cargo.toml has none.'
+  USS-RUST-010:
+    result: fail
+    evidence: 'CI runs `cargo-deny check` with no check named (tools/xtask/src/main.rs:123) and fails on a non-zero status (main.rs:86, 224), but deny.toml:1-15 does not include the profile baseline (standard/vendors/embarkstudios/cargo-deny.md:32-55): it lacks advisories.db-urls, advisories.unmaintained = "all", advisories.unused-ignored-advisory = "deny", licenses.unused-license-exception = "deny" and sources.required-git-spec = "rev". Also xtask pins cargo-deny 0.22.0 (main.rs:7), outside the profile''s Versions >=0.22.1.'
+  USS-SAF-001:
+    result: fail
+    evidence: 'The Rust module''s MUST rules that refine USS-SAF-001 are USS-RUST-003 and USS-RUST-004. unsafe_code = "forbid" is on (Cargo.toml:14), but overflow checks are off in release builds: Cargo.toml has no [profile.release] with overflow-checks = true (USS-RUST-004 fails).'
+  USS-SEC-002:
+    result: pass
+    evidence: 'No default turns a security feature off: docs/cli.md:14-20 (no environment variable, no configuration file, no option weakens a check); jsonschema is built without default features, so no remote reference resolution (tools/uss/Cargo.toml:21); `uss show` reads only listed files (tools/uss/src/cli/mod.rs:233-238); record paths never leave the project root (cli/files.rs:73-85).'
+  USS-SEC-003:
+    result: pass
+    evidence: 'The install and run steps need no administrator or root rights: README.md:47-52 and :97-106 install with `cargo install` into the user''s Cargo home; no service definition, container file or installer exists; `git grep -i -E ''sudo|as root|run as administrator''` in the documents, templates, hooks and CI finds nothing.'
+  USS-SEC-004:
+    result: unverified
+    evidence: 'No secret scanner is installed (gitleaks, trufflehog and detect-secrets: command not found), and none may be installed for this audit; GitHub secret scanning is off (`gh api -X GET .../secret-scanning/alerts` -> HTTP 404 ''Secret scanning is disabled on this repository''). A plain regex search of `git log -p --all` for AWS, GitHub, Slack, Google and private-key patterns found nothing, but that is not a secret scan.'
+  USS-SEC-005:
+    result: fail
+    evidence: 'No secret scanner runs in CI: .github/workflows/ci.yml:11-28 has one job, `cargo xtask check`, whose steps are fmt, clippy, test, wasm32 clippy and build, cargo-deny, uss lint and uss check (tools/xtask/src/main.rs:127-213).'
+  USS-SEC-009:
+    result: fail
+    evidence: 'Records and results are checked against schema/record.schema.json and schema/audit-results.schema.json (types, enums, patterns for IDs, dates, versions and the SHA, additionalProperties false), and paths must be plain names (tools/uss/src/cli/files.rs:73-85); but no length is validated: neither schema sets a maxLength (project.name, deviations[].document and approved-by, audits[].results and report, components, auditor, evidence, suppressions), and the files are read whole with no size limit (cli/files.rs:117, cli/mod.rs:348).'
+  USS-SEC-010:
+    result: pass
+    evidence: 'No shell is called: git runs as Command::new("git") with an argument array (tools/uss/src/cli/git.rs:19-34), and the SHA it passes is schema-checked as 40 hex digits; xtask starts programs with argument arrays (tools/xtask/src/main.rs:64-88).'
+  USS-SEC-011:
+    result: pass
+    evidence: 'Untrusted YAML is parsed by serde-saphyr into fixed serde types (tools/uss/src/yaml.rs:17-19): the record is read into serde_json::Value, validated, then into Record (record/mod.rs:171-196); no format or loader that builds arbitrary types is used.'
+  USS-SEC-014:
+    result: fail
+    evidence: 'Report table cells are escaped (tools/uss/src/report.rs:168-179 cell filter), but terminal output is not: check messages write record strings as they are (tools/uss/src/evaluate/check.rs:133, 150, 153; release-check writes git file names, cli/mod.rs:446-449). `uss check` on a copy of the record with deviations[0].document "\e[31mRED\e[0m.md" printed 2 raw ESC bytes to stdout.'
+  USS-SEC-028:
+    result: fail
+    evidence: 'No SAST tool runs in CI: the only job runs Clippy, tests and cargo-deny (tools/xtask/src/main.rs:127-213); the Clippy profile maps no rule to USS-SEC-028 (standard/vendors/rust-lang/clippy.md, Mappings); code scanning is not set up (`gh api -X GET .../code-scanning/alerts` -> HTTP 403 ''Advanced Security must be enabled for this repository'').'
+  USS-SEC-029:
+    result: pass
+    evidence: 'SECURITY.md:3-17 says how to report privately (GitHub private vulnerability reporting) and SECURITY.md:19-29 what happens after a report. Note: `gh api -X GET .../private-vulnerability-reporting` -> HTTP 404, so the named channel is not on yet; SECURITY.md:15-17 gives a fallback.'
+  USS-SEC-030:
+    result: pass
+    evidence: 'SECURITY.md:21-24: acknowledge within 7 days, assess within 14 days, fix or mitigate within 90 days.'
+  USS-SEC-031:
+    result: pass
+    evidence: 'no release yet: `git tag` prints nothing; `gh api -X GET .../releases` and `.../tags` -> HTTP 200 [].'
+  USS-SEC-032:
+    result: pass
+    evidence: 'no release yet: `git tag` prints nothing; `gh api -X GET .../releases` -> HTTP 200 []. (cargo-deny reports no known vulnerability on this commit.)'
+  USS-SUP-001:
+    result: pass
+    evidence: 'rust-toolchain.toml:2-4 pins Rust 1.100.0 with rustfmt, clippy and the wasm32 target; CI installs it from that file (`rustup toolchain install`, .github/workflows/ci.yml:22) and local builds read it through rustup; the other build tool, cargo-deny, is pinned at 0.22.0 (tools/xtask/src/main.rs:7).'
+  USS-SUP-002:
+    result: pass
+    evidence: 'No script installs system-wide: xtask installs cargo-deny into the repository''s .tools with --root (tools/xtask/src/main.rs:104-121); .githooks/pre-commit runs cargo fmt and uss lint only; CI''s `rustup toolchain install` (.github/workflows/ci.yml:22) runs on a runner that is discarded after the job.'
+  USS-SUP-003:
+    result: pass
+    evidence: 'Each action is pinned to a full commit SHA: .github/workflows/ci.yml:19 actions/checkout@3d3c42e5... # v7.0.1, :23 Swatinem/rust-cache@d1527c8f... # v2.9.3, :24 actions/cache@55cc8345... # v6.1.0; no reusable workflow or other component.'
+  USS-SUP-005:
+    result: pass
+    evidence: 'Downloads outside the lockfile: the Rust toolchain at the fixed version 1.100.0 (rust-toolchain.toml:2), which rustup checks against the SHA-256 hashes of the channel manifest, and cargo-deny 0.22.0 through `cargo install --locked --version` (tools/xtask/src/main.rs:109-121), which uses crates.io checksums and cargo-deny''s lockfile. No script downloads an installer, script or binary by URL.'
+  USS-SUP-006:
+    result: pass
+    evidence: 'Rust 1.100.0 is the current stable (`rustup check`: stable 1.100.0, 2026-11-09). cargo-deny 0.22.0 is the release before the latest, 0.22.1 (`gh api -X GET repos/EmbarkStudios/cargo-deny/releases`: 0.22.1 2026-11-24, 0.22.0 2026-11-19, one release line, no backports), so it counts as supported. CI runs on GitHub''s ubuntu-latest, windows-latest and macos-latest images (.github/workflows/ci.yml:17).'
+  USS-SUP-007:
+    result: fail
+    evidence: 'The default branch is not protected: `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/branches/main/protection`, `.../rulesets` and `.../rules/branches/main` -> HTTP 403 ''Upgrade to GitHub Pro or make this repository public to enable this feature'' (private repository, organisation plan free; the token has admin access), so no rule can block force-pushes or deletion; no release tag exists.'
+  USS-SUP-008:
+    result: fail
+    evidence: 'No required checks: branch protection and rulesets are unavailable for this private repository on the free plan (`gh api -X GET .../branches/main/protection` and `.../rulesets` -> HTTP 403 ''Upgrade to GitHub Pro or make this repository public to enable this feature''), so a change can merge without CI.'
+  USS-SUP-010:
+    result: pass
+    evidence: '.github/workflows/ci.yml:8-9 sets permissions: contents: read at the top level and the check job asks for no more; `gh api -X GET .../actions/permissions/workflow` -> HTTP 200 default_workflow_permissions: read.'
+  USS-SUP-011:
+    result: pass
+    evidence: '.github/workflows/ci.yml:3-6 triggers on push and pull_request only (no pull_request_target or workflow_run); the token is read-only (:8-9), checkout keeps no credentials (:21), and the repository has no Actions secrets (`gh api -X GET .../actions/secrets` -> HTTP 200 total_count 0).'
+  USS-SUP-012:
+    result: pass
+    evidence: 'No script text has an expression: the run steps are `rustup toolchain install` and `cargo xtask check` (.github/workflows/ci.yml:22, :28); ${{ }} is used only in name, runs-on and the cache key (:13-14, :27).'
+  USS-SUP-013:
+    result: fail
+    evidence: 'Needs a published artifact before the first release: no release exists (`gh api -X GET .../releases` -> []), so no SBOM is published, and no workflow generates one.'
+  USS-SUP-014:
+    result: fail
+    evidence: 'Needs a published artifact before the first release: no release exists (`gh api -X GET .../releases` -> []), so no signed artifact is published, and no workflow signs one.'
+  USS-SUP-015:
+    result: fail
+    evidence: 'Needs a published artifact before the first release: no release exists (`gh api -X GET .../releases` -> []), so no provenance is published, and no workflow builds releases or produces an attestation.'
+  USS-TRU-001:
+    result: pass
+    evidence: 'no release yet: `git tag` prints nothing and `gh api -X GET .../releases` -> []; nothing is sold (is-commercial is false in .uss/record.yaml).'
+  USS-TRU-002:
+    result: pass
+    evidence: 'no release yet: `git tag` prints nothing and `gh api -X GET .../releases` -> []; LICENSE is MIT.'
+  USS-TST-001:
+    result: pass
+    evidence: 'CI runs on each pull request and each push to main (.github/workflows/ci.yml:3-6); `cargo xtask check` (:28) runs `cargo test --locked --workspace --all-features` (tools/xtask/src/main.rs:151-156), and a failure exits 1 (main.rs:86, 224). The latest run on main, 45650698265 at f414a61 (2026-11-25), succeeded on ubuntu, windows and macos (`gh api -X GET .../actions/runs?branch=main`).'
+  USS-TST-002:
+    result: fail
+    evidence: 'tools/uss/build.rs (a directory walk with branches and error returns, :20-67) has no test; tools/xtask/src/main.rs tests (:229-) cover toolchain_problem and the normal cases of the two parsers, but not a program that fails to start or exits non-zero in capture and run (:64-88) or channel_from with no channel; tools/uss/src/main.rs:8 (exit-code fallback) has no test. The modules under tools/uss/src have tests with error cases.'
+  USS-TST-003:
+    result: fail
+    evidence: '46 of the 67 commits labelled fix in the window change no test: they change no .rs file, for example 770c0d2, f414a61 and e941126 (fix(standard) text fixes). The before-and-after run of the tests of the 21 code fixes was not done, because these 46 already decide the result.'
+  USS-TST-005:
+    result: fail
+    evidence: 'No test runs the built uss command: no test uses CARGO_BIN_EXE_uss or starts the binary; the CLI tests call the internal function uss::cli::run (tools/uss/src/cli/mod.rs:620 onwards). Documented workflows such as `uss applicable .uss/record.yaml` (README.md:36-38), uss report, uss release-check, uss show and uss export (docs/cli.md:54-115) have no end-to-end test. `cargo xtask check` runs the built uss lint and uss check (tools/xtask/src/main.rs:192-211) only as checks of this repository.'
+  USS-TST-010:
+    result: fail
+    evidence: 'The parsers (catalog/markdown.rs, expr.rs, yaml.rs, record/mod.rs) and the score calculation (evaluate/score.rs) have only fixed examples; no property-based test library is a dependency (tools/uss/Cargo.toml:31-32 lists only tempfile).'
+  USS-TST-012:
+    result: fail
+    evidence: 'The parsers of untrusted input (records and results: tools/uss/src/record/mod.rs, record/results.rs, yaml.rs) have no fuzz target: there is no fuzz/ directory or cargo-fuzz target, and CI runs no fuzzing (.github/workflows/ci.yml:11-28).'
+suppressions:
+  - file: tools/uss/src/catalog/profiles.rs
+    line: 476
+    rule: 'clippy::too_many_lines'
+    reason: 'one table row per check keeps every pinned message in one place'
+  - file: tools/uss/src/catalog/registry.rs
+    line: 20
+    rule: 'clippy::expect_used'
+    reason: 'the patterns are constants, so a failure is a bug caught by the tests'
+  - file: tools/uss/src/catalog/rules.rs
+    line: 531
+    rule: 'clippy::too_many_lines'
+    reason: 'one table row per check keeps every pinned message in one place'
+  - file: tools/uss/src/evaluate/check.rs
+    line: 223
+    rule: 'clippy::too_many_lines'
+    reason: 'one table row per check'
+  - file: clippy.toml
+    line: 1
+    rule: 'clippy::unwrap_used'
+    reason: 'no reason given (allow-unwrap-in-tests = true relaxes the lint in tests)'
+  - file: clippy.toml
+    line: 2
+    rule: 'clippy::expect_used'
+    reason: 'no reason given (allow-expect-in-tests = true relaxes the lint in tests)'
+  - file: clippy.toml
+    line: 3
+    rule: 'clippy::panic'
+    reason: 'no reason given (allow-panic-in-tests = true relaxes the lint in tests)'
