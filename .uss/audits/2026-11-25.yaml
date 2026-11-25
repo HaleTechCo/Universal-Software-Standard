@@ -1,6 +1,6 @@
 standard:
   version: 0.1.0
-commit: 484209a4dc168639f1fc64251df3ebfa5806dec1
+commit: d726138b9b3f11c402789cb36a365248cec78130
 date: 2026-11-25
 auditor: claude
 results:
@@ -290,8 +290,8 @@ results:
     result: pass
     evidence: 'Cargo.toml:13-14 [workspace.lints.rust] unsafe_code = "forbid"; both crates inherit it with [lints] workspace = true (tools/uss/Cargo.toml:28-29, tools/xtask/Cargo.toml:10-11).'
   USS-RUST-004:
-    result: fail
-    evidence: 'Cargo.toml has no [profile.release], so overflow-checks keeps its release default false; .cargo/config.toml:1-2 holds only an alias, and .github/workflows/ci.yml sets no CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS.'
+    result: pass
+    evidence: 'Cargo.toml:26-27 sets [profile.release] overflow-checks = true in the workspace root manifest, whose profile settings Cargo reads. Nothing overrides it: tools/uss/Cargo.toml and tools/xtask/Cargo.toml have no profile table, .cargo/config.toml:1-2 holds only an alias, and .github/workflows/ci.yml sets no CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS. `cargo build --locked --release -p uss -v` on d726138 -> exit 0, and rustc got -C opt-level=3 with -C overflow-checks=on for the uss library and the uss binary.'
   USS-RUST-007:
     result: pass
     evidence: 'rust-toolchain.toml:2 channel = "1.100.0"; :3 components = ["rustfmt", "clippy"], which the CI steps cargo fmt and cargo clippy use (tools/xtask/src/main.rs:134-150); :4 adds the wasm32 target that CI builds.'
@@ -305,8 +305,8 @@ results:
     result: fail
     evidence: 'CI runs `cargo-deny check` with no check named (tools/xtask/src/main.rs:123) and fails on a non-zero status (main.rs:86, 224), but deny.toml:1-15 does not include the profile baseline (standard/vendors/embarkstudios/cargo-deny.md:32-55): it lacks advisories.db-urls, advisories.unmaintained = "all", advisories.unused-ignored-advisory = "deny", licenses.unused-license-exception = "deny" and sources.required-git-spec = "rev". Also xtask pins cargo-deny 0.22.0 (main.rs:7), outside the profile''s Versions >=0.22.1.'
   USS-SAF-001:
-    result: fail
-    evidence: 'The Rust module''s MUST rules that refine USS-SAF-001 are USS-RUST-003 and USS-RUST-004. unsafe_code = "forbid" is on (Cargo.toml:14), but overflow checks are off in release builds: Cargo.toml has no [profile.release] with overflow-checks = true (USS-RUST-004 fails).'
+    result: pass
+    evidence: 'The Rust module''s MUST rules that refine USS-SAF-001 are USS-RUST-003 and USS-RUST-004. Both are on in the build configuration: unsafe_code = "forbid" (Cargo.toml:13-14, inherited by both crates through [lints] workspace = true) and overflow-checks = true in [profile.release] (Cargo.toml:26-27; see USS-RUST-004). Both are on in the CI build: `cargo xtask check` (.github/workflows/ci.yml:31) builds, lints and tests with the dev and test profiles, with no --release (tools/xtask/src/main.rs:136-189). There, overflow checks are on by default and nothing turns them off: `cargo build --locked -p uss -v` on d726138 in a scratch target directory passed no opt-level, no -C debug-assertions=off and no -C overflow-checks=off to rustc for the uss library and binary, so rustc''s defaults hold (debug assertions on at opt-level 0, and overflow checks with them). unsafe_code = "forbid" applies to every profile.'
   USS-SEC-002:
     result: pass
     evidence: 'No default turns a security feature off: docs/cli.md:14-20 (no environment variable, no configuration file, no option weakens a check); jsonschema is built without default features, so no remote reference resolution (tools/uss/Cargo.toml:21); `uss show` reads only listed files (tools/uss/src/cli/mod.rs:233-238); record paths never leave the project root (cli/files.rs:73-85).'
