@@ -716,8 +716,10 @@ profile. Neither side restates the other's content.
 A profile is in `standard/vendors/<vendor>/<product>.md`: exactly one
 directory below `standard/vendors/`. `<vendor>` is the lowercase name of the
 organisation that owns the tool's source repository. A profile is labelled
-`community` (written by USS contributors) or `vendor` (written or taken over by
-the vendor).
+`community` (written by USS contributors until the vendor takes it over) or
+`vendor`. The vendor's maintainers own a vendor-maintained profile through
+CODEOWNERS. Profiles ship with USS releases, and adding one is a MINOR
+release (section 10).
 
 The header comes after the `#` title and has these fields, and no other:
 
@@ -759,9 +761,9 @@ Each row is one active rule:
   say `full` only when the baseline configuration alone decides the rule.
   Otherwise it MUST say `partial` and name what else is needed.
 - `Tool rules or settings` and `How to verify` MUST NOT be empty.
-- For each category that a profile lists, the profile MUST map every MUST
-  rule of that category that falls within what the tool can check. It cannot
-  list a category and leave such a rule out.
+- For each category that a profile lists, the profile MUST map every
+  applicable MUST that falls within what the tool can check. It cannot list a
+  category and leave such a MUST out.
 
 The rules of a profile (`## Rules`) have the normal rule format (section 3),
 with the profile's `Prefix`, and exist only because of the tool. They can use
@@ -785,6 +787,11 @@ It maps the obligations of a law to the rules of the standard, and adds rules
 only for what the standard does not already cover. A regulation module can set
 a stronger level than the core rule on the same subject where the law does.
 Its rules MUST NOT use `Refines`.
+
+Facts switch a regulation module on: its `Applies when` header holds the
+condition, such as `sold-in-eu`. The module MUST state the version of the
+regulation and the dates from which its obligations apply, each confirmed from
+the official text when the module is written.
 
 After the header and the title, the module has two sections before its rules:
 
