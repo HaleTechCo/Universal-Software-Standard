@@ -623,7 +623,8 @@ and the category scores first. Then it lists the stack entries that no module
 covers. Then it shows every applicable rule with its outcome and evidence,
 grouped by outcome in the order fail, unverified, deviation, declined and
 pass. In each group, the rules are sorted by level, from MUST to MAY, then by
-ID. Then it lists the deviations and the suppressions. Scores and reports MUST NOT be computed or written by hand.
+ID. Then it lists the deviations and the suppressions. Scores and reports
+MUST NOT be computed or written by hand.
 
 To record an audit:
 
