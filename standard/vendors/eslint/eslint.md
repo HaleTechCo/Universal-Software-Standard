@@ -4,7 +4,8 @@
 - **Product:** ESLint with typescript-eslint
 - **Vendor:** ESLint and typescript-eslint
 - **Maintainer:** community
-- **Versions:** eslint >=10.15.0, <11.0.0; typescript-eslint >=8.74.0, <9.0.0;
+- **Versions:** eslint >=10.15.0, <11.0.0; @eslint/js >=10.0.1, <11.0.0;
+  typescript-eslint >=8.74.0, <9.0.0;
   @eslint-community/eslint-plugin-eslint-comments >=4.8.1, <5.0.0
 
 ESLint is a linter for JavaScript and, with typescript-eslint, for TypeScript.
@@ -12,9 +13,17 @@ typescript-eslint adds the rules that read the type information of the
 TypeScript compiler. The ESLint comments plugin adds rules for the directive
 comments that suppress findings. The TypeScript module recommends the
 combination in USS-TS-002. Put the baseline below in `eslint.config.mjs` (any
-of the flat config file names that ESLint reads works). The profile has three
-version ranges because it covers three packages that release on their own
-schedules; each range runs from the version that the profile was checked
+of the flat config file names that ESLint reads works). The type-aware rules
+need each linted file to be in a TypeScript project, and a config file such as
+`eslint.config.mjs` usually is not, so the baseline lists it in
+`allowDefaultProject`, which typescript-eslint offers for config files (a
+glob there cannot use `**`, and a file in it must not be in the nearest
+`tsconfig.json`). Another config file at the project root goes in the same
+list, or gets typescript-eslint's `disableTypeChecked` configuration in a
+block of its own (`{ files: ["**/*.js"], extends:
+[tseslint.configs.disableTypeChecked] }`). The profile has four version ranges
+because it covers four packages that release on their own schedules; each
+range runs from the version that the profile was checked
 against to the next major version. The rules and settings that the mappings
 name are those of ESLint 10.15.0, typescript-eslint 8.74.0 and the comments
 plugin 4.8.1, from their documentation and sources (read 2026-11-24).
@@ -50,7 +59,8 @@ export default defineConfig({
   ],
   languageOptions: {
     parserOptions: {
-      projectService: true,
+      // Config files that no tsconfig.json covers; add each other one here.
+      projectService: { allowDefaultProject: ["eslint.config.mjs"] },
     },
   },
   linterOptions: {
@@ -85,7 +95,7 @@ export default defineConfig({
 | USS-QLT-004 | Maintainability | `no-unreachable`, `@typescript-eslint/no-unused-vars` (unused variables, parameters, imports and functions), `no-unused-private-class-members` | partial: unused exports and unused files are not reported (the knip profile covers them), and commented-out code is not covered | Run `eslint .`; search for commented-out code. |
 | USS-QLT-005 | Maintainability | `no-empty` (an empty block, an empty `catch` block included, with no comment in it), `@typescript-eslint/no-floating-promises` (a promise with no rejection handler) | partial: a `catch` block that has statements and does not handle the error, an error that is returned and ignored, and a rejection that `void` hides are not covered | Run `eslint .`; search for places that drop an error. |
 | USS-QLT-006 | Maintainability | the baseline `extends` and `rules`, with none of them set to `off` or `warn` | partial: the project's configuration must enable every preset and rule of the baseline at error level, and a rule that is turned off for the whole project is judged by USS-QLT-007 | Compare the project's ESLint configuration with the baseline above. |
-| USS-QLT-009 | Maintainability | `@eslint-community/eslint-comments/require-description` (a directive comment needs a description after `--`), `@eslint-community/eslint-comments/no-unlimited-disable` (a directive must name its rules), `@typescript-eslint/ban-ts-comment` (`@ts-expect-error` needs a description of at least 10 characters, and `@ts-ignore` and `@ts-nocheck` are reported) | partial: the rules check that a description exists, not what it says, `@ts-expect-error` names no rule because TypeScript has none, and the suppressions of other tools are outside them | Run `eslint .`; read each reason. |
+| USS-QLT-009 | Maintainability | `@eslint-community/eslint-comments/require-description` (a directive comment needs a description after `--`), `@eslint-community/eslint-comments/no-unlimited-disable` (a directive must name its rules), `@typescript-eslint/ban-ts-comment` (`@ts-expect-error` needs a description of at least 10 characters, the value that `strictTypeChecked` sets for `minimumDescriptionLength` (the rule's own default is 3), and `@ts-ignore` and `@ts-nocheck` are reported) | partial: the rules check that a description exists, not what it says, `@ts-expect-error` names no rule because TypeScript has none, and the suppressions of other tools are outside them | Run `eslint .`; read each reason. |
 | USS-QLT-010 | Maintainability | `@eslint-community/eslint-comments/no-unlimited-disable` (`eslint-disable`, `eslint-disable-line` and `eslint-disable-next-line` with no rule name), `@typescript-eslint/ban-ts-comment` (`@ts-ignore` and `@ts-nocheck`) | partial: a file-level `/* eslint-disable <rule> */` that names a rule is not reported, and the suppressions of other tools are outside the rules | Run `eslint .`; search for `eslint-disable` at the top of a file and for `@ts-nocheck`. |
 | USS-QLT-011 | Maintainability | `@typescript-eslint/ban-ts-comment` (`@ts-ignore` is reported, `@ts-expect-error` is allowed with a description) | partial: the rule covers TypeScript's directives only, since ESLint's own directives have no form that fails when the problem is gone | Run `eslint .`; search for `@ts-ignore`. |
 | USS-QLT-012 | Maintainability | `linterOptions.reportUnusedDisableDirectives: "error"`, `linterOptions.reportUnusedInlineConfigs: "error"` | full | Confirm both settings in `linterOptions`; run `eslint .` and expect exit status 0. |

@@ -104,9 +104,9 @@ style arguments in review and keeps each diff to the change itself.
   and so does one of the five that is left unset. CI runs the type check
   (such as `tsc --noEmit`) over the project's TypeScript code, and the job
   fails on any error that `tsc` reports.
-- **References:** TypeScript TSConfig Reference (read 2026-11-24); TypeScript
-  6.0 release notes (strict by default); TypeScript documentation, tsc CLI
-  Options (read 2026-11-24)
+- **References:** TypeScript 6.0 or later, TSConfig Reference (read
+  2026-11-24); TypeScript 6.0 release notes (strict by default); TypeScript
+  documentation, tsc CLI Options (read 2026-11-24)
 
 The effective TypeScript configuration MUST turn on `strict`,
 `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
@@ -154,8 +154,8 @@ undeclared variable, into errors. ES modules are strict without a directive.
   `jsconfig.json` and each file that it `extends`) sets `checkJs` to `true`
   and has `strict` on (`true`, or unset under TypeScript 6.0 or later). The
   types come from JSDoc comments or from declaration files.
-- **References:** TypeScript TSConfig Reference, `checkJs` (read 2026-11-24);
-  TypeScript 6.0 release notes (strict by default)
+- **References:** TypeScript 6.0 or later, TSConfig Reference, `checkJs`
+  (read 2026-11-24); TypeScript 6.0 release notes (strict by default)
 
 CI SHOULD type-check JavaScript with the TypeScript compiler, with `checkJs`
 and `strict` on, from JSDoc types or declaration files.
@@ -178,9 +178,7 @@ project gets, with no change of language.
   pinned to one exact version with three numbers: the `packageManager` field
   of `package.json` (`name@version`, such as `pnpm@12.23.0`, with an optional
   hash after the version), or `devEngines.packageManager` with an exact
-  `version`. A range, or a version with no patch number, fails. Local
-  development and CI use these versions: CI reads the files or names the same
-  versions.
+  `version`. A range, or a version with no patch number, fails.
 - **References:** npm Docs, package.json: `devEngines` (npm 11.20.0, read
   2026-11-24); pnpm Docs, package.json: `packageManager` and
   `devEngines` (read 2026-11-24); Corepack README (read 2026-11-24)
@@ -225,9 +223,13 @@ declares it supported invites its users to run on it.
 - **Applies when:** has-dependencies
 - **Category:** Safety
 - **Refines:** USS-DEP-001
-- **Verify:** Each dependency in each `package.json` (the dependencies,
-  devDependencies, peerDependencies and optionalDependencies tables) has a
-  range that admits at most one major version, read by npm's range rules. A
+- **Verify:** Each dependency in each `package.json` (the `dependencies`,
+  `devDependencies` and `optionalDependencies` tables) has a range that
+  admits at most one major version, read by npm's range rules. The ranges in
+  `peerDependencies` are left to USS-DEP-001. A `workspace:`, `file:` or
+  `link:` reference names the project's own or a local package and is not a
+  third-party dependency, and a `catalog:` reference is judged by the range
+  of its catalog entry. A
   caret (`^1.2.0`, and `^0.3.0`, which stops before `0.4.0`), a tilde, an
   exact version, an x-range such as `1.x`, and a range with an upper bound
   below the next major version (`>=1.2.0 <2.0.0`) pass. `*`, an empty string,
@@ -284,9 +286,9 @@ and the frozen mode stops the install when it no longer matches
 - **Refines:** USS-DEP-003, USS-DEP-004
 - **Verify:** The repository holds a `pnpm-lock.yaml`, and CI installs the
   dependencies with pnpm (such as `pnpm install --frozen-lockfile`). A
-  project on another package manager (such as npm,
-  Yarn or Bun) fails this rule (it records a Standard Deviation) and meets
-  USS-TS-010 and USS-TS-013 through that manager's own lock file and checks.
+  project on another package manager (such as npm, Yarn or Bun) fails this
+  rule (it records a Standard Deviation) and meets USS-TS-010 and USS-TS-013
+  through that manager's own lock file and checks.
 - **References:** pnpm Docs, Motivation (read 2026-11-24); pnpm Docs, pnpm
   install (read 2026-11-24)
 
