@@ -5,18 +5,19 @@
 - **Applies when:** sold-in-eu
 
 This module covers Regulation (EU) 2024/2847 of 23 October 2024 (the Cyber
-Resilience Act), published in the Official Journal of the European Union on
-20 November 2024. Article 14 (the reporting obligations of manufacturers)
-applies from 11 September 2026, and the rest of the Regulation applies from
-11 December 2027 (Article 71(2)). A product placed on the market before
-11 December 2027 is subject to the Regulation only if it is substantially
-modified from that date, except that Article 14 applies to every such product
-(Article 69(2) and (3)). The article and annex references were read in the
-Official Journal text on 2026-11-24. The module maps the obligations of the
-manufacturer to USS rules and adds nine rules for what the core rules leave
-open. The role of the open-source software steward and the other special
-regimes of the Regulation are not mapped here: a qualified person judges them.
-The core rules that the module does not name apply as written.
+Resilience Act), published in the Official Journal of the European Union on 20
+November 2024. Chapter IV (Articles 35 to 51, the notification of conformity
+assessment bodies) applies from 11 June 2026, Article 14 (the reporting
+obligations of manufacturers) applies from 11 September 2026, and the rest of
+the Regulation applies from 11 December 2027 (Article 71(2)). A product placed
+on the market before 11 December 2027 is subject to the Regulation only if it is
+substantially modified from that date, except that Article 14 applies to every
+such product (Article 69(2) and (3)). The article and annex references were read
+in the Official Journal text on 2026-11-24. The module maps the obligations of
+the manufacturer to USS rules and adds nine rules for what the core rules leave
+open. The role of the open-source software steward and the other special regimes
+of the Regulation are not mapped here: a qualified person judges them. The core
+rules that the module does not name apply as written.
 
 ## Disclaimer
 
@@ -41,7 +42,7 @@ qualified person confirms each row, and what is left, for the product.
 | Exploit mitigation | Annex I Part I(2)(k) | USS-SAF-001, USS-SAF-002 | partial: mitigation outside native code |
 | Security monitoring | Annex I Part I(2)(l) | USS-AUD-001 | partial: the opt-out for the user |
 | Remove data and settings | Annex I Part I(2)(m) | USS-CRA-009 | full |
-| SBOM | Annex I Part II(1) | USS-CRA-001, USS-SUP-013 | full |
+| SBOM | Annex I Part II(1) | USS-CRA-001, USS-SUP-013 | partial: identifying and documenting vulnerabilities and components beyond the SBOM |
 | Remediate without delay; separate security updates | Annex I Part II(2) | USS-DEP-008, USS-CRA-006 | partial: vulnerabilities outside dependencies, and the delay |
 | Tests and reviews | Annex I Part II(3) | USS-TST-001, USS-SEC-028 | partial: regular security reviews |
 | Disclose fixed vulnerabilities | Annex I Part II(4) | USS-SEC-031 | partial: the description, impact, severity and remediation information |
@@ -50,8 +51,8 @@ qualified person confirms each row, and what is left, for the product.
 | Free security updates with advisories | Annex I Part II(8) | USS-CRA-005, USS-SEC-031 | full |
 | Support period | Art. 13(8), (19) | USS-CRA-004, USS-REL-004 | partial: the notice at the end of support, and the reasoning in the technical documentation |
 | Updates kept available | Art. 13(9) | USS-CRA-007 | full |
-| Report exploited vulnerabilities | Art. 14(1)–(2) | USS-CRA-002 | full |
-| Report severe incidents | Art. 14(3)–(4) | USS-CRA-003 | full |
+| Report exploited vulnerabilities | Art. 14(1)–(2) | USS-CRA-002 | partial: the content of each notification |
+| Report severe incidents | Art. 14(3)–(4) | USS-CRA-003 | partial: the content of each notification |
 | Information for users | Annex II | USS-CRA-004, USS-SEC-029, USS-DOC-001 | partial: the other items of Annex II |
 | Technical documentation | Art. 31; Annex VII | none | none: a qualified person prepares it |
 | Conformity assessment, EU declaration, CE marking | Arts. 28, 30, 32 | none | none: a qualified person handles them |
@@ -90,8 +91,9 @@ components that a newly disclosed vulnerability touches.
 - **Verify:** The project has a written reporting procedure that the auditor can
   read. It names the single reporting platform (Article 16) as the route, and
   gives each of the three submissions with its deadline: the early warning
-  within 24 hours of becoming aware of the vulnerability, the vulnerability
-  notification within 72 hours of becoming aware of it, and the final report no
+  without undue delay and in any event within 24 hours of becoming aware of
+  the vulnerability, the vulnerability notification without undue delay and in
+  any event within 72 hours of becoming aware of it, and the final report no
   later than 14 days after a corrective or mitigating measure is available. A
   procedure without the platform or with any of the three missing, or with a
   later deadline, fails. A reportable event is an actively exploited
@@ -110,8 +112,9 @@ components that a newly disclosed vulnerability touches.
 
 A written procedure MUST report each actively exploited vulnerability in the
 product through the single reporting platform within the deadlines of
-Article 14: an early warning within 24 hours of becoming aware of it, a
-vulnerability notification within 72 hours of becoming aware of it and a final
+Article 14: an early warning without undue delay and in any event within
+24 hours of becoming aware of it, a vulnerability notification without undue
+delay and in any event within 72 hours of becoming aware of it and a final
 report no later than 14 days after a corrective or mitigating measure is
 available.
 
@@ -127,7 +130,8 @@ Regulation applies Article 14 from 11 September 2026.
 - **Verify:** The project has a written reporting procedure that the auditor can
   read. It names the single reporting platform (Article 16) as the route, and
   gives each of the three submissions with its deadline: the early warning
-  within 24 hours of becoming aware of the incident, the incident notification
+  without undue delay and in any event within 24 hours of becoming aware of
+  the incident, the incident notification without undue delay and in any event
   within 72 hours of becoming aware of it, and the final report within one month
   after the incident notification was submitted. A procedure without the
   platform or with any of the three missing, or with a later deadline, fails.
@@ -148,9 +152,10 @@ Regulation applies Article 14 from 11 September 2026.
 
 A written procedure MUST report each severe incident having an impact on the
 security of the product through the single reporting platform within the
-deadlines of Article 14: an early warning within 24 hours of becoming aware of
-it, an incident notification within 72 hours of becoming aware of it and a final
-report within one month after the incident notification.
+deadlines of Article 14: an early warning without undue delay and in any event
+within 24 hours of becoming aware of it, an incident notification without
+undue delay and in any event within 72 hours of becoming aware of it and a
+final report within one month after the incident notification.
 
 **Rationale:** Article 14(5) calls an incident severe where it harms the
 availability, authenticity, integrity or confidentiality of sensitive or
@@ -168,39 +173,45 @@ in the product or in a user's systems.
   the download or store page, or the packaging) states the end date of the
   support period, with at least the month and the year. A support period with
   no end date, or an end date with no month, fails. The period from the date
-  the product was placed on the market to the end date is at least five years,
-  or the product information states an expected use time shorter than five
-  years and the period corresponds to that time. Anything shorter fails.
+  the release under audit was placed on the market to the end date is at least
+  five years, or, where the project has documented an expected use time of less
+  than five years for the product, corresponds to that time. Any other period
+  fails.
 - **References:** Regulation (EU) 2024/2847, Official Journal L, 20.11.2024,
   Article 13(8) and (19) (read 2026-11-24)
 
 The product information MUST state the end date of the support period, with at
 least the month and the year, and the support period MUST be at least five
-years unless the product is expected to be in use for less than five years, in
-which case it corresponds to the expected use time.
+years, counted from the date the release is placed on the market, unless the
+product is expected to be in use for less than five years, in which case it
+corresponds to the expected use time.
 
 **Rationale:** Users plan their own upgrades from the end date. USS-REL-004
-asks for a support policy but sets no minimum period.
+asks for a support policy but sets no minimum period. Article 13(8) names no
+start for the five years; USS counts them from the placing on the market of the
+release, which is its own reading for a qualified person to confirm.
 
 ### USS-CRA-005: Provide security updates free of charge
 
 - **Level:** MUST
 - **Applies when:** always
 - **Category:** Safety
-- **Verify:** Each security update that the project made available during the
-  support period, since the last audit or in the last 12 months when there is
-  none, was disseminated without delay, was free of charge to the users, and
-  came with an advisory message that gives users the relevant information,
-  including any action they can take. An update behind a payment, a licence
-  upgrade or a subscription tier fails. A tailor-made product, whose security
-  updates are agreed in a contract between the manufacturer and a business
-  user, is judged by that agreement.
+- **Verify:** For each security update that the project made available during
+  the support period to address an identified security issue, since the last
+  audit or in the last 12 months when there is none, the update was
+  disseminated without delay, was free of charge to its users, and came with an
+  advisory message that gives users the relevant information, including any
+  action they can take. An update behind a payment, a licence upgrade or a
+  subscription tier fails, unless it belongs to a tailor-made product and the
+  manufacturer and a business user agreed otherwise.
 - **References:** Regulation (EU) 2024/2847, Official Journal L, 20.11.2024,
   Annex I Part II(8) (read 2026-11-24)
 
-Security updates during the support period MUST be disseminated without delay,
-free of charge, and accompanied by advisory messages that give users the
-relevant information, including on any action they can take.
+Where security updates are available to address identified security issues
+during the support period, they MUST be disseminated without delay and, unless
+otherwise agreed between the manufacturer and a business user in relation to a
+tailor-made product, free of charge, accompanied by advisory messages that give
+users the relevant information, including on any action they can take.
 
 **Rationale:** A security fix that costs money leaves the users who do not pay
 exposed, and the exposed installations can be attacked.
@@ -252,20 +263,24 @@ rebuilding it or running an exposed version.
 - **Level:** MUST
 - **Applies when:** has-ui or has-cli
 - **Category:** Safety
-- **Verify:** Where automatic security updates apply to the product, the default
-  configuration installs them automatically, within an appropriate timeframe.
-  The product has a clear and easy-to-use way to turn this off, tells users
+- **Verify:** The product's cybersecurity risk assessment (in the technical
+  documentation) says whether automatic security updates are applicable to the
+  product. Where it says they are applicable, the default configuration
+  installs security updates automatically within an appropriate timeframe, and
+  the product has a clear and easy-to-use way to turn this off, tells users
   that an update is available, and lets them postpone an update temporarily. A
-  default that does not install security updates, or any of the three
-  user-facing parts missing, fails. A product for which the project's technical
-  documentation gives the reason that automatic updates do not apply to it
-  passes this rule on that reason.
+  default that does not install security updates automatically, or any of
+  those three parts missing, fails. Where the risk assessment says they are not
+  applicable, the rule is met by that statement. Where there is no risk
+  assessment, the outcome is `unverified`.
 - **References:** Regulation (EU) 2024/2847, Official Journal L, 20.11.2024,
-  Annex I Part I(2)(c) (read 2026-11-24)
+  Annex I Part I(2)(c) and Article 13(3) (read 2026-11-24)
 
-Where automatic security updates apply to the product, they MUST be on by
-default, with a clear opt-out, a notice to users that an update is available,
-and a way to postpone an update temporarily.
+Where, on the basis of the cybersecurity risk assessment, automatic security
+updates are applicable to the product, they MUST be installed within an
+appropriate timeframe and be on by default, with a clear and easy-to-use
+opt-out, a notice to users that an update is available, and a way to postpone
+an update temporarily.
 
 **Rationale:** Most users never change a default, and a security update that
 waits for the user often never arrives.
