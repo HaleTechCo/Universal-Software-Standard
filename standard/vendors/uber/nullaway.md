@@ -73,7 +73,7 @@ over.
 
 | Rule | Category | Tool rules or settings | Coverage | How to verify |
 |---|---|---|---|---|
-| USS-SAF-001 | Safety | `-Xep:NullAway:ERROR` with `OnlyNullMarked=true` and `JSpecifyMode=true` (a dereference of a nullable value, in `@NullMarked` code) | partial: NullAway checks nullness only, and only in `@NullMarked` code, so the other safety options that the Java module names (the `javac` options of USS-JAVA-001) are judged from the compiler arguments, and `@NullMarked` must cover the project's own code | Read the compiler arguments; run the build and expect exit status 0; check that `@NullMarked` covers each module, package or class of the project. |
+| USS-QLT-001 | Maintainability | `-Xep:NullAway:ERROR` with `OnlyNullMarked=true` and `JSpecifyMode=true` (in `@NullMarked` code: a dereference of a value that can be null, a `null` that reaches a place that forbids it, a field that a constructor leaves unset) | partial: NullAway checks nullness bug patterns only, and only in `@NullMarked` code, so a linter for the other defects is still needed (such as Error Prone, configured per its profile); CI must run the build on each pull request and each push to the default branch and fail on a finding, and NullAway reads Java code only | Read the compiler arguments and the CI job; run the build and expect exit status 0; check which code `@NullMarked` covers. |
 
 ## Check-integrity guards
 

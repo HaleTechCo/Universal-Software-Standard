@@ -16,16 +16,18 @@ USS-JAVA-004. Put the baseline below in the `build` section of `pom.xml`; the
 `check` goal binds to the `verify` phase and runs the `spotbugs` goal first.
 The plugin version 4.10.5.0 uses SpotBugs 4.10.5. The settings that the
 profile names are those of spotbugs-maven-plugin 4.10.5.0 (its source and goal
-pages) and of Find Security Bugs 1.14.0 (its bug-pattern list and metadata),
-read 2026-11-24. `effort` takes `Min`, `Default` or `Max`, and `threshold`
-takes `High`, `Default`, `Low`, `Ignore` or `Exp`; `Low` reports findings of low
-priority and above. The `check` goal ends the build with an error when SpotBugs
-reports a finding or an error, so Maven exits with a non-zero status; it
-tolerates findings only when `maxAllowedViolations` is above 0, and it
-counts only findings at or above `failThreshold` when that is set. The plugin
-analyses the test classes only when `includeTests` is `true`, which the
-baseline leaves at its default. A suppression is `@SuppressFBWarnings` with
-the bug pattern in `value` and the reason in `justification`; the tool does
+pages), of the SpotBugs bug descriptions and of Find Security Bugs 1.14.0 (its
+bug-pattern list and metadata), read 2026-11-24. `effort` takes `Min`,
+`Default` or `Max`, and `threshold` takes `High`, `Default`, `Low`, `Ignore` or
+`Exp`; `Low` reports findings of low priority and above. The `check` goal ends
+the build with an error when SpotBugs reports a finding or an error, so Maven
+exits with a non-zero status; it tolerates findings only when
+`maxAllowedViolations` is above 0, and it counts only findings at or above
+`failThreshold` when that is set. The plugin analyses the test classes only
+when `includeTests` is `true` (its default is `false`), so the baseline sets
+it, as USS-JAVA-002 asks for test code to be checked. A suppression is
+`@SuppressFBWarnings` with the bug pattern in `value` and the reason in
+`justification`; the tool does
 not require `justification`, and an annotation with no `value` suppresses every
 warning in its scope without a report, so the auditor reads each annotation.
 The baseline has no exclude filter, so no detector is switched off.
@@ -44,6 +46,7 @@ over.
   <configuration>
     <effort>Max</effort>
     <threshold>Low</threshold>
+    <includeTests>true</includeTests>
     <failOnError>true</failOnError>
     <maxAllowedViolations>0</maxAllowedViolations>
     <!-- No excludeFilterFile, omitVisitors or failThreshold: nothing is
@@ -83,13 +86,12 @@ over.
 | USS-SEC-023 | Safety | `WEAK_TRUST_MANAGER` (a `TrustManager` that accepts any certificate), `WEAK_HOSTNAME_VERIFIER` (a `HostnameVerifier` that accepts any host) | partial: other ways to switch off validation, such as a setting or a flag, are not reported, and the user opt-out that the rule allows needs a read of the code | Run `mvn verify`; search for settings that disable validation. |
 | USS-SEC-024 | Safety | `CUSTOM_MESSAGE_DIGEST` (a custom hash function implementation) | partial: only a custom `MessageDigest`, so other self-made ciphers, protocols and random number generators are read from the code | Run `mvn verify`; search for other cryptographic code. |
 | USS-SEC-026 | Safety | `WEAK_MESSAGE_DIGEST_MD5`, `WEAK_MESSAGE_DIGEST_SHA1`, `DES_USAGE`, `TDES_USAGE`, `ECB_MODE` (MD2, MD4, MD5, SHA-1, DES, 3DES and the ECB mode), `RSA_KEY_SIZE`, `BLOWFISH_KEY_SIZE` (a short RSA or Blowfish key) | partial: the detectors report these algorithms for every use, SHA-1 included, check key sizes for RSA and Blowfish only, and do not cover the other algorithms and key sizes that NIST SP 800-131A or OWASP ASVS Appendix C disallow | Run `mvn verify`; check the other key sizes and algorithms in the code and the configuration. |
-| USS-SEC-028 | Safety | the baseline plugin configuration with Find Security Bugs, and its bug patterns for injection, deserialization, XML parsing, cryptography and secrets | partial: CI must run `mvn verify` (or the `check` goal) on each pull request and each push to the default branch and fail on a finding, and the detectors cover Java code that the bug-pattern list covers, not the other languages of the project | Read the CI job and its triggers; run `mvn verify` and expect exit status 0. |
-| USS-JAVA-002 | Maintainability | the baseline plugin configuration with Find Security Bugs (SpotBugs is a bug-pattern checker that reads compiled classes) | partial: CI must run the check on all of the project's code and fail on a finding, test classes are analysed only with `includeTests` set to `true`, and SpotBugs reads Java classes only | Read the CI job; run `mvn verify` and expect exit status 0. |
-| USS-QLT-001 | Maintainability | the baseline plugin configuration (`effort` `Max`, `threshold` `Low`, `failOnError`, `maxAllowedViolations` 0) | partial: CI must run the check on each pull request and each push to the default branch, test classes are analysed only with `includeTests` set to `true`, and SpotBugs reads Java classes only | Read the CI job; run `mvn verify` and expect exit status 0. |
+| USS-SEC-028 | Safety | the Find Security Bugs plugin, which the baseline adds, and its bug patterns for injection, deserialization, XML parsing, cryptography and secrets | partial: with the baseline, SpotBugs with Find Security Bugs is the SAST tool of the rule for Java code; CI must run `mvn verify` (or the `check` goal) on each pull request and each push to the default branch and fail on a finding, each suppression needs a recorded reason, and the project's other languages need a SAST tool of their own | Read the CI job and its triggers; confirm the Find Security Bugs plugin in `plugins`; read the reason of each suppression. |
+| USS-JAVA-002 | Maintainability | the baseline plugin configuration with Find Security Bugs and `includeTests` (SpotBugs is a bug-pattern checker that reads compiled classes, test classes included) | partial: CI must run the check on all of the project's code and fail on a finding, and SpotBugs reads Java classes only | Read the CI job; run `mvn verify` and expect exit status 0. |
+| USS-QLT-001 | Maintainability | the baseline plugin configuration (`effort` `Max`, `threshold` `Low`, `includeTests`, `failOnError`, `maxAllowedViolations` 0) | partial: CI must run the check on each pull request and each push to the default branch, and SpotBugs reads Java classes only | Read the CI job; run `mvn verify` and expect exit status 0. |
 | USS-QLT-004 | Maintainability | `UPM_UNCALLED_PRIVATE_METHOD` (a private method that is never called), `UUF_UNUSED_FIELD`, `URF_UNREAD_FIELD` (an unused or unread field), `DLS_DEAD_LOCAL_STORE` (a value that is stored and never read) | partial: public and package-private members, unreachable code and unused types are not reported, and commented-out code is not covered | Run `mvn verify`; search for commented-out code. |
 | USS-QLT-005 | Maintainability | `DE_MIGHT_IGNORE`, `DE_MIGHT_DROP` (a method that might ignore or drop an exception), `RV_RETURN_VALUE_IGNORED`, `RV_RETURN_VALUE_IGNORED_BAD_PRACTICE` (an ignored return value or exceptional return value) | partial: the detectors report an ignored exception whether or not a comment explains it, and a `catch` block that has statements and does not handle the error is not reported | Run `mvn verify`; read the comment at each place that ignores an error. |
-| USS-QLT-006 | Maintainability | the baseline `effort`, `threshold`, `plugins`, `failOnError` and `maxAllowedViolations`, with no `excludeFilterFile` and no `omitVisitors` | partial: the project's configuration must set every option of the baseline at its value or stricter, and a detector that the project turns off is judged by USS-QLT-007 | Compare the project's SpotBugs configuration with the baseline above. |
-| USS-QLT-012 | Maintainability | `US_USELESS_SUPPRESSION_ON_CLASS`, `US_USELESS_SUPPRESSION_ON_FIELD`, `US_USELESS_SUPPRESSION_ON_METHOD`, `US_USELESS_SUPPRESSION_ON_METHOD_PARAMETER`, `US_USELESS_SUPPRESSION_ON_PACKAGE` (a `@SuppressFBWarnings` that suppresses nothing, reported at normal priority, which `threshold` `Low` includes), failing the build through `check` | partial: test classes are analysed only with `includeTests` set to `true`, so a stale suppression in test code is not reported with the baseline | Confirm `threshold` and `check` in the plugin configuration; run `mvn verify` and expect exit status 0; read the suppressions in test code. |
+| USS-QLT-012 | Maintainability | `US_USELESS_SUPPRESSION_ON_CLASS`, `US_USELESS_SUPPRESSION_ON_FIELD`, `US_USELESS_SUPPRESSION_ON_METHOD`, `US_USELESS_SUPPRESSION_ON_METHOD_PARAMETER`, `US_USELESS_SUPPRESSION_ON_PACKAGE` (a `@SuppressFBWarnings` that suppresses nothing, reported at normal priority, which `threshold` `Low` includes, in main and test classes with `includeTests`), failing the build through `check` | partial: a stale suppression is not reported in a class, field, method or package that carries a `Generated` annotation with `CLASS` or `RUNTIME` retention | Confirm `threshold`, `includeTests` and `check` in the plugin configuration; run `mvn verify` and expect exit status 0; read the suppressions in code that carries a `Generated` annotation. |
 
 ## Check-integrity guards
 

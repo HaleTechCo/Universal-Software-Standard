@@ -55,7 +55,6 @@ export default defineConfig([
 | Rule | Category | Tool rules or settings | Coverage | How to verify |
 |---|---|---|---|---|
 | USS-QLT-001 | Maintainability | the baseline `extends` (the `recommended` preset) and `rules` | partial: the plugin checks React hooks and the React Compiler's rules only, so CI must run `eslint .` on each pull request and each push to the default branch and fail on any violation (a rule at warn level needs `--max-warnings 0`), and the rest of the lint is the ESLint profile's | Read the CI job; run `eslint .` and expect exit status 0. |
-| USS-QLT-006 | Maintainability | the baseline `extends` (the `recommended` preset) and the two `rules` set to `"error"` | partial: the project's configuration must enable the preset and both rules at error level, and a rule that is turned off for the whole project is judged by USS-QLT-007 | Compare the project's ESLint configuration with the baseline above. |
 | USS-REACT-001 | Maintainability | `react-hooks/rules-of-hooks` (the Rules of Hooks: hooks called in conditions, loops, nested functions and non-React functions), `react-hooks/exhaustive-deps` (missing and extra dependencies of `useEffect`, `useCallback`, `useMemo` and the other hooks that take a dependency array), both set to `"error"` | partial: CI must run ESLint over all components and hooks and fail on exit status 1 | Read the CI job; read the effective configuration for both rules at `"error"`; run `eslint .` and expect exit status 0. |
 
 ## Check-integrity guards

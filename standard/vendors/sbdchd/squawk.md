@@ -48,6 +48,24 @@ also sets `assume_in_transaction = true`, which the baseline leaves out because
 it depends on the migration tool. Run Squawk over each migration file that the
 change adds (or over all of them).
 
+`require-lock-timeout` reports the first statement of a migration that can hold
+a lock for a long time when no `SET lock_timeout` comes before it, and Squawk's
+documentation says that a project whose database connection already sets the
+timeout can ignore the rule. USS-PG-003 accepts a `lock_timeout` that the
+connection sets, so a project that sets it there gets a finding on each
+migration that has such a statement. Such a project does one of two things. It
+excludes the rule in `excluded_rules`, with its reason next to it
+(USS-QLT-007); that leaves the baseline, so USS-PG-002 fails and the project
+records a Standard Deviation. Or it puts the comment
+`-- squawk-ignore require-lock-timeout`, with a reason, above the reported
+statement of each migration, which keeps the baseline.
+`require-statement-timeout`, also on by default, reports a migration that
+changes the schema without setting `statement_timeout` first. No rule of the
+PostgreSQL module requires a statement timeout, but the baseline keeps the
+check on: a project sets `statement_timeout` at the start of each migration,
+which is the fix that Squawk's documentation gives, or, when its connection
+sets a statement timeout, handles the rule in one of the two ways above.
+
 Squawk has no setting that reports a suppression that suppresses nothing: its
 `unused-ignore` check reports only a rule name that does not exist. The auditor
 lists each `squawk-ignore` comment as a suppression, with the rule's name.
