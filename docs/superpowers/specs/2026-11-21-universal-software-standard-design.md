@@ -242,8 +242,8 @@ Header fields:
   `has-plugin-marketplace`, `stores-persistent-data`, `operates-service`,
   `accepts-external-contributions`, `uses-ai-models`, `exposes-mcp-server`,
   `has-multiple-users`, `is-commercial`, `sold-in-eu`,
-  `processes-eu-personal-data`, `is-foss`, `is-network-service`,
-  `uses-relational-database`.
+  `covered-by-eaa`, `processes-eu-personal-data`, `is-foss`,
+  `is-network-service`, `uses-relational-database`.
 - Stack facts are derived from the record's stack lists: `lang.<id>`,
   `framework.<id>`, `platform.<id>`, `tool.<id>` (e.g. `lang.go`, `tool.maven`).
 - Expression grammar: `always`, a fact, `not X`, `X and Y`, `X or Y`,
@@ -356,8 +356,8 @@ Seeded from `Initial_Idea.md` and `todo.txt`. Each file under
 | Architecture [ARC] | Modularity, clear interfaces, externalized config, statelessness where practical, ADRs for significant decisions (including stack choice: "best tool for the job" documented, not dictated), no unnecessary distribution |
 | Code quality [QLT] | Strict linting and static analysis, enforced formatting, warnings as errors, no dead code, explicit error handling, no silent failure, and **check integrity** (§6.5) so "zero violations" cannot be reached by switching checks off |
 | Language & runtime safety [SAF] | Enable every safety feature, strict mode and hardening flag the language/toolchain offers; memory safety; isolated and justified unsafe code; sanitizers where the language permits memory errors (fuzzing is TST's); integer and concurrency safety (integer safety comes through the language modules' safety checks; race detection applies when `uses-concurrency`) |
-| Security [SEC] | Threat model, least privilege, secrets handling, standards-based authN/authZ, input validation and output encoding, parameterized queries, TLS minimums, crypto and FIPS 140-3 (when `requires-fips`), SAST and secret scanning, never fail open, OWASP ASVS level for web apps; secure-by-default per CISA Secure by Design (no default passwords, MFA available). **Vulnerability handling:** coordinated disclosure policy, `security.txt` (RFC 9116) for web services, published security advisories, VEX statements alongside the SBOM (does a known vulnerability actually affect this product), documented response-time targets |
-| Supply chain [SUP] | Pin toolchains, CI actions by SHA (or a host lockfile such as GitHub's `actions.lock`) and third-party container images by digest (library and package dependencies: see DEP); no floating tags; SBOM (SPDX or CycloneDX) marking direct versus transitive dependencies; signing and provenance (SLSA), with SUP as the one home for signing release artifacts; never modify system-level runtimes or package managers (installing toolchains per project is CTB's). **No end-of-life platforms:** no unsupported runtimes, base images or toolchains. **Source and CI protection:** branch protection, required review (when `has-multiple-maintainers`), CI tokens with least privilege, no dangerous workflow patterns (e.g. untrusted code running with secrets). OpenSSF Scorecard checks much of this automatically and is an early vendor-profile candidate (§6.6) |
+| Security [SEC] | Threat model, least privilege, secrets handling, standards-based authN/authZ, input validation and output encoding, parameterized queries, TLS minimums, crypto and FIPS 140-3 (when `requires-fips`), SAST and secret scanning, never fail open, OWASP ASVS level for web apps; secure-by-default per CISA Secure by Design (no default passwords, MFA available). **Vulnerability handling:** coordinated disclosure policy, `security.txt` (RFC 9116) for web services, published security advisories, VEX statements alongside the SBOM (does a known vulnerability actually affect this product), documented response-time targets; the advisory and VEX rules apply to every project that publishes releases |
+| Supply chain [SUP] | Pin toolchains, CI actions by SHA (or a host lockfile such as GitHub's `actions.lock`) and third-party container images by digest (library and package dependencies: see DEP); no floating tags; SBOM (SPDX or CycloneDX) marking direct versus transitive dependencies; signing and provenance (SLSA), with SUP as the one home for signing release artifacts (the SBOM, signing and SLSA rules apply to every project that publishes releases); never modify system-level runtimes or package managers (installing toolchains per project is CTB's). **No end-of-life platforms:** no unsupported runtimes, base images or toolchains. **Source and CI protection:** branch protection, required review (when `has-multiple-maintainers`), CI tokens with least privilege, no dangerous workflow patterns (e.g. untrusted code running with secrets). OpenSSF Scorecard checks much of this automatically and is an early vendor-profile candidate (§6.6) |
 | Dependencies [DEP] | Default category Safety. **Bounded version ranges (MUST):** every dependency in a manifest is constrained to a bounded range: at least a "soft pin" within one major version (e.g. `>=1.2, <2`, written in the ecosystem's own syntax: Cargo `1.2`, npm `^1.2.0`, Python `~=1.2`, Maven `[1.2,2.0)`); never `*`, `latest`, a branch, or an unbounded `>=` (which admits the next major version, and with it breaking changes). Language modules name the syntax. **Exact, verified resolution (MUST):** a lockfile with integrity hashes is committed, and builds and CI install strictly from it, failing when it is out of date (e.g. `cargo build --locked`, `npm ci`, `uv sync --locked`). **Libraries:** SHOULD declare the widest range they are tested against (tight pins in a library cause conflicts for everyone downstream) and SHOULD test the lowest versions in that range, not only the newest. **Direct dependencies declared (MUST):** every package the code uses directly is declared as a direct dependency, never reached through another package's dependencies (such "phantom" dependencies break when that package changes); tools find these, e.g. deptry, knip, Maven `dependency:analyze`, `go mod tidy` (Rust's compiler already enforces it). **Direct dependencies documented (SHOULD):** each one has its purpose recorded (in the manifest or a dependency list), and adding one requires that justification. **No unused dependencies (SHOULD; category Maintainability).** **Runtime, build and dev dependencies kept separate (MUST)**, so shipped artifacts carry only runtime ones. **Healthy dependencies (SHOULD):** before adding one, check that it is maintained, not deprecated or archived, has more than one maintainer, and that the standard library is not enough, and record the check in the change that adds it, with a reason for any point it fails (licence compatibility is LIC's). **No end-of-life dependencies (MUST).** **Updates:** automated update PRs (e.g. Renovate, Dependabot), reviewed before merge; new releases SHOULD wait a minimum age (e.g. a few days) before adoption, because compromised releases are usually caught and pulled within days (e.g. Renovate `minimumReleaseAge`, Dependabot cooldown, uv `--exclude-newer`); releases that fix a known vulnerability affecting the project are exempt. **Vulnerability scanning** of all dependencies, with VEX for findings that do not affect the product (SEC). **Private packages:** names scoped or registries configured so a public package cannot take their place ("dependency confusion"). **Vendoring:** a project that vendors (fact `vendors-dependencies`) MUST record each vendored component's source, version and licence in a form scanners and update tools read, so it is scanned and updated like any other dependency. Tool-specific details (exact commands and configuration) live in language modules and vendor profiles |
 | Testing [TST] | Unit, integration, end-to-end for user workflows, API, regression test per fixed bug, migration, accessibility (accessibility testing is ACC's); tests run in CI; no disabled tests without tracking (QLT's); coverage not a gate but critical and security logic tested. **Test effectiveness** (tests can be gamed too: a test that asserts nothing still passes): mutation testing on critical and security logic (e.g. Stryker, PIT, mutmut, cargo-mutants) to prove the tests catch real faults; property-based testing for logic with wide input ranges; fuzzing for anything that parses untrusted input. Performance testing lives in PRF |
 | Accessibility [ACC] | WCAG 2.2 AA baseline, keyboard, screen readers, focus, contrast, no colour-only meaning, reduced motion, responsive, automated (e.g. axe-core) plus manual testing |
@@ -380,7 +380,7 @@ Seeded from `Initial_Idea.md` and `todo.txt`. Each file under
 | Performance & efficiency [PRF] | Category Efficiency. Written performance budgets (e.g. startup time, latency, memory, binary or bundle size, Core Web Vitals for web UIs); benchmarks in CI that fail the build on regression beyond a stated threshold; load testing for operated services; efficient resource use (no busy-waiting, bounded memory, idle at near-zero cost); energy and carbon measured with the Software Carbon Intensity specification (ISO/IEC 21031) where practical. References confirmed at writing time |
 | Usability [UX] | Category Accessibility & Usability. Error messages say what went wrong and how to fix it; destructive actions ask for confirmation or can be undone; sensible defaults with zero-config start where possible; no deceptive design ("dark patterns"; counts toward Fairness). **When `has-cli`:** Command Line Interface Guidelines (clig.dev), `--help` and `--version`, meaningful exit codes, machine-readable output option, `NO_COLOR` honoured, stdout for output and stderr for messages. **Config and data locations** follow platform conventions (XDG Base Directory on Linux, the platform equivalents elsewhere) |
 | Operations [OPS] | Category Reliability. When `operates-service`. Service-level objectives (SLOs) with error budgets; alerts on symptoms users feel, not on causes; a runbook (in ASD-STE100) for every alert; a documented incident-response process; blameless postmortems with tracked follow-ups; progressive rollouts (canary or staged) with automatic rollback; status communication to users during incidents. References: Google SRE practices; confirmed at writing time |
-| Fair dealing [TRU] | Promises to users kept across versions. Default category Fairness; individual rules override. Features once available free SHOULD NOT be removed or moved behind a paid tier or licence later (no "rug-pulls"), e.g. LDAP or OIDC login that was free must stay free; future versions SHOULD NOT be relicensed to more restrictive terms. **When `is-commercial`:** security essentials (SSO via OIDC/SAML/LDAP, MFA, audit logging) SHOULD NOT be paywalled at all (category Safety; ties to CISA Secure by Design); users' own data MUST NOT be held hostage: users MUST be able to export it in an open, documented format, and export works regardless of subscription state; pricing and licence changes are announced ahead of time in the changelog. References: CISA Secure by Design; confirmed at writing time |
+| Fair dealing [TRU] | Promises to users kept across versions. Default category Fairness; individual rules override. Features once available free SHOULD NOT be taken out of the free edition or moved behind a payment while a paid edition keeps them (no "rug-pulls"), e.g. LDAP or OIDC login that was free must stay free. Removing a feature from every edition is a breaking change and belongs to REL; an operated service with no releases that removes a feature from every edition is judged by no rule; future versions SHOULD NOT be relicensed to more restrictive terms. **When `is-commercial`:** security essentials (SSO via OIDC/SAML/LDAP, MFA, audit logging) SHOULD NOT be paywalled at all (category Safety; ties to CISA Secure by Design); users' own data MUST NOT be held hostage: users MUST be able to export it in an open, documented format, and export works regardless of subscription state; pricing and licence changes are announced ahead of time in the changelog. References: CISA Secure by Design; confirmed at writing time |
 | Commercial licensing [COM] | Category Fairness. When `is-commercial` (any edition, tier, feature or licence is sold). **Transparent:** licence models, tiers and prices SHOULD be published, with what each includes, so the full cost can be worked out in advance (no hidden fees, and every offering has a published list price rather than being "contact sales" only). Negotiated volume and corporate-wide agreements MAY be offered on top of the published prices, provided they follow every other COM rule (price-increase caps, notice, renewal-only increases, no virtualisation penalties, usage visibility, grace periods) and are never worse than the published price for the same thing. **À la carte:** each feature SHOULD be purchasable on its own; bundles MAY also be offered, but never priced so that buying à la carte is a penalty. **Not predatory:** every agreement SHOULD state a cap on price increases; increases SHOULD NOT exceed a named inflation index (e.g. CPI) plus 3 percentage points per year, apply only at renewal (never mid-term), and be announced at least 90 days ahead; licence metrics SHOULD NOT penalise virtualisation or containers (e.g. counting physical cores of a whole host); licence usage SHOULD be visible to the customer in the product, so there is never a surprise "true-up" audit. **Licence delivery types:** an offline licence file for air-gapped use SHOULD always be offered; a licence server MAY be offered, and if so SHOULD be self-hostable (IND); a lost connection to any licence service SHOULD start a generous grace period, never an immediate stop; an expired licence SHOULD degrade gracefully (e.g. read-only), and data export always works (TRU). **Licence models:** SHOULD offer several, such as named user, concurrent (floating), node-locked, subscription, perpetual (with optional paid maintenance, or a perpetual-fallback licence that keeps the last version paid for), and a **service-account licence for CI/CD**: for automation only, does not consume a human seat, works on ephemeral and containerised runners (no node lock or hardware fingerprint), activates without interaction from a secret token, and is priced for automation use |
 | Independence [IND] | Users can run the software on their own terms. Category Compatibility. **When `is-network-service`:** SHOULD be self-hostable: runs entirely on the user's own infrastructure, with a documented self-hosting guide, no required phone-home or licence server, and the self-hosted edition not cut down relative to any hosted one; SHOULD run in restricted-egress and air-gapped environments (DST covers installing offline; this covers running offline). **When `is-foss`:** SHOULD NOT require any commercial product or subscription to work: proprietary services may be offered as optional integrations, but every required dependency has a FOSS option (e.g. an AI feature that calls a hosted model API can also point at a locally run model). **When `uses-network`:** SHOULD NOT require one cloud provider's proprietary services; use open or widely implemented protocols instead (e.g. S3-compatible storage, OIDC, OpenTelemetry). **When `uses-relational-database`:** SHOULD support SQLite, PostgreSQL and MariaDB/MySQL rather than one database only, with the full test suite running against every supported database in CI (support that CI does not prove is only a claim); database access SHOULD go through an abstraction layer (an ORM, a query builder, or repository interfaces with per-database adapters, as the language module recommends) and migrations SHOULD be written or generated per supported database. Projects that depend on one database's distinctive features (e.g. PostGIS, PostgreSQL JSONB operators, LISTEN/NOTIFY) record a Standard Deviation |
 
@@ -405,12 +405,17 @@ Seeded from `Initial_Idea.md` and `todo.txt`. Each file under
 
 Under `standard/modules/<category>/`:
 
-- languages: Go, Rust, TypeScript (incl. JavaScript), Python, Java
-- tools: Maven
-- platforms: Docker Compose, Kubernetes + Helm, PostgreSQL
-- frameworks: React
-- regulations: EU Cyber Resilience Act, European Accessibility Act, GDPR
-  (see §6.7)
+- languages: Python (`PY`), Go (`GO`), Rust (`RUST`), TypeScript and
+  JavaScript (`TS`), Java (`JAVA`)
+- tools: Maven (`MVN`)
+- platforms: Docker Compose (`COMPOSE`), Kubernetes and Helm (`K8S`),
+  PostgreSQL (`PG`)
+- frameworks: React (`REACT`)
+- regulations: EU Cyber Resilience Act (`CRA`), European Accessibility Act
+  (`EAA`), GDPR (`GDPR`) (see §6.7)
+
+Each module is one file, `standard/modules/<category>/<name>.md`, with the
+prefix in brackets.
 
 Each module states the concrete flags, linters, checker configs and patterns
 that satisfy the core rules for that technology (e.g. which compiler flags
@@ -418,22 +423,36 @@ satisfy SAF rules for Rust, which linters satisfy QLT for Python), plus rules
 that exist only because of that technology's quirks.
 
 Module rules are **binding**, and each one that makes a core rule concrete
-names it in `Refines`. The required **outcome** is a MUST ("MUST lint with zero
-violations against a rule set covering correctness, style, imports and
-security"). The **best-in-class tool** for that outcome, chosen from current
-sources when the module is written, is a separate SHOULD ("SHOULD use Ruff,
-configured per its vendor profile"). New projects simply get the recommended
-tool. An existing project on another tool meets the MUST if that tool has a
-vendor profile (§6.6) covering it, and records a Standard Deviation for the
-SHOULD. Modules do not hold tool configuration themselves; that lives in vendor
-profiles. Where one tool does not cover an outcome, the module pairs tools:
-Ruff covers linting, formatting and Bandit-style security checks but not type
-checking, so the Python module also names a strict type checker (mypy or
-pyright, whichever current sources favour).
+names it in `Refines` and takes the strength of the core rules it refines (a
+module never weakens a core rule or silently raises one). The required
+**outcome** is a MUST ("MUST lint with zero violations against a rule set
+covering correctness, style, imports and security"). The **best-in-class tool**
+for that outcome, chosen from current sources when the module is written, is a
+separate SHOULD ("SHOULD use Ruff, configured per its vendor profile"); this
+tool rule refines the same core rules as its outcome and is exempt from the
+strength rule. New projects simply get the recommended tool. An existing
+project on another tool meets the MUST if that tool has a vendor profile (§6.6)
+covering it, and records a Standard Deviation for the SHOULD.
+
+A module states the technology's own flags and settings (the compiler, the
+standard formatter, the package manager and, for Maven, Compose and Kubernetes,
+the configuration of the technology itself); the configuration of a separate
+checking tool whose rule set sets a floor (a linter, a type checker, a scanner
+with a rule set) lives in that tool's vendor profile. A formatter or a scanner
+without a configurable rule set (such as Prettier or `govulncheck`) is named by
+its module rule and has no profile. Where one tool does not cover an outcome,
+the module pairs tools: Ruff covers linting, formatting and Bandit-style
+security checks but not type checking, so the Python module also names mypy as
+the strict type checker.
 
 A project in a language with no module
 yet is audited against the core rules directly, using that toolchain's own
-documentation, and the audit report notes that no module existed.
+documentation, and the audit report lists the stack entry as "no module";
+`uss check` does not reject it.
+
+A Dockerfile module (with hadolint) is a candidate for a later release. In v1,
+USS-HRD-001 covers container images through the CIS Docker Benchmark, and the
+Compose module covers only Compose files.
 
 ### 6.4 Rule-writing bar
 
@@ -548,10 +567,17 @@ restates the other's content.
   for accurate claims before merging; the validator checks its format and that
   every mapped ID exists. Profiles ship with USS releases (adding one is a
   MINOR release).
-- **v1:** community-maintained profiles for each tool recommended by the v1
-  modules (e.g. Ruff, golangci-lint, Clippy, ESLint with typescript-eslint),
-  plus OpenSSF Scorecard, which checks many SUP and CTB rules automatically;
-  the exact list comes out of writing the modules.
+- **v1:** seventeen community-maintained profiles, for the tools that the v1
+  modules recommend and that have a rule set: Ruff, mypy, deptry, OSV-Scanner,
+  golangci-lint, Clippy, cargo-deny, ESLint with typescript-eslint, knip, Error
+  Prone, NullAway, SpotBugs with Find Security Bugs, kube-linter, Squawk,
+  eslint-plugin-react-hooks, Oxlint (for its jsx-a11y rules;
+  eslint-plugin-jsx-a11y was replaced because it no longer met the maintenance
+  test and does not support ESLint 10) and OpenSSF Scorecard. Scorecard checks
+  supply-chain, security, dependency, testing and licence rules automatically,
+  and no Contributability rule. No CODEOWNERS entry exists yet: USS maintainers
+  own the community profiles, and a vendor that takes one over adds its own
+  entry.
 
 ### 6.7 Regulation modules
 
@@ -569,9 +595,12 @@ Every regulation module carries a plain disclaimer: USS compliance is not legal
 compliance and not legal advice. A regulation module shows where USS helps
 meet the law and what is left over, for a qualified person to confirm.
 
-v1: EU Cyber Resilience Act (its vulnerability-reporting duties apply from
-September 2026, the rest from December 2027), European Accessibility Act (in
-force since June 2025), and GDPR. Later: PCI DSS, HIPAA, US federal (NIST SP
+v1: EU Cyber Resilience Act (`sold-in-eu`; as Article 71(2) states, Chapter IV,
+Articles 35 to 51 on the notification of conformity assessment bodies, applies
+from 11 June 2026, Article 14 on reporting from 11 September 2026, and the rest
+from 11 December 2027), European Accessibility Act (switched on by the
+`covered-by-eaa` fact; in force since June 2025), and GDPR (switched on by
+`processes-eu-personal-data`). Later: PCI DSS, HIPAA, US federal (NIST SP
 800-53, FedRAMP, DISA STIGs, secure-development attestation).
 
 ## 7. The project record file
