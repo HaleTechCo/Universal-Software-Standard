@@ -45,7 +45,8 @@ the Supply chain area.
   of another ecosystem) may admit several major versions, such as
   `^18 || ^19`, if it has an upper bound. Where the ecosystem has a default
   range syntax, a requirement is read by the ecosystem's rules: for example
-  `1.2` in Cargo means `>=1.2.0, <2.0.0`, and `~=1.2` in Python means `>=1.2, ==1.*`.
+  `1.2` in Cargo means `>=1.2.0, <2.0.0`, and `~=1.2` in Python means
+  `>=1.2, ==1.*`.
 - **References:** The Cargo Book, Specifying Dependencies (read 2026-11-23);
   Python Packaging User Guide, Version specifiers (read 2026-11-23),
   Compatible release; Apache Maven Enforcer, Version Ranges (read 2026-11-23)

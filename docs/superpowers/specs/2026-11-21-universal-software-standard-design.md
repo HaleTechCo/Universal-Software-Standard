@@ -429,8 +429,8 @@ module never weakens a core rule or silently raises one). The required
 covering correctness, style, imports and security"). The **best-in-class tool**
 for that outcome, chosen from current sources when the module is written, is a
 separate SHOULD ("SHOULD use Ruff, configured per its vendor profile"); this
-tool rule refines the same core rules as its outcome and is exempt from the
-strength rule. New projects simply get the recommended tool. An existing
+tool rule refines the core rules whose outcome it serves and is exempt from
+the strength rule. New projects simply get the recommended tool. An existing
 project on another tool meets the MUST through that tool, configured to at
 least the baseline that QLT-006 sets (the tool's vendor profile, §6.6, when it
 has one), and records a Standard Deviation for the SHOULD.
