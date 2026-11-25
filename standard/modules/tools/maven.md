@@ -111,9 +111,9 @@ rule keeps a project from switching that off.
 - **Refines:** USS-DEP-001
 - **Verify:** In each POM of the project, each dependency (the `dependencies`
   and `dependencyManagement` tables, a BOM that the project imports with scope
-  `import`, and the dependencies in profiles) has an effective version that
-  names one release: a version written directly, set by a property, or taken
-  from `dependencyManagement` or an imported BOM. That version is an exact
+  `import`, and the dependencies in profiles) has an effective version: a
+  version written directly, set by a property, or taken from
+  `dependencyManagement` or an imported BOM. That version is an exact
   release version, as a soft requirement (`1.2.3`) or a hard requirement
   (`[1.2.3]`), or a range bounded within one major version: both bounds are
   written, the lower bound is a version of that major version, and the upper
