@@ -66,11 +66,12 @@ hardening rules is still judged as those rules say.
   `checks.addAllBuiltIn` is
   `true` (in `.kube-linter.yaml` or `.kube-linter.yml`, or in the file that
   `--config` names, or as `--add-all-built-in`), and the configuration sets
-  none of `checks.exclude` and `checks.ignorePaths` (or `--exclude` and
-  `--ignore-paths`). The job fails when `kube-linter lint` exits with status 1,
-  which it does when it reports a lint error. A project that uses another
-  linter fails this rule and records a Standard Deviation; it meets USS-K8S-001
-  through that linter's own profile.
+  no `checks.ignorePaths` (or `--ignore-paths`) and excludes no check other
+  than `required-label-owner` and `required-annotation-email` in
+  `checks.exclude` (or `--exclude`). The job fails when `kube-linter lint`
+  exits with status 1, which it does when it reports a lint error. A project
+  that uses another linter fails this rule and records a Standard Deviation; it
+  meets USS-K8S-001 through that linter's own profile.
 - **References:** kube-linter 0.8.3, documentation, Configuring KubeLinter and
   KubeLinter checks (read 2026-11-24); kube-linter 0.8.3, source of the `lint`
   command and `main` (read 2026-11-24)
@@ -175,10 +176,13 @@ turns the mistake into an error at `helm lint`, `helm template` and
   that is empty, `*`, or a lower bound with no upper bound (`>=1.2.0`) fails.
   Then each such chart has a `Chart.lock` in version control (not excluded by a
   `.gitignore` file) that lists each dependency of `Chart.yaml` with the version
-  that was resolved.
+  that was resolved. The integrity hash of each downloaded chart is not judged
+  here (USS-DEP-002 judges it).
 - **References:** Helm 4.3.1 documentation, `helm dependency` and `helm
-  dependency build` (read 2026-11-24); Masterminds/semver 3.5.0, Readme, range
-  comparisons (read 2026-11-24)
+  dependency build` (read 2026-11-24); Helm 4.3.2, source of the lock digest
+  in `internal/resolver/resolver.go` and `pkg/downloader/manager.go` (read
+  2026-11-24); Masterminds/semver 3.5.0, Readme, range comparisons (read
+  2026-11-24)
 
 The dependencies of a chart MUST have bounded version ranges, and `Chart.lock`
 MUST be committed.
@@ -186,7 +190,12 @@ MUST be committed.
 **Rationale:** A range with no upper bound takes a new major version that nobody
 has tested. `helm dependency build` restores the charts from `Chart.lock`, so
 the committed file gives every build the versions that were resolved, and
-`helm dependency update` is the deliberate step that changes them.
+`helm dependency update` is the deliberate step that changes them. `Chart.lock`
+alone does not record the hash of each chart: its `digest` is a hash of the
+dependency list, which `helm dependency build` compares with `Chart.yaml`, and
+it verifies a downloaded chart only with signatures (`--verify`). The integrity
+requirement of USS-DEP-002 is met another way, such as by committing the
+packaged dependency charts under `charts/`, and USS-DEP-002 judges that part.
 
 ## Hardening fields
 

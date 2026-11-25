@@ -45,9 +45,15 @@ annotation that suppresses nothing, so the auditor reads each annotation and
 lists it as a suppression with the check's name as its rule. The annotation
 `kube-linter.io/ignore-all` suppresses every check on one object. The checks of
 the workload kinds above also report Jobs, CronJobs and Pods that do not restart
-(which some mappings below note), and the baseline enables checks that ask for
-an owner label or annotation, so a project that needs an exception uses the
-annotation with its reason, not an exclusion.
+(which some mappings below note). The baseline excludes the two built-in checks
+whose meaning depends on an organisation's own labels or annotations:
+`required-label-owner` (requires a label with the key `owner`) and
+`required-annotation-email` (requires an annotation with the key `email` and an
+email address as its value). A project has no such label or annotation unless
+its organisation defines them, so these two cannot set a floor for every
+project; they are the only built-in checks of kube-linter 0.8.3 that read an
+organisation's own label or annotation keys. A project that needs another
+exception uses the annotation with its reason, not an exclusion.
 
 Community-maintained: written by USS contributors until the vendor takes it
 over.
@@ -60,8 +66,14 @@ over.
 checks:
   # Every built-in check on, the ones that are off by default included.
   addAllBuiltIn: true
-  # No exclude list and no ignorePaths: no check is turned off and no path is
-  # skipped. A single exception is an annotation on the object, with a reason.
+  exclude:
+    # These two checks require label and annotation keys that only an
+    # organisation defines, so they cannot be a floor for every project.
+    - required-label-owner
+    - required-annotation-email
+  # No other exclusion and no ignorePaths: no other check is turned off and no
+  # path is skipped. A single exception is an annotation on the object, with a
+  # reason.
 ```
 
 ## Mappings
@@ -82,7 +94,7 @@ checks:
 
 | Guard | Setting | Rule |
 |---|---|---|
-| Every built-in check is on | `checks.addAllBuiltIn: true`, and no `checks.exclude` (which always wins over the checks that are on) | USS-QLT-006 |
+| Every built-in check is on, except the two that depend on an organisation's labels | `checks.addAllBuiltIn: true`, and a `checks.exclude` that lists only `required-label-owner` and `required-annotation-email` (an exclusion always wins over the checks that are on) | USS-QLT-006, USS-QLT-007 |
 | No path is skipped | no `checks.ignorePaths` | USS-QLT-006 |
 | A suppression names one check and gives the reason | the annotation `ignore-check.kube-linter.io/<check>` with the reason as its value (the documentation encourages the reason and describes no setting that requires it) | USS-QLT-009 |
 | No blanket suppression | the annotation `kube-linter.io/ignore-all` is not used | USS-QLT-010 |
