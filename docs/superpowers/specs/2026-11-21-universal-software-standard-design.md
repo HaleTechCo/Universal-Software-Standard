@@ -227,7 +227,7 @@ Header fields:
 | Verify | yes | How an auditor determines pass/fail |
 | References | yes (may be `none`) | External standards, CWEs, specs |
 | Enables | MAY rules only, optional | Fact(s) set to true when the project adopts this MAY |
-| Refines | module rules, optional | Core rule ID(s) this module rule makes concrete for its technology |
+| Refines | module and profile rules, optional | Core rule ID(s) this module or profile rule makes concrete for its technology |
 | Status | optional | `Retired`, with `Retired in` and `Replaced by` |
 
 ### 5.3 Applicability
@@ -357,7 +357,7 @@ Seeded from `Initial_Idea.md` and `todo.txt`. Each file under
 | Code quality [QLT] | Strict linting and static analysis, enforced formatting, warnings as errors, no dead code, explicit error handling, no silent failure, and **check integrity** (§6.5) so "zero violations" cannot be reached by switching checks off |
 | Language & runtime safety [SAF] | Enable every safety feature, strict mode and hardening flag the language/toolchain offers; memory safety; isolated and justified unsafe code; sanitizers where the language permits memory errors (fuzzing is TST's); integer and concurrency safety (integer safety comes through the language modules' safety checks; race detection applies when `uses-concurrency`) |
 | Security [SEC] | Threat model, least privilege, secrets handling, standards-based authN/authZ, input validation and output encoding, parameterized queries, TLS minimums, crypto and FIPS 140-3 (when `requires-fips`), SAST and secret scanning, never fail open, OWASP ASVS level for web apps; secure-by-default per CISA Secure by Design (no default passwords, MFA available). **Vulnerability handling:** coordinated disclosure policy, `security.txt` (RFC 9116) for web services, published security advisories, VEX statements alongside the SBOM (does a known vulnerability actually affect this product), documented response-time targets; the advisory and VEX rules apply to every project that publishes releases |
-| Supply chain [SUP] | Pin toolchains, CI actions by SHA (or a host lockfile such as GitHub's `actions.lock`) and third-party container images by digest (library and package dependencies: see DEP); no floating tags; SBOM (SPDX or CycloneDX) marking direct versus transitive dependencies; signing and provenance (SLSA), with SUP as the one home for signing release artifacts (the SBOM, signing and SLSA rules apply to every project that publishes releases); never modify system-level runtimes or package managers (installing toolchains per project is CTB's). **No end-of-life platforms:** no unsupported runtimes, base images or toolchains. **Source and CI protection:** branch protection, required review (when `has-multiple-maintainers`), CI tokens with least privilege, no dangerous workflow patterns (e.g. untrusted code running with secrets). OpenSSF Scorecard checks much of this automatically and is an early vendor-profile candidate (§6.6) |
+| Supply chain [SUP] | Pin toolchains, CI actions by SHA (or a host lockfile such as GitHub's `actions.lock`) and third-party container images by digest (library and package dependencies: see DEP); no floating tags; SBOM (SPDX or CycloneDX) marking direct versus transitive dependencies; signing and provenance (SLSA), with SUP as the one home for signing release artifacts (the SBOM, signing and SLSA rules apply to every project that publishes releases); never modify system-level runtimes or package managers (installing toolchains per project is CTB's). **No end-of-life platforms:** no unsupported runtimes, base images or toolchains. **Source and CI protection:** branch protection, required review (when `has-multiple-maintainers`), CI tokens with least privilege, no dangerous workflow patterns (e.g. untrusted code running with secrets). OpenSSF Scorecard checks much of this automatically and has a vendor profile (§6.6) |
 | Dependencies [DEP] | Default category Safety. **Bounded version ranges (MUST):** every dependency in a manifest is constrained to a bounded range: at least a "soft pin" within one major version (e.g. `>=1.2, <2`, written in the ecosystem's own syntax: Cargo `1.2`, npm `^1.2.0`, Python `~=1.2`, Maven `[1.2,2.0)`); never `*`, `latest`, a branch, or an unbounded `>=` (which admits the next major version, and with it breaking changes). Language modules name the syntax. **Exact, verified resolution (MUST):** a lockfile with integrity hashes is committed, and builds and CI install strictly from it, failing when it is out of date (e.g. `cargo build --locked`, `npm ci`, `uv sync --locked`). **Libraries:** SHOULD declare the widest range they are tested against (tight pins in a library cause conflicts for everyone downstream) and SHOULD test the lowest versions in that range, not only the newest. **Direct dependencies declared (MUST):** every package the code uses directly is declared as a direct dependency, never reached through another package's dependencies (such "phantom" dependencies break when that package changes); tools find these, e.g. deptry, knip, Maven `dependency:analyze`, `go mod tidy` (Rust's compiler already enforces it). **Direct dependencies documented (SHOULD):** each one has its purpose recorded (in the manifest or a dependency list), and adding one requires that justification. **No unused dependencies (SHOULD; category Maintainability).** **Runtime, build and dev dependencies kept separate (MUST)**, so shipped artifacts carry only runtime ones. **Healthy dependencies (SHOULD):** before adding one, check that it is maintained, not deprecated or archived, has more than one maintainer, and that the standard library is not enough, and record the check in the change that adds it, with a reason for any point it fails (licence compatibility is LIC's). **No end-of-life dependencies (MUST).** **Updates:** automated update PRs (e.g. Renovate, Dependabot), reviewed before merge; new releases SHOULD wait a minimum age (e.g. a few days) before adoption, because compromised releases are usually caught and pulled within days (e.g. Renovate `minimumReleaseAge`, Dependabot cooldown, uv `--exclude-newer`); releases that fix a known vulnerability affecting the project are exempt. **Vulnerability scanning** of all dependencies, with VEX for findings that do not affect the product (SEC). **Private packages:** names scoped or registries configured so a public package cannot take their place ("dependency confusion"). **Vendoring:** a project that vendors (fact `vendors-dependencies`) MUST record each vendored component's source, version and licence in a form scanners and update tools read, so it is scanned and updated like any other dependency. Tool-specific details (exact commands and configuration) live in language modules and vendor profiles |
 | Testing [TST] | Unit, integration, end-to-end for user workflows, API, regression test per fixed bug, migration, accessibility (accessibility testing is ACC's); tests run in CI; no disabled tests without tracking (QLT's); coverage not a gate but critical and security logic tested. **Test effectiveness** (tests can be gamed too: a test that asserts nothing still passes): mutation testing on critical and security logic (e.g. Stryker, PIT, mutmut, cargo-mutants) to prove the tests catch real faults; property-based testing for logic with wide input ranges; fuzzing for anything that parses untrusted input. Performance testing lives in PRF |
 | Accessibility [ACC] | WCAG 2.2 AA baseline, keyboard, screen readers, focus, contrast, no colour-only meaning, reduced motion, responsive, automated (e.g. axe-core) plus manual testing |
@@ -431,8 +431,9 @@ for that outcome, chosen from current sources when the module is written, is a
 separate SHOULD ("SHOULD use Ruff, configured per its vendor profile"); this
 tool rule refines the same core rules as its outcome and is exempt from the
 strength rule. New projects simply get the recommended tool. An existing
-project on another tool meets the MUST if that tool has a vendor profile (§6.6)
-covering it, and records a Standard Deviation for the SHOULD.
+project on another tool meets the MUST through that tool, configured to at
+least the baseline that QLT-006 sets (the tool's vendor profile, §6.6, when it
+has one), and records a Standard Deviation for the SHOULD.
 
 A module states the technology's own flags and settings (the compiler, the
 standard formatter, the package manager and, for Maven, Compose and Kubernetes,
@@ -574,10 +575,10 @@ restates the other's content.
   eslint-plugin-react-hooks, Oxlint (for its jsx-a11y rules;
   eslint-plugin-jsx-a11y was replaced because it no longer met the maintenance
   test and does not support ESLint 10) and OpenSSF Scorecard. Scorecard checks
-  supply-chain, security, dependency, testing and licence rules automatically,
-  and no Contributability rule. No CODEOWNERS entry exists yet: USS maintainers
-  own the community profiles, and a vendor that takes one over adds its own
-  entry.
+  supply-chain, security, dependency, testing and licence rules automatically;
+  it checks no Contributability rule. No CODEOWNERS entry exists yet: USS
+  maintainers own the community profiles, and a vendor that takes one over adds
+  its own entry.
 
 ### 6.7 Regulation modules
 
@@ -599,7 +600,8 @@ v1: EU Cyber Resilience Act (`sold-in-eu`; as Article 71(2) states, Chapter IV,
 Articles 35 to 51 on the notification of conformity assessment bodies, applies
 from 11 June 2026, Article 14 on reporting from 11 September 2026, and the rest
 from 11 December 2027), European Accessibility Act (switched on by the
-`covered-by-eaa` fact; in force since June 2025), and GDPR (switched on by
+`covered-by-eaa` fact; it entered into force in 2019 and applies from 28 June
+2025), and GDPR (switched on by
 `processes-eu-personal-data`). Later: PCI DSS, HIPAA, US federal (NIST SP
 800-53, FedRAMP, DISA STIGs, secure-development attestation).
 
@@ -776,7 +778,9 @@ Distribution: release binaries per OS, plus
 
 - `uss lint` — checks the standard: header format, valid levels, unique IDs,
   registered prefixes, applicability expressions reference defined facts,
-  `Enables` only on MAY rules, retired rules carry replacement info.
+  `Enables` only on MAY rules, retired rules carry replacement info, every rule
+  ID named in the text exists, a rule applies only where each rule it refines
+  applies, and the formats of vendor profiles and regulation modules.
 - `uss check <record>` — validates a project record against the schema and the
   pinned standard version: known facts, every deviation names a real rule and
   an existing document, every applicable MAY has a decision.
