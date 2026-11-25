@@ -222,9 +222,26 @@ impl Catalog {
     /// Runs the checks that need more than one file.
     fn check(&self, files: &[RuleFile], texts: &[(String, Vec<u8>)], diags: &mut Vec<Diagnostic>) {
         Self::check_unique(files, diags);
+        // The unknown IDs that an active rule's `Refines` names, by file: the
+        // check of `Refines` reports them, so the text check skips them on the
+        // lines of a `Refines` field.
+        let unknown_refines: BTreeSet<(&str, &str)> = self
+            .rules
+            .iter()
+            .filter_map(|r| r.active().map(|a| (r.file.as_str(), a)))
+            .flat_map(|(file, a)| {
+                a.refines
+                    .iter()
+                    .filter(|t| self.rule(t).is_none())
+                    .map(move |t| (file, t.as_str()))
+            })
+            .collect();
         for (path, data) in texts {
+            let refines_lines = markdown::field_lines(data, "Refines");
             for (line, id) in markdown::rule_refs(data) {
-                if self.rule(&id).is_none() {
+                let reported = refines_lines.contains(&line)
+                    && unknown_refines.contains(&(path.as_str(), id.as_str()));
+                if self.rule(&id).is_none() && !reported {
                     diags.push(Diagnostic {
                         file: path.clone(),
                         line,
@@ -328,6 +345,9 @@ impl Catalog {
                 return;
             }
         };
+        if table.rows.is_empty() {
+            diags.push(at(g.line, "the obligations table has no rows".to_string()));
+        }
         for row in &table.rows {
             let [obligation, source, rules, coverage] = &row.cells[..] else {
                 continue;
@@ -471,6 +491,10 @@ impl Catalog {
         diags: &mut Vec<Diagnostic>,
     ) {
         let Some(t) = target.active() else {
+            diags.push(at(format!(
+                "{} refines retired rule {}",
+                rule.id, target.id
+            )));
             return;
         };
         let idents: Vec<String> = a
@@ -713,6 +737,48 @@ See USS-SEC-099.
     }
 
     #[test]
+    fn load_refines_retired_rule() {
+        let src = edited(
+            "standard/modules/languages/go.md",
+            "**Refines:** USS-SEC-001",
+            "**Refines:** USS-SEC-004",
+        );
+        let text = text_of(&load(&src).unwrap_err());
+        assert!(
+            text.contains(
+                "standard/modules/languages/go.md:7: USS-GO-001 refines retired rule USS-SEC-004"
+            ),
+            "{text}"
+        );
+    }
+
+    #[test]
+    fn load_unknown_refines_reported_once() {
+        let src = edited(
+            "standard/modules/languages/go.md",
+            "**Refines:** USS-SEC-001",
+            "**Refines:** USS-SEC-099",
+        );
+        let diags = load(&src).unwrap_err();
+        assert_eq!(
+            text_of(&diags),
+            "standard/modules/languages/go.md:7: USS-GO-001 refines unknown rule USS-SEC-099"
+        );
+
+        // The same unknown ID elsewhere in the file is still reported.
+        let src = edited(
+            "standard/modules/languages/go.md",
+            "**Refines:** USS-SEC-001\n\nGo code MUST handle every returned error.",
+            "**Refines:** USS-SEC-099\n\nGo code MUST handle every returned error, as\nUSS-SEC-099 says.",
+        );
+        let text = text_of(&load(&src).unwrap_err());
+        assert_eq!(
+            text,
+            "standard/modules/languages/go.md:7: USS-GO-001 refines unknown rule USS-SEC-099\nstandard/modules/languages/go.md:17: unknown rule USS-SEC-099"
+        );
+    }
+
+    #[test]
     fn load_duplicate_within_one_file() {
         let src = edited(
             "standard/core/security.md",
@@ -816,6 +882,14 @@ See USS-SEC-099.
             (
                 edited(law, "## Obligations", "## Duties"),
                 "missing section \"Obligations\"",
+            ),
+            (
+                edited(
+                    law,
+                    "| Escape output | Art. 1 | USS-SEC-003, USS-LAW-001 | full |\n| Appoint a representative | Art. 2 | none | none: a lawyer confirms this |\n",
+                    "",
+                ),
+                "law.md:11: the obligations table has no rows",
             ),
             (
                 edited(law, none_row, "| none | full |"),

@@ -1,6 +1,6 @@
 //! A strict, line-based scanner for the Markdown files of the standard.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::LazyLock;
 
 use regex::Regex;
@@ -299,11 +299,9 @@ pub(crate) fn parse_table(lines: &[Line]) -> Result<Table, (usize, String)> {
     Ok(Table { header, rows })
 }
 
-/// Finds the rule IDs that `data` names outside fenced code blocks, each with
-/// its 1-based line.
-pub(crate) fn rule_refs(data: &[u8]) -> Vec<(usize, String)> {
-    let raw = String::from_utf8_lossy(data);
-    let text = text::normalise(&raw);
+/// The lines of `text` outside fenced code blocks, each with its 1-based
+/// number.
+fn unfenced(text: &str) -> Vec<(usize, &str)> {
     let mut fence: Option<&str> = None;
     let mut out = Vec::new();
     for (i, line) in text.lines().enumerate() {
@@ -314,12 +312,45 @@ pub(crate) fn rule_refs(data: &[u8]) -> Vec<(usize, String)> {
         } else if let Some(marker) = ["```", "~~~"].into_iter().find(|m| line.starts_with(m)) {
             fence = Some(marker);
         } else {
-            out.extend(
-                REF_RE
-                    .find_iter(line)
-                    .map(|m| (i + 1, m.as_str().to_string())),
-            );
+            out.push((i + 1, line));
         }
+    }
+    out
+}
+
+/// Finds the rule IDs that `data` names outside fenced code blocks, each with
+/// its 1-based line.
+pub(crate) fn rule_refs(data: &[u8]) -> Vec<(usize, String)> {
+    let raw = String::from_utf8_lossy(data);
+    let text = text::normalise(&raw);
+    unfenced(&text)
+        .into_iter()
+        .flat_map(|(n, line)| {
+            REF_RE
+                .find_iter(line)
+                .map(move |m| (n, m.as_str().to_string()))
+        })
+        .collect()
+}
+
+/// Finds the 1-based lines of every `name` field in `data` outside fenced code
+/// blocks: the field's own line and its continuation lines.
+pub(crate) fn field_lines(data: &[u8], name: &str) -> BTreeSet<usize> {
+    let raw = String::from_utf8_lossy(data);
+    let text = text::normalise(&raw);
+    let mut out = BTreeSet::new();
+    let mut open = false;
+    let mut prev = 0;
+    for (n, line) in unfenced(&text) {
+        // A fence between two lines ends the field.
+        open = match FIELD_RE.captures(line) {
+            Some(caps) => &caps[1] == name,
+            None => open && n == prev + 1 && line.starts_with("  ") && !line.trim().is_empty(),
+        };
+        if open {
+            out.insert(n);
+        }
+        prev = n;
     }
     out
 }
@@ -454,6 +485,24 @@ USS-GO-007
         let refs = rule_refs(src.as_bytes());
         let want = [(1, "USS-SEC-001"), (1, "USS-A1-042"), (9, "USS-GO-007")];
         assert_eq!(refs, want.map(|(n, id)| (n, id.to_string())).to_vec());
+    }
+
+    #[test]
+    fn field_lines_cases() {
+        let src = "- **Refines:** USS-SEC-001,
+  USS-SEC-002
+- **Verify:** V,
+  USS-SEC-003
+
+- **Refines:** USS-SEC-004
+```
+  USS-SEC-005
+- **Refines:** USS-SEC-006
+```
+  USS-SEC-007
+";
+        let lines: Vec<usize> = field_lines(src.as_bytes(), "Refines").into_iter().collect();
+        assert_eq!(lines, [1, 2, 6]);
     }
 
     #[test]
