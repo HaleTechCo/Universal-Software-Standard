@@ -7,18 +7,18 @@ argument-hint: "[release | upgrade <version> | headless]"
 
 Read `${CLAUDE_PLUGIN_ROOT}/AGENTS.md`.
 
-Start at "Before every workflow". Follow that section and "Questions to the
-developer" for the whole workflow.
-
 Arguments: $ARGUMENTS
 
-Choose the workflow from the arguments:
+Choose the workflow in `AGENTS.md` from the arguments:
 
 - No argument: follow "Audit an existing project".
 - `release`: follow "Release audit".
 - `upgrade <version>`: follow "Upgrade the pinned version" for that version.
+  If the developer gave no version, ask for it.
 - `headless`: no person is present. Follow "Audit an existing project". Use the
   rules for no person present in "Release audit".
 
+Each workflow starts with "Before every workflow". Ask each question as
+"Questions to the developer" says.
 Do not copy the workflow steps into your answer.
-Follow "Agent conduct" in the same file.
+Follow "Agent conduct" in `AGENTS.md`.

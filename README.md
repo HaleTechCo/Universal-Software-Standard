@@ -119,6 +119,7 @@ that you need.
    ```text
    /plugin marketplace update universal-software-standard
    ```
+
 4. To move a project to the new version, run `/uss:audit upgrade 0.2.0` in the
    project.
 
@@ -133,6 +134,8 @@ that you need.
 2. If you moved a project to the new version, restore its `.uss` directory
    from version control. The record pins the version that it was written for.
 3. Run `uss version`. Check that it prints the earlier version.
+4. Keep the plugin as it is. It has no version of its own: its skills follow
+   the workflows of the installed `uss`, which `uss show AGENTS.md` prints.
 
 ### Uninstall
 

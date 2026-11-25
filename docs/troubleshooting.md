@@ -71,12 +71,31 @@ shallow`.
   1.100 or later.
 - Fix: run `rustup update`. Run the install command again.
 
+## `uss` says that a file is not valid UTF-8
+
+The message is `<file>: /: not valid UTF-8: ...`.
+
+- Cause: the file has another encoding. In Windows PowerShell 5.1, a
+  redirection (`>`) writes UTF-16.
+- Fix:
+  1. Open the file in an editor. Save it with the encoding UTF-8.
+  2. To copy a template in Windows PowerShell 5.1, use `Out-File`:
+
+     ```powershell
+     uss show templates/record.yaml | Out-File -Encoding utf8 .uss/record.yaml
+     ```
+
+  3. Run `uss check .uss/record.yaml` again.
+
 ## The skills `/uss:adopt` and `/uss:audit` do not appear
 
-1. Run `/reload-plugins`.
-2. Run `/plugin marketplace list`. Check that `universal-software-standard`
-   is in the list.
-3. Run `/plugin install uss@universal-software-standard`.
-4. Type `/uss:`. The two skills must appear.
-5. If they do not, run `claude plugin validate .` in the checkout. Fix each
-   error that it reports.
+- Cause: Claude Code has not loaded the plugin. The marketplace or the plugin
+  is missing, Claude Code did not reload, or the plugin has an error.
+- Fix:
+  1. Run `/reload-plugins`.
+  2. Run `/plugin marketplace list`. Check that `universal-software-standard`
+     is in the list.
+  3. Run `/plugin install uss@universal-software-standard`.
+  4. Type `/uss:`. The two skills must appear.
+  5. If they do not, run `claude plugin validate .` in the checkout. Fix each
+     error that it reports.

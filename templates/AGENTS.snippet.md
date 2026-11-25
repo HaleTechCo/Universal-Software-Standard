@@ -4,13 +4,14 @@ This project follows the Universal Software Standard (USS). The version of USS
 is the version that `.uss/record.yaml` pins.
 
 - Before you change the project, run `uss applicable --full .uss/record.yaml`.
-- Follow every applicable MUST and MUST NOT rule. A MUST deviation makes the
-  project not compliant.
-- Follow every SHOULD and SHOULD NOT rule. Do not follow one only if the
-  record lists a deviation for it.
-- Do not change the facts, decisions or deviations of the record without the
+- Follow every applicable MUST and MUST NOT rule. A Standard Deviation from
+  one makes the project not compliant.
+- Follow every applicable SHOULD and SHOULD NOT rule. Skip one only if the
+  record lists a Standard Deviation for it.
+- Do not change `facts`, `decisions` or `deviations` in the record without the
   developer.
-- To audit the project, follow the Audit workflow in `uss show AGENTS.md`.
+- To audit the project, follow "Audit an existing project" in the output of
+  `uss show AGENTS.md`.
 
 ### Agent conduct
 

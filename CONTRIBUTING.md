@@ -21,6 +21,9 @@ The pre-commit hook runs `cargo fmt --all --check` and the `uss` lint.
 
 ## Make a change
 
+Issues that suit a first contribution carry the label `good first issue`.
+None is open at present (2026-11-25).
+
 1. Open an issue first for a large change. Use the bug or rule template.
 2. Create a branch from `main`.
 3. Make the change. Keep each pull request to one subject.
@@ -38,11 +41,12 @@ How long `cargo xtask check` takes, on Windows 11 (x86-64):
 
 - Warm run, with the build cache present: about 9 seconds.
 - Cold run, after `cargo clean`: about 140 seconds (2 minutes 17 seconds).
-  The cargo-deny tool was already under `.tools`. Without it, the first run also downloads it.
+  The cargo-deny tool was already under `.tools`. Without it, the first run
+  also downloads and builds it.
 
-I measured each time with the `time` command of a POSIX shell, on one run.
-Times differ between machines. A run in CI takes longer, because it starts
-with no build cache.
+Each time comes from one run, measured with the `time` command of a POSIX
+shell. Other machines give other times. A run in CI takes longer, because it
+starts with no build cache.
 
 ## What makes a change acceptable
 
@@ -94,8 +98,9 @@ points:
 Give a reason for each point that the dependency fails. Check the licence too
 (USS-LIC-003). `cargo xtask check` runs cargo-deny for the licence check.
 
-Dependabot opens pull requests for updates. It waits 3 days after a release
-before it does (`.github/dependabot.yml`).
+Dependabot opens pull requests for updates. It waits some days after a
+release before it does. The `cooldown` settings in `.github/dependabot.yml`
+give the number of days.
 
 ## Review
 

@@ -2,7 +2,9 @@
 
 USS has two parts: the standard (files) and `uss` (the tool that reads them).
 Agents apply the standard by following the workflows in `AGENTS.md`. They use
-`uss` for every calculation.
+`uss` for every calculation. USS ships as two deployable parts: the `uss`
+binary, which embeds the standard and the workflows, and the Claude plugin,
+whose skills send the agent to `AGENTS.md`. ADR 0003 records this split.
 
 ## Where things live
 
@@ -15,8 +17,11 @@ Agents apply the standard by following the workflows in `AGENTS.md`. They use
 | `.claude-plugin/` | The plugin manifest and the marketplace file.                   |
 | `tools/uss/`   | The `uss` library and command (a Rust crate).                      |
 | `tools/xtask/` | `cargo xtask check`: every check that CI runs.                     |
-| `docs/`        | The user documents, the architecture decision records and the design spec. |
-| `.github/`     | The CI workflow.                                                   |
+| `docs/`        | The user documents, the architecture decision records, and the design spec and plans (`docs/superpowers/`). |
+| `.github/`     | The CI workflow, the Dependabot settings, the issue and pull request templates, and `CODEOWNERS`. |
+| `.cargo/`      | The Cargo alias that makes `cargo xtask` run `tools/xtask/`. Not a component. |
+| `.githooks/`   | The pre-commit hook for contributors. Not a component.             |
+| `.uss/`        | This repository's own USS record and audits. Not a component.      |
 
 ## The library and the command
 
@@ -67,3 +72,5 @@ another `Source`. The library never reads a path by itself.
 
 - [0001: Write the validator in Rust](adr/0001-validator-in-rust.md)
 - [0002: Use serde-saphyr for YAML](adr/0002-yaml-crate.md)
+- [0003: Ship the standard inside `uss`, and the workflows as a Claude
+  plugin](adr/0003-deployable-parts.md)

@@ -7,11 +7,12 @@ argument-hint: "[project name]"
 
 Read `${CLAUDE_PLUGIN_ROOT}/AGENTS.md`.
 
-Follow the workflow "Adopt a new project". Start at "Before every workflow".
-Follow that section and "Questions to the developer" for the whole workflow.
+Follow the workflow "Adopt a new project" in `AGENTS.md`. Its first step is
+"Before every workflow". Ask each question as "Questions to the developer"
+says.
 
 Arguments: $ARGUMENTS
 
 Use the arguments as the project name, if the developer gave one.
 Do not copy the workflow steps into your answer.
-Follow "Agent conduct" in the same file.
+Follow "Agent conduct" in `AGENTS.md`.

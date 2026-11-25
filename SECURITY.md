@@ -30,10 +30,10 @@ These are target times. The maintainers tell you if they cannot meet one.
 
 ## Supported versions
 
-| Version                  | Fixes | Security fixes | Support ends                   |
-| ------------------------ | ----- | -------------- | ------------------------------ |
-| The latest 0.x release   | Yes   | Yes            | When the next release is published |
-| Any earlier release      | No    | No             | Ended                          |
+| Version                | Fixes and security fixes | Support ends                       |
+| ---------------------- | ------------------------ | ---------------------------------- |
+| The latest 0.x release | Yes                      | When the next release is published |
+| Any earlier release    | No                       | Ended                              |
 
 Before 1.0, only the latest 0.x release gets fixes. To get a fix, upgrade to
 the latest release. See "Upgrade" in the [README](README.md).
