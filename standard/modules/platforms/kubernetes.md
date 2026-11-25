@@ -59,19 +59,18 @@ hardening rules is still judged as those rules say.
 - **Applies when:** deploys-to-kubernetes
 - **Category:** Safety
 - **Refines:** USS-HRD-004, USS-HRD-005, USS-HRD-006, USS-HRD-008
-- **Verify:** CI runs `kube-linter lint` on the project's rendered manifests,
-  or on a chart directory (which kube-linter renders itself, with the values
-  of the chart's `values.yaml`), with a configuration that includes the
-  baseline of the profile `standard/vendors/stackrox/kube-linter.md`:
-  `checks.addAllBuiltIn` is
+- **Verify:** CI runs `kube-linter lint` on the project's rendered manifests, or
+  on a chart directory (which kube-linter renders itself, with the values of the
+  chart's `values.yaml`), with a configuration that includes the baseline of the
+  profile `standard/vendors/stackrox/kube-linter.md`: `checks.addAllBuiltIn` is
   `true` (in `.kube-linter.yaml` or `.kube-linter.yml`, or in the file that
-  `--config` names, or as `--add-all-built-in`), and the configuration sets
-  no `checks.ignorePaths` (or `--ignore-paths`) and excludes no check other
-  than `required-label-owner` and `required-annotation-email` in
-  `checks.exclude` (or `--exclude`). The job fails when `kube-linter lint`
-  exits with status 1, which it does when it reports a lint error. A project
-  that uses another linter fails this rule and records a Standard Deviation; it
-  meets USS-K8S-001 through that linter's own profile.
+  `--config` names, or as `--add-all-built-in`), and the configuration sets no
+  `checks.ignorePaths` (or `--ignore-paths`) and excludes no check other than
+  `required-label-owner` and `required-annotation-email` in `checks.exclude` (or
+  `--exclude`). The job fails when `kube-linter lint` exits with status 1, which
+  it does when it reports a lint error. A project that uses another linter fails
+  this rule and records a Standard Deviation; it meets USS-K8S-001 through that
+  linter's own profile.
 - **References:** kube-linter 0.8.3, documentation, Configuring KubeLinter and
   KubeLinter checks (read 2026-11-24); kube-linter 0.8.3, source of the `lint`
   command and `main` (read 2026-11-24)
@@ -103,8 +102,8 @@ writing policies of its own. The profile fixes the configuration that makes
   2026-11-24)
 
 CI MUST validate the rendered manifests against the API schemas of each
-Kubernetes version that the project supports (such as with kubeconform), and an
-invalid manifest MUST fail the build.
+Kubernetes version that the project's documentation names as supported (such as
+with kubeconform), and an invalid manifest MUST fail the build.
 
 **Rationale:** A manifest with a misspelled field or a removed API version is
 well-formed YAML, and a cluster can accept it and ignore the mistake or reject
@@ -144,7 +143,8 @@ core rule.
 - **Category:** Maintainability
 - **Verify:** Each chart that the project ships has a `values.schema.json` in
   its directory. Each object in the schema that lists its properties sets
-  `additionalProperties` to `false`, and each property declares its type. An
+  `additionalProperties` to `false`, and each property declares its type (with
+  `type`, `$ref` or `enum`). An
   object whose keys the user chooses (labels, annotations or a node selector)
   has no fixed properties, so it gives `additionalProperties` a schema for its
   values instead. Then run `helm lint` on the chart, once with a key that the
@@ -208,22 +208,23 @@ packaged dependency charts under `charts/`, and USS-DEP-002 judges that part.
 - **Verify:** Render each chart with its default values and take the manifests
   that the project publishes. For each workload, search the code and the
   documentation for calls to the Kubernetes API (a Kubernetes client library,
-  or a call to the API server). A workload that makes none has an effective
-  `automountServiceAccountToken` of `false`: the value on its pod spec when that
-  is set (it takes precedence), and otherwise the value on its ServiceAccount.
-  A workload that has no value on either, or a value of `true` on its pod spec,
-  mounts a token and fails when it calls no API. A workload that calls the API
-  is not judged here.
+  or a call to the API server). A workload that makes none sets
+  `automountServiceAccountToken: false` on its own pod spec (the pod template
+  of a controller). A value on its ServiceAccount does not count, an unset
+  value on the pod spec fails, and so does `true`. A workload that calls the
+  API is not judged here.
 - **References:** Kubernetes documentation, Configure Service Accounts for Pods
   (read 2026-11-24)
 
-A Pod that does not call the Kubernetes API MUST NOT mount a service-account
-token (`automountServiceAccountToken: false`).
+A Pod that does not call the Kubernetes API MUST NOT leave token mounting to
+its ServiceAccount: its own Pod spec sets `automountServiceAccountToken: false`.
+The Pod spec's value wins over the ServiceAccount's, and an unset value mounts
+the token.
 
-**Rationale:** Kubernetes mounts a token into every pod by default, so leaving
-the field out mounts one. The value on the pod spec wins over the value on the
-ServiceAccount, so a pod-level `true` undoes a ServiceAccount that turns the
-mount off.
+**Rationale:** A ServiceAccount's setting can change without the workload
+changing, and a Pod that sets nothing mounts a token. The setting on the Pod
+spec keeps the token away from a workload that has no use for it, whatever its
+ServiceAccount says.
 
 ### USS-K8S-008: Ship a default-deny network policy
 
@@ -232,20 +233,22 @@ mount off.
 - **Category:** Safety
 - **Refines:** USS-HRD-007
 - **Verify:** Render each chart with its default values and take the manifests
-  that the project publishes. They include a NetworkPolicy that denies traffic
-  by default: its `podSelector` is empty or matches all the pods of the
-  software, its `policyTypes` list `Ingress` and `Egress` (in one policy, or
-  one policy for each type), and it has no `ingress` or `egress` rule. They also
-  include NetworkPolicy resources that allow the connections that the
-  documentation or the manifests show each workload needs, each selecting that
-  workload's pods. A workload that resolves names has an allow rule for the
-  cluster's DNS, because a default-deny egress policy blocks DNS. No allow rule
-  is open to every source or destination (an empty `from` or `to`, or the CIDR
-  `0.0.0.0/0`) unless the documentation names a connection that needs it.
+  that the project publishes. They include a NetworkPolicy with an empty
+  `podSelector` (it selects every pod in its namespace), with `policyTypes`
+  that list `Ingress` and `Egress` (in one policy, or one policy for each type)
+  and no `ingress` or `egress` rule. They also include NetworkPolicy resources
+  that allow the connections that the documentation or the manifests show each
+  workload needs, each selecting that workload's pods. A workload that resolves
+  names has an allow rule for the cluster's DNS, because a default-deny egress
+  policy blocks DNS. No allow rule is open to every source or destination (an
+  empty `from` or `to`, or the CIDR `0.0.0.0/0`) unless the documentation names
+  a connection that needs it. A workload that no policy selects fails.
 - **References:** Kubernetes documentation, Network Policies (read 2026-11-24)
 
-The chart or manifests SHOULD include a NetworkPolicy that denies traffic by
-default, and policies that allow only what each workload needs.
+The chart or manifests SHOULD include a NetworkPolicy that selects every Pod
+and denies all ingress and egress by default, plus policies that allow only the
+traffic that each workload needs, with DNS egress allowed where the workload
+resolves names. A workload that no policy selects fails.
 
 **Rationale:** In a namespace with no policy, every pod can reach every other
 pod. A policy that selects all pods and allows nothing is the base that the

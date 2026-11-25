@@ -84,7 +84,8 @@ Each service in the Compose files that the documentation tells people to run
 MUST be hardened in all of these ways: it runs as a non-root user; it drops all
 capabilities and adds back only the capabilities it needs, each with a comment
 that gives the reason; it sets `no-new-privileges`; it is not `privileged`; it
-uses no host network, PID or IPC namespace; and it has memory and PID limits.
+uses no host network, PID or IPC namespace; and it has finite memory and PID
+limits (a value of `-1` means no limit).
 
 **Rationale:** A process that runs as root with every capability, or that
 shares the host's namespaces, can do far more to the host after a flaw than a
@@ -138,7 +139,9 @@ that the service writes also tells operators what to back up.
   `depends_on` (read 2026-11-24)
 
 Each long-running service in the Compose files that the documentation tells
-people to run MUST have a `healthcheck`.
+people to run MUST have a `healthcheck`. A long-running service keeps running
+to serve requests or do continuous work; a service that runs a task and exits
+is not one.
 
 **Rationale:** Compose reports the health of a service from its check, and
 another service can wait for it with `depends_on` and `condition:
