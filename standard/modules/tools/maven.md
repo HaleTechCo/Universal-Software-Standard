@@ -118,7 +118,9 @@ rule keeps a project from switching that off.
   fails in a released build, which is a build whose project version has no
   `-SNAPSHOT`, such as the build of a release tag.
 - **References:** Apache Maven 3.10.2, POM Reference, Dependency Version
-  Requirement Specification (read 2026-11-24); Apache Maven Enforcer 3.7.0,
+  Requirement Specification (read 2026-11-24); Apache Maven 4 API
+  documentation, maven-artifact, deprecated list: `Artifact.LATEST_VERSION` and
+  `Artifact.RELEASE_VERSION` (read 2026-11-24); Apache Maven Enforcer 3.7.0,
   `requireReleaseDeps` (read 2026-11-24)
 
 Each dependency MUST have a release version, directly or through
@@ -138,11 +140,12 @@ dependencies.
 - **Refines:** USS-DEP-001
 - **Verify:** The build runs the `enforce` goal of `maven-enforcer-plugin` (in
   the POM or in a parent POM) with the rule `dependencyConvergence` or the rule
-  `requireUpperBoundDeps`. The rule has none of `includes`, `excludes` or an
-  `excludedScopes` list wider than its default (`test` and `provided`), and its
-  level is not `WARN` (its default is `ERROR`). The execution does not set
-  `fail` to `false` (its default is `true`), and CI does not set
-  `enforcer.skip`. The build passes on the default branch.
+  `requireUpperBoundDeps`. The rule has none of `includes` and `excludes`,
+  and its `excludedScopes` (a parameter of both rules, with the default `test`
+  and `provided`) is not wider than the default. Its level is not `WARN` (its
+  default is `ERROR`). The execution does not set `fail` to `false` (its
+  default is `true`), and CI does not set `enforcer.skip`. The build passes on
+  the default branch.
   `dependencyConvergence` fails the build when two paths of the dependency tree
   need different versions of an artifact; `requireUpperBoundDeps` fails it when
   the resolved version is lower than the highest version that the tree

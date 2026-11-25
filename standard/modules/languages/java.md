@@ -11,8 +11,11 @@ parsers. Build, dependency and plugin rules are in the Maven module
 (`standard/modules/tools/maven.md`). The module uses three vendor profiles:
 `standard/vendors/google/error-prone.md`, `standard/vendors/uber/nullaway.md`
 and `standard/vendors/spotbugs/spotbugs.md`. It names google-java-format
-without a profile, because a formatter has no rule set. The core rules that this
-module does not refine apply as written.
+without a profile, because a formatter has no rule set. USS-JAVA-001 is the
+Java safety check that USS-SAF-001 makes binding. In this module, a release is
+one exact JDK version (such as `25.0.1`), and a feature release is its Java
+number (such as `25`). The core rules that this module does not refine apply as
+written.
 
 ## Checks
 
@@ -21,7 +24,7 @@ module does not refine apply as written.
 - **Level:** MUST
 - **Applies when:** always
 - **Category:** Maintainability
-- **Refines:** USS-QLT-003
+- **Refines:** USS-QLT-003, USS-SAF-001
 - **Verify:** Each `javac` run of the build, test compilation included, has the
   options `-Xlint:all` and `-Werror` (in Maven, `compilerArgs` of
   `maven-compiler-plugin`; another build tool passes the same options), and
@@ -133,7 +136,7 @@ that a static security analysis exists to find.
   arguments include the baseline of the NullAway profile
   (`standard/vendors/uber/nullaway.md`). A project on another nullness checker
   fails this rule (it records a Standard Deviation).
-- **References:** JSpecify 1.0.0, User Guide (read 2026-11-24); NullAway 0.14.4,
+- **References:** JSpecify 1.0.1, User Guide (read 2026-11-24); NullAway 0.14.4,
   Configuration and JSpecify Support (read 2026-11-24)
 
 The project's code SHOULD mark nullness with JSpecify annotations, and the
@@ -200,15 +203,15 @@ change to the code.
 - **Applies when:** always
 - **Category:** Safety
 - **Refines:** USS-SUP-006
-- **Verify:** Take the Java release of the JDK that the project builds with (the
-  pin of USS-JAVA-007) and the release that it targets (`--release`, or
-  `maven.compiler.release` in Maven; `source` and `target` where it uses those),
-  and the support roadmap that the vendor of the project's JDK publishes (such
-  as the Eclipse Temurin support roadmap for a Temurin JDK). At the audit date,
-  the roadmap shows that each of the two releases still receives security
-  updates. A release whose end date has passed fails. Where neither the
-  roadmap nor the vendor's release history shows it, the auditor records
-  `unverified`.
+- **Verify:** Take the feature release of the JDK that the project builds with
+  (the pin of USS-JAVA-007, such as 25 for `25.0.1`) and the feature release
+  that it targets (`--release`, or `maven.compiler.release` in Maven; `source`
+  and `target` where it uses those), and the support roadmap that the vendor of
+  the project's JDK publishes (such as the Eclipse Temurin support roadmap for a
+  Temurin JDK). At the audit date, the roadmap shows that each of the two
+  feature releases still receives security updates. A feature release whose end
+  date has passed fails. Where neither the roadmap nor the vendor's release
+  history shows it, the auditor records `unverified`.
 - **References:** Eclipse Temurin, Support (Adoptium, read 2026-11-24); javac
   documentation, JDK 25, `--release` (read 2026-11-24)
 

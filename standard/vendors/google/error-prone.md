@@ -12,29 +12,22 @@ a default severity (ERROR, WARNING or off), and a flag changes it. The Java
 module recommends it in USS-JAVA-003. Put the baseline below in the
 `maven-compiler-plugin` section of `pom.xml`. Error Prone runs on JDK 21 or
 newer, and when the compiler does not fork, `.mvn/jvm.config` needs the lines
-below (from the Error Prone installation guide), because the JDK encapsulates
-the compiler's internals. The checks and flags that the profile
-names are those of Error Prone 2.53.0, from its documentation and bug-pattern
-pages (read 2026-11-24). Every check that is on by default at ERROR is part of
-the baseline without a flag. The baseline raises the WARNING checks that find
-ignored errors, unused code, missing overrides and suppressions with no
-explanation to ERROR; the other WARNING checks stay warnings, and they fail the
-build only when `javac` runs with `-Werror` (USS-JAVA-001). A suppression is
-`@SuppressWarnings("CheckName")`, which names the check; the annotation has no
-reason field, so the reason is a comment next to it. Error Prone ends the
-compilation with an error for a finding at ERROR, so Maven's compiler plugin
-fails and the build fails.
-
-- `--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED`
-- `--add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED`
-- `--add-exports jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED`
-- `--add-exports jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED`
-- `--add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED`
-- `--add-exports jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED`
-- `--add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED`
-- `--add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED`
-- `--add-opens jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED`
-- `--add-opens jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED`
+that follow the baseline, because the JDK encapsulates the compiler's
+internals. The checks and flags that the profile names are those of Error Prone
+2.53.0, from its documentation and bug-pattern pages (read 2026-11-24). Every
+check that is on by default at ERROR is part of the baseline without a flag.
+The baseline raises ten WARNING checks to ERROR: the ones that find ignored
+errors (`EmptyCatch`, `CatchAndPrintStackTrace`, `FutureReturnValueIgnored`),
+unused code (`UnusedVariable`, `UnusedMethod`, `UnusedNestedClass`), a missing
+`@Override` (`MissingOverride`), a comparison of references where the values
+should be compared (`ReferenceEquality`), an `enum` switch that misses a case
+(`MissingCasesInEnumSwitch`) and a `@SuppressWarnings` with no explanation
+(`SuppressWarningsWithoutExplanation`). The other WARNING checks stay warnings,
+and they fail the build only when `javac` runs with `-Werror` (USS-JAVA-001).
+A suppression is `@SuppressWarnings("CheckName")`, which names the check; the
+annotation has no reason field, so the reason is a comment next to it. Error
+Prone ends the compilation with an error for a finding at ERROR, so Maven's
+compiler plugin fails and the build fails.
 
 Community-maintained: written by USS contributors until the vendor takes it
 over.
@@ -64,6 +57,19 @@ over.
   </configuration>
 </plugin>
 ```
+
+The `.mvn/jvm.config` lines for a compiler that does not fork:
+
+- `--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED`
+- `--add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED`
+- `--add-exports jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED`
+- `--add-exports jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED`
+- `--add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED`
+- `--add-exports jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED`
+- `--add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED`
+- `--add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED`
+- `--add-opens jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED`
+- `--add-opens jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED`
 
 ## Mappings
 
