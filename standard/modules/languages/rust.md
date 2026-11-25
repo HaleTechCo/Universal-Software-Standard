@@ -202,19 +202,21 @@ fixes what the library's own CI tests.
 - **Verify:** In each `Cargo.toml` of the project (the dependency, development
   dependency and build dependency tables, the target-specific tables and
   `[workspace.dependencies]`), each requirement is read by Cargo's rules and
-  has an upper bound below the next incompatible version, so the range does
-  not admit it: the next major version, or the next minor version for a `0.x`
-  version. The default caret
-  form (`1.2`, `^1.2`, `0.3`), a tilde, an exact `=` and a range with such an
-  upper bound pass. `*`, a lower bound with no upper bound (such as `>=1.2`)
-  and an upper bound beyond the next incompatible version (such as `<3` for a
-  `1.x` version) fail. Each git dependency names a `rev`; one that names a
-  `branch` or a `tag`, or none of the three, fails.
+  has an upper bound, written or implied by the form of the requirement, below
+  the next incompatible version, so the range does not admit it: the next major
+  version, or the next minor version for a `0.x` version. The default caret
+  form (`1.2` implies `<2.0.0`, `^1.2`, `0.3` implies `<0.4.0`), a tilde, an
+  exact `=` and a range with such a written bound pass. `*`, a lower bound
+  with no upper bound (such as `>=1.2`) and an upper bound beyond the next
+  incompatible version (such as `<3` for a `1.x` version) fail. Each git
+  dependency names a `rev`; one that names a `branch` or a `tag`, or none of
+  the three, fails.
 - **References:** The Cargo Book, Specifying Dependencies (read 2026-11-24)
 
-Each dependency MUST have a requirement with an upper bound below the next
-incompatible version, such as Cargo's default caret form `1.2`, and each git
-dependency MUST name a `rev`.
+Each dependency MUST have a requirement with an upper bound, written or
+implied by the requirement's form, below the next incompatible version (Cargo's
+default caret form `1.2` implies `<2.0.0`), and each git dependency MUST name a
+`rev`.
 
 **Rationale:** A requirement with no upper bound accepts a new incompatible
 version, and a branch or tag of a git repository moves, so the same manifest
