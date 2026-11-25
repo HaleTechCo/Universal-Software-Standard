@@ -619,6 +619,8 @@ pub fn run(args: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
 
 #[cfg(test)]
 mod tests {
+    use clap::CommandFactory;
+
     use super::*;
 
     fn run_capture(args: &[&str]) -> (i32, String, String) {
@@ -1528,5 +1530,197 @@ mod tests {
         assert_eq!(code, 1);
         assert!(out.starts_with("Not compliant"), "stdout: {out}");
         assert!(out_file.is_file());
+    }
+
+    /// The documents whose `uss` commands `documented_commands_exist` checks:
+    /// each one's name and text.
+    const DOC_FILES: &[(&str, &str)] = &[("AGENTS.md", include_str!("../../../../AGENTS.md"))];
+
+    /// Returns each inline code span and each line of a fenced block in the
+    /// Markdown `text`, with the number of the line where it starts. A code
+    /// span can go on over the next lines of its paragraph.
+    fn code_snippets(text: &str) -> Vec<(usize, String)> {
+        let mut found = Vec::new();
+        let mut paragraph: Vec<(usize, &str)> = Vec::new();
+        // The fence character and length of the open fenced block.
+        let mut fence: Option<(char, usize)> = None;
+        for (index, line) in text.lines().enumerate() {
+            let number = index + 1;
+            let trimmed = line.trim();
+            if let Some((mark, length)) = fence {
+                if trimmed.len() >= length && trimmed.chars().all(|c| c == mark) {
+                    fence = None;
+                } else {
+                    found.push((number, trimmed.to_string()));
+                }
+            } else if trimmed.starts_with("```") || trimmed.starts_with("~~~") {
+                code_spans(&paragraph, &mut found);
+                paragraph.clear();
+                let mark = if trimmed.starts_with('`') { '`' } else { '~' };
+                fence = Some((mark, trimmed.chars().take_while(|&c| c == mark).count()));
+            } else if trimmed.is_empty() {
+                code_spans(&paragraph, &mut found);
+                paragraph.clear();
+            } else {
+                paragraph.push((number, line));
+            }
+        }
+        code_spans(&paragraph, &mut found);
+        found
+    }
+
+    /// Adds each code span of a paragraph (its numbered lines) to `found`. A
+    /// span opens with a run of backticks and closes with a run of the same
+    /// length. A line break in a span counts as a space.
+    fn code_spans(paragraph: &[(usize, &str)], found: &mut Vec<(usize, String)>) {
+        let chars: Vec<(usize, char)> = paragraph
+            .iter()
+            .flat_map(|&(number, line)| line.chars().chain(['\n']).map(move |c| (number, c)))
+            .collect();
+        let run = |at: usize| chars[at..].iter().take_while(|&&(_, c)| c == '`').count();
+        let mut at = 0;
+        while at < chars.len() {
+            if chars[at].1 != '`' {
+                at += 1;
+                continue;
+            }
+            let open = run(at);
+            let start = at + open;
+            let mut end = start;
+            while end < chars.len() && !(chars[end].1 == '`' && run(end) == open) {
+                end += if chars[end].1 == '`' { run(end) } else { 1 };
+            }
+            if end < chars.len() {
+                let span = chars[start..end]
+                    .iter()
+                    .map(|&(_, c)| if c == '\n' { ' ' } else { c })
+                    .collect();
+                found.push((chars[at].0, span));
+                at = end + open;
+            } else {
+                at = start;
+            }
+        }
+    }
+
+    /// Returns the words after `uss` when `snippet` is a `uss` command: its
+    /// first word is `uss`, or it starts with `cargo run` and holds
+    /// `-p uss --`. Any other snippet is not a command.
+    fn uss_args(snippet: &str) -> Option<Vec<&str>> {
+        let words: Vec<&str> = snippet.split_whitespace().collect();
+        match words.as_slice() {
+            ["uss", args @ ..] => Some(args.to_vec()),
+            ["cargo", "run", rest @ ..] => rest
+                .windows(3)
+                .position(|w| w == ["-p", "uss", "--"])
+                .map(|i| rest[i + 3..].to_vec()),
+            _ => None,
+        }
+    }
+
+    /// Returns why `args`, the words after `uss`, are not a command that the
+    /// `uss` command tree accepts, or `None` when they are. Only the
+    /// subcommand and the long options are checked.
+    fn command_problem(uss: &clap::Command, args: &[&str]) -> Option<String> {
+        let args = match args {
+            ["--standard-root", _, rest @ ..] => rest,
+            _ => args,
+        };
+        // `uss` alone names the tool; the version and help options stand alone.
+        if matches!(args, [] | ["--version" | "-V" | "--help" | "-h"]) {
+            return None;
+        }
+        let Some(name) = args.iter().find(|word| !word.starts_with('-')) else {
+            return Some("no subcommand".to_string());
+        };
+        let Some(sub) = uss.find_subcommand(name) else {
+            return Some(format!("unknown subcommand {name}"));
+        };
+        let has = |cmd: &clap::Command, long: &str| {
+            cmd.get_arguments().any(|arg| arg.get_long() == Some(long))
+        };
+        args.iter()
+            .filter_map(|word| word.strip_prefix("--"))
+            .map(|option| option.split_once('=').map_or(option, |(long, _)| long))
+            .find(|&long| !long.is_empty() && !has(sub, long) && !has(uss, long))
+            .map(|long| format!("unknown option --{long} for {name}"))
+    }
+
+    /// The `uss` command tree, built so that it holds the global and the
+    /// generated options too.
+    fn uss_command() -> clap::Command {
+        let mut uss = Cli::command();
+        uss.build();
+        uss
+    }
+
+    #[test]
+    fn doc_command_parser() {
+        let text = concat!(
+            "Run `uss show\n",
+            "  standard/x.md` and `cargo install --path tools/uss --force`.\n",
+            "\n",
+            "   ```sh\n",
+            "   cargo run --locked -q -p uss -- lint --fast\n",
+            "uss --standard-root DIR applicable --full r.yaml\n",
+            "   ```\n",
+            "`` uss `odd` `` and `.uss/record.yaml`, then a lone ` tick.\n",
+        );
+        let snippets = code_snippets(text);
+        let expected = [
+            (1, "uss show   standard/x.md"),
+            (2, "cargo install --path tools/uss --force"),
+            (5, "cargo run --locked -q -p uss -- lint --fast"),
+            (6, "uss --standard-root DIR applicable --full r.yaml"),
+            (8, " uss `odd` "),
+            (8, ".uss/record.yaml"),
+        ];
+        let got: Vec<(usize, &str)> = snippets.iter().map(|(n, s)| (*n, s.as_str())).collect();
+        assert_eq!(got, expected);
+
+        let uss = uss_command();
+        let problems: Vec<Option<String>> = snippets
+            .iter()
+            .filter_map(|(_, snippet)| uss_args(snippet))
+            .map(|args| command_problem(&uss, &args))
+            .collect();
+        assert_eq!(
+            problems,
+            [
+                None,
+                Some("unknown option --fast for lint".to_string()),
+                None,
+                Some("unknown subcommand `odd`".to_string()),
+            ]
+        );
+        let valid: [&[&str]; 4] = [&[], &["-V"], &["--help"], &["show", "--help"]];
+        for args in valid {
+            assert_eq!(command_problem(&uss, args), None, "{args:?}");
+        }
+        assert_eq!(
+            command_problem(&uss, &["--quiet"]),
+            Some("no subcommand".to_string())
+        );
+        assert_eq!(
+            command_problem(&uss, &["release-check", "--require-compliant=yes"]),
+            None
+        );
+    }
+
+    #[test]
+    fn documented_commands_exist() {
+        let uss = uss_command();
+        let mut problems = Vec::new();
+        for (name, text) in DOC_FILES {
+            for (line, snippet) in code_snippets(text) {
+                let Some(args) = uss_args(&snippet) else {
+                    continue;
+                };
+                if let Some(problem) = command_problem(&uss, &args) {
+                    problems.push(format!("{name}:{line}: {snippet}: {problem}"));
+                }
+            }
+        }
+        assert!(problems.is_empty(), "{}", problems.join("\n"));
     }
 }

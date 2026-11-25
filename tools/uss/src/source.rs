@@ -110,6 +110,11 @@ mod tests {
     }
 
     #[test]
+    fn embedded_has_agents_md() {
+        assert!(Embedded.read("AGENTS.md").is_some());
+    }
+
+    #[test]
     fn uss_files_lists_dirs_and_root_files() {
         let files = [
             "standard/a.md",
