@@ -1,0 +1,54 @@
+# Universal Software Standard (USS): audit each release.
+#
+# To use this file:
+#   1. Copy it to .github/workflows/uss-release.yml in your project.
+#   2. Set USS_VERSION below to the version that .uss/record.yaml pins.
+#   3. Audit the release commit and commit the results before you publish the
+#      release. See "Release audit" in `uss show AGENTS.md`.
+#
+# When you publish a release, this workflow runs `uss release-check`. It
+# attaches the report uss-report.md to the release.
+name: USS release audit
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+env:
+  # The USS version. Change it when you upgrade the pinned version.
+  USS_VERSION: "0.1.0"
+
+jobs:
+  release-check:
+    runs-on: ubuntu-latest
+    permissions:
+      # Upload the report to the release.
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # `uss release-check` needs the full Git history.
+          fetch-depth: 0
+          persist-credentials: false
+
+      # The toolchain must meet the `rust-version` of `uss`.
+      - name: Install the Rust toolchain
+        run: |
+          rustup toolchain install 1.100.0 --profile minimal
+          rustup default 1.100.0
+
+      - name: Install uss
+        run: cargo install --locked --git https://github.com/HaleTechCo/Universal-Software-Standard --tag "v${USS_VERSION}" uss
+
+      # Add --require-compliant to fail the job when a record is not compliant.
+      - name: Check the release
+        run: uss release-check --out uss-report.md
+
+      - name: Attach the report to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" uss-report.md --clobber

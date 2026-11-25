@@ -1534,7 +1534,40 @@ mod tests {
 
     /// The documents whose `uss` commands `documented_commands_exist` checks:
     /// each one's name and text.
-    const DOC_FILES: &[(&str, &str)] = &[("AGENTS.md", include_str!("../../../../AGENTS.md"))];
+    const DOC_FILES: &[(&str, &str)] = &[
+        ("AGENTS.md", include_str!("../../../../AGENTS.md")),
+        (
+            "templates/AGENTS.snippet.md",
+            include_str!("../../../../templates/AGENTS.snippet.md"),
+        ),
+        (
+            "templates/ci/uss-release.yml",
+            include_str!("../../../../templates/ci/uss-release.yml"),
+        ),
+    ];
+
+    /// Returns the commands in a document, with the number of the line of each.
+    /// In a YAML file (`.yml` or `.yaml`), a command is a line that starts with
+    /// the word `uss` after its leading white space, a leading `- ` and a
+    /// leading `run:`. In any other file, it is a code snippet of Markdown.
+    fn snippets_of(name: &str, text: &str) -> Vec<(usize, String)> {
+        let is_yaml = std::path::Path::new(name)
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("yml") || ext.eq_ignore_ascii_case("yaml"));
+        if !is_yaml {
+            return code_snippets(text);
+        }
+        text.lines()
+            .enumerate()
+            .filter_map(|(index, line)| {
+                let rest = line.trim_start();
+                let rest = rest.strip_prefix("- ").unwrap_or(rest).trim_start();
+                let rest = rest.strip_prefix("run:").unwrap_or(rest).trim_start();
+                let first = rest.split_whitespace().next()?;
+                (first == "uss").then(|| (index + 1, rest.to_string()))
+            })
+            .collect()
+    }
 
     /// Returns each inline code span and each line of a fenced block in the
     /// Markdown `text`, with the number of the line where it starts. A code
@@ -1668,6 +1701,7 @@ mod tests {
 
     #[test]
     fn doc_command_parser() {
+        yaml_command_lines();
         let text = concat!(
             "Run `uss show\n",
             "  standard/x.md` and `cargo install --path tools/uss --force`.\n",
@@ -1736,12 +1770,85 @@ mod tests {
         );
     }
 
+    /// The YAML case of `doc_command_parser`.
+    fn yaml_command_lines() {
+        let text = concat!(
+            "# uss in a comment
+",
+            "steps:
+",
+            "  - run: uss release-check --out r.md
+",
+            "  - run: |
+",
+            "      uss check x.yaml
+",
+            "      echo uss
+",
+            "  - name: uss
+",
+            "    run: ussless
+",
+        );
+        let got: Vec<(usize, String)> = snippets_of("w.yml", text);
+        assert_eq!(
+            got,
+            [
+                (3, "uss release-check --out r.md".to_string()),
+                (5, "uss check x.yaml".to_string()),
+            ]
+        );
+        // A Markdown file still goes through the Markdown parser.
+        assert_eq!(
+            snippets_of(
+                "a.md",
+                "`uss show x`
+"
+            )
+            .len(),
+            1
+        );
+    }
+
+    #[test]
+    fn ci_template_is_hardened() {
+        let text = include_str!("../../../../templates/ci/uss-release.yml");
+        let doc: serde_json::Value = crate::yaml::from_slice(text.as_bytes()).unwrap();
+        // How serde-saphyr reads the key `on`: as the string "on".
+        let release = &doc["on"]["release"];
+        assert_eq!(release["types"], serde_json::json!(["published"]));
+        assert_eq!(doc["permissions"], serde_json::json!({"contents": "read"}));
+
+        let pinned = regex::Regex::new("^[^@]+@[0-9a-f]{40}$").unwrap();
+        let mut uses = 0;
+        let mut checkout = false;
+        let mut release_check = false;
+        for job in doc["jobs"].as_object().unwrap().values() {
+            for step in job["steps"].as_array().unwrap() {
+                if let Some(action) = step["uses"].as_str() {
+                    uses += 1;
+                    assert!(pinned.is_match(action), "not pinned: {action}");
+                    if action.starts_with("actions/checkout@") {
+                        checkout = true;
+                        assert_eq!(step["with"]["fetch-depth"], 0);
+                        assert_eq!(step["with"]["persist-credentials"], false);
+                    }
+                }
+                if let Some(run) = step["run"].as_str() {
+                    assert!(!run.contains("${{"), "expression in run: {run}");
+                    release_check |= run.lines().any(|l| l.starts_with("uss release-check"));
+                }
+            }
+        }
+        assert!(uses > 0 && checkout && release_check);
+    }
+
     #[test]
     fn documented_commands_exist() {
         let uss = uss_command();
         let mut problems = Vec::new();
         for (name, text) in DOC_FILES {
-            for (line, snippet) in code_snippets(text) {
+            for (line, snippet) in snippets_of(name, text) {
                 let Some(args) = uss_args(&snippet) else {
                     continue;
                 };
