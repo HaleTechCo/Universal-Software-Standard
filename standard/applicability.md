@@ -236,7 +236,8 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 ### sold-in-eu
 
 - **Question:** Is it placed on the EU market?
-- **Definition:** Yes when it is placed on the market of the European Union.
+- **Definition:** Yes when it is placed on the market of the European Union: made available as a product, such as installable software, firmware or a device, in the course of a commercial activity. A service that the project only runs for its users does not count.
+- **Implies:** publishes-releases
 
 ### processes-eu-personal-data
 
