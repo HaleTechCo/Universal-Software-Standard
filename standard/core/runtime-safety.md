@@ -15,18 +15,20 @@ area.
 - **Level:** MUST
 - **Applies when:** always
 - **Category:** Safety
-- **Verify:** For each language of the project's own code, take the list of
-  safety checks, strict modes and hardening options that its USS module
-  names. For a language with no module, take the options that the
-  toolchain's documentation describes as safety or strict options (such as
+- **Verify:** For each language of the project's own code, take every safety
+  check, strict mode and hardening option that the language's USS module
+  makes binding: the checks named by the module's MUST rules that refine this
+  rule. For a language with no module, take the options that the toolchain's
+  documentation describes as safety or strict options (such as
   integer-overflow checks in release builds, a type checker's strict mode,
   or the warnings that the documentation marks as safety-relevant). Each one
   is on in the project's build configuration and in the CI build.
 - **References:** CWE-190
 
 Every safety check, strict mode and hardening option that the language's
-module names MUST be on. For a language with no module, the same holds for
-every option that the toolchain documents as a safety or strict option.
+module makes binding (the checks named by the module's MUST rules that refine
+this rule) MUST be on. For a language with no module, the same holds for every
+option that the toolchain documents as a safety or strict option.
 
 **Rationale:** Toolchains ship with some safety options off, to keep old code
 building or to keep the build fast. A project that turns them on finds the

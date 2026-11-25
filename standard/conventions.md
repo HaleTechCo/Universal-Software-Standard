@@ -48,7 +48,7 @@ The header has these fields:
 
 | Field | Present | Value |
 |---|---|---|
-| Prefix | always | The prefix of every rule ID in the file: an uppercase letter, then 1 to 7 uppercase letters or digits (`^[A-Z][A-Z0-9]{1,7}$`), such as `SEC` or `GO`. |
+| Prefix | in area and module files; in a vendor profile only when it has rules (section 12) | The prefix of every rule ID in the file: an uppercase letter, then 1 to 7 uppercase letters or digits (`^[A-Z][A-Z0-9]{1,7}$`), such as `SEC` or `GO`. |
 | Kind | always | `area` in a file under `standard/core/`; `module` in a file under `standard/modules/`; `profile` in a vendor profile (section 12). |
 | Applies when | when needed | A condition for every rule in the file (section 5). The default is `always`. |
 
@@ -399,9 +399,12 @@ each suppression, and make audits list every suppression.
   SHOULD NOT another. A module never weakens a core rule or silently raises
   one.
 - The best tool for an outcome is a separate SHOULD rule, a tool rule. It
-  names the tool's vendor profile (section 12), refines the same core rules
-  as its outcome rule, and is exempt from the strength rule above.
+  names the tool, and its vendor profile (section 12) when the tool has one,
+  refines the core rules whose outcome it serves, and is exempt from the
+  strength rule above.
 - A SHOULD rule that is not a tool rule MUST NOT refine a MUST rule.
+- A module's MUST rules that refine USS-SAF-001 are the safety checks that
+  USS-SAF-001 makes binding for its technology.
 - A module states the settings of its own technology: the compiler, the
   standard formatter and the package manager, and, for a module whose subject
   is a configuration (such as Maven, Compose or Kubernetes), that
@@ -762,8 +765,8 @@ Each row is one active rule:
   Otherwise it MUST say `partial` and name what else is needed.
 - `Tool rules or settings` and `How to verify` MUST NOT be empty.
 - For each category that a profile lists, the profile MUST map every
-  applicable MUST that falls within what the tool can check. It cannot list a
-  category and leave such a MUST out.
+  applicable MUST and MUST NOT rule that falls within what the tool can
+  check. It cannot list a category and leave such a rule out.
 
 The rules of a profile (`## Rules`) have the normal rule format (section 3),
 with the profile's `Prefix`, and exist only because of the tool. They can use
