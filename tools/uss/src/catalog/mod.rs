@@ -3,6 +3,7 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
+use crate::expr::{self, Expr};
 use crate::source::Source;
 use facts::parse_facts;
 use rules::parse_rule_file;
@@ -23,6 +24,17 @@ pub use facts::{Fact, FactSource};
 pub use registry::{Category, Registry, load_registry};
 pub use rules::{Active, FileKind, Level, Rule, RuleFile, RuleState};
 
+/// A module file of the standard, with the condition under which it applies.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ModuleFile {
+    /// Path of the file, relative to the USS root.
+    pub file: String,
+    /// Text of the file's `#` title.
+    pub title: String,
+    /// The file's `Applies when` header condition.
+    pub applies: Expr,
+}
+
 /// The loaded and cross-checked standard.
 #[derive(Debug, Clone)]
 pub struct Catalog {
@@ -34,6 +46,8 @@ pub struct Catalog {
     pub rules: Vec<Rule>,
     /// How many rule files were read.
     pub file_count: usize,
+    /// Every file under `standard/modules/`, sorted by path.
+    pub modules: Vec<ModuleFile>,
 }
 
 impl Catalog {
@@ -113,6 +127,16 @@ pub fn load(src: &dyn Source) -> Result<Catalog, Vec<Diagnostic>> {
     }
 
     let file_count = files.len();
+    let mut modules: Vec<ModuleFile> = files
+        .iter()
+        .filter(|f| f.file.starts_with("standard/modules/"))
+        .map(|f| ModuleFile {
+            file: f.file.clone(),
+            title: f.title.clone(),
+            applies: expr::parse(&f.applies_when).unwrap_or(Expr::Always),
+        })
+        .collect();
+    modules.sort_by(|a, b| a.file.cmp(&b.file));
     let mut rules: Vec<Rule> = files.iter().flat_map(|f| f.rules.clone()).collect();
     rules.sort_by(|a, b| a.id.cmp(&b.id));
 
@@ -124,6 +148,7 @@ pub fn load(src: &dyn Source) -> Result<Catalog, Vec<Diagnostic>> {
         facts,
         rules,
         file_count,
+        modules,
     };
     catalog.check(&files, &mut diags);
     if diags.is_empty() {
@@ -308,6 +333,10 @@ mod tests {
         let go = c.rule("USS-GO-001").unwrap();
         assert_eq!(go.active().unwrap().applies.to_string(), "lang.go");
         assert!(c.rule("USS-NOPE-001").is_none());
+        assert_eq!(c.modules.len(), 1);
+        assert_eq!(c.modules[0].file, "standard/modules/languages/go.md");
+        assert_eq!(c.modules[0].title, "Go");
+        assert_eq!(c.modules[0].applies.to_string(), "lang.go");
         assert!(c.known_ident("has-ui"));
         assert!(c.known_ident("lang.go"));
         assert!(!c.known_ident("lang.cobol"));

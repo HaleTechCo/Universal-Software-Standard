@@ -34,6 +34,7 @@ struct View {
     sections: Vec<Section>,
     deviations: Vec<DeviationRow>,
     suppressions: Vec<SuppressionRow>,
+    uncovered_stack: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -155,6 +156,7 @@ fn view(project: &str, ev: &Evaluation) -> View {
                 reason: s.reason.clone(),
             })
             .collect(),
+        uncovered_stack: ev.uncovered_stack.clone(),
     }
 }
 
@@ -244,6 +246,26 @@ mod tests {
         }
         let want = std::fs::read_to_string(&path).unwrap();
         assert_eq!(text, want);
+    }
+
+    #[test]
+    fn render_lists_uncovered_stack() {
+        let c = catalog();
+        let r = record(
+            "stack: { languages: [go, cobol], tools: [make] }\nfacts: {}\ndecisions: { USS-EXT-001: { adopt: false } }\n",
+        );
+        let ev = evaluate(&c, &r, &results(&[("USS-SEC-001", Outcome::Pass)])).unwrap();
+        let text = render(&Embedded, "p", &ev).unwrap();
+        let section = "## Stack without a module\n\nNo USS module covers these stack entries, so the audit applied the core rules to them directly: `lang.cobol`, `tool.make`.\n";
+        assert!(text.contains(section), "{text}");
+        let at = |heading: &str| text.find(heading).unwrap();
+        assert!(at("## Scores") < at("## Stack without a module"), "{text}");
+        assert!(at("## Stack without a module") < at("## Results"), "{text}");
+
+        let r = record("facts: {}\ndecisions: { USS-EXT-001: { adopt: false } }\n");
+        let ev = evaluate(&c, &r, &results(&[("USS-SEC-001", Outcome::Pass)])).unwrap();
+        let text = render(&Embedded, "p", &ev).unwrap();
+        assert!(!text.contains("Stack without a module"), "{text}");
     }
 
     #[test]

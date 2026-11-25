@@ -3,7 +3,7 @@
 use std::borrow::Cow;
 use std::path::{Component, Path, PathBuf};
 
-use crate::evaluate::ProjectFiles;
+use crate::evaluate::{self, ProjectFiles};
 use crate::record::{Record, parse_record};
 use crate::source::Source;
 
@@ -100,17 +100,7 @@ impl ProjectFiles for OsProject {
 /// directory.
 #[must_use]
 pub fn project_root(record_path: &Path) -> PathBuf {
-    let dir = record_path.parent().unwrap_or_else(|| Path::new(""));
-    let root = if dir.file_name().is_some_and(|n| n == ".uss") {
-        dir.parent().unwrap_or(dir)
-    } else {
-        dir
-    };
-    if root.as_os_str().is_empty() {
-        PathBuf::from(".")
-    } else {
-        root.to_path_buf()
-    }
+    PathBuf::from(evaluate::project_root(&record_path.to_string_lossy()))
 }
 
 /// Reads and parses the record at `path`, validating it against the schema in `src`.

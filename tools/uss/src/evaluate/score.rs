@@ -69,6 +69,29 @@ pub struct Evaluation<'c> {
     pub suppressions: Vec<Suppression>,
     /// The deviations the record lists.
     pub deviations: Vec<Deviation>,
+    /// The stack facts of the record (`lang.<id>`, `framework.<id>`,
+    /// `platform.<id>`, `tool.<id>`) that no module file's `Applies when`
+    /// names, sorted.
+    pub uncovered_stack: Vec<String>,
+}
+
+/// Returns the stack facts of `r` that no module of `c` names, sorted.
+fn uncovered_stack(c: &Catalog, r: &Record) -> Vec<String> {
+    let covered: BTreeSet<String> = c.modules.iter().flat_map(|m| m.applies.idents()).collect();
+    let stack = &r.stack;
+    let mut out: Vec<String> = [
+        ("lang", &stack.languages),
+        ("framework", &stack.frameworks),
+        ("platform", &stack.platforms),
+        ("tool", &stack.tools),
+    ]
+    .into_iter()
+    .flat_map(|(kind, ids)| ids.iter().map(move |id| format!("{kind}.{id}")))
+    .filter(|fact| !covered.contains(fact))
+    .collect();
+    out.sort();
+    out.dedup();
+    out
 }
 
 /// Evaluates `r` against `c` using the audit `res`.
@@ -184,6 +207,7 @@ pub fn evaluate<'c>(
         rules: outcomes,
         suppressions: res.suppressions.clone(),
         deviations: r.deviations.clone(),
+        uncovered_stack: uncovered_stack(c, r),
     })
 }
 
@@ -422,6 +446,20 @@ mod tests {
         let o = e.rules.iter().find(|o| o.rule.id == "USS-EXT-001").unwrap();
         assert_eq!(o.outcome, Outcome::Unverified);
         assert_eq!(o.evidence, "no result recorded");
+    }
+
+    #[test]
+    fn evaluation_lists_uncovered_stack() {
+        let c = catalog();
+        let r = record(&format!(
+            "stack: {{ languages: [go, cobol], tools: [make] }}\nfacts: {{}}\n{DECLINE_EXT}"
+        ));
+        let e = evaluate(&c, &r, &results(&[])).unwrap();
+        assert_eq!(e.uncovered_stack, ["lang.cobol", "tool.make"]);
+
+        let r = record(&format!("facts: {{}}\n{DECLINE_EXT}"));
+        let e = evaluate(&c, &r, &results(&[])).unwrap();
+        assert_eq!(e.uncovered_stack, Vec::<String>::new());
     }
 
     #[test]

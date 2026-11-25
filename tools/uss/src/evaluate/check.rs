@@ -3,16 +3,17 @@
 use std::collections::BTreeSet;
 
 use crate::catalog::{Catalog, Diagnostic, FactSource, Level};
+use crate::evaluate::components::walk;
 use crate::evaluate::project::{ProjectFiles, SubProject};
 use crate::evaluate::{applicable, resolve_facts};
-use crate::record::{Record, parse_record};
+use crate::record::Record;
 use crate::source::Source;
 
 /// Checks `r` against the catalog `c` and the project's files.
 ///
 /// Returns one diagnostic per problem, each with `file` set to the record's
-/// path and no line number. Component records are read through `project`,
-/// parsed, and checked in the same way; their diagnostics carry their own path.
+/// path and no line number. Component records are found with [`walk`] and
+/// checked in the same way; their diagnostics carry their own path.
 #[must_use]
 pub fn check_record(
     src: &dyn Source,
@@ -20,7 +21,21 @@ pub fn check_record(
     r: &Record,
     project: &dyn ProjectFiles,
 ) -> Vec<Diagnostic> {
-    check_in(src, c, r, project, "")
+    let walked = walk(src, r, project);
+    let mut out = Vec::new();
+    for found in &walked.records {
+        if found.dir.is_empty() {
+            check_own(c, &found.record, project, &mut out);
+        } else {
+            let sub = SubProject {
+                inner: project,
+                prefix: found.dir.clone(),
+            };
+            check_own(c, &found.record, &sub, &mut out);
+        }
+    }
+    out.extend(walked.problems);
+    out
 }
 
 /// Normalises a path from a record: forward slashes only, with `.` and
@@ -31,15 +46,6 @@ pub(crate) fn normalise(path: &str) -> String {
         .filter(|s| !s.is_empty() && *s != ".")
         .collect::<Vec<_>>()
         .join("/")
-}
-
-/// Joins two forward-slash paths, skipping an empty `base`.
-fn join(base: &str, rel: &str) -> String {
-    if base.is_empty() {
-        rel.to_string()
-    } else {
-        format!("{base}/{rel}")
-    }
 }
 
 /// Returns whether a path segment starts with a drive prefix such as `C:`.
@@ -149,90 +155,12 @@ fn check_own(c: &Catalog, r: &Record, project: &dyn ProjectFiles, out: &mut Vec<
     }
 }
 
-/// Checks the component records of `r`. `prefix` is the path of `r`'s
-/// directory from the root record's directory, for naming nested records.
-fn check_components(
-    src: &dyn Source,
-    c: &Catalog,
-    r: &Record,
-    project: &dyn ProjectFiles,
-    prefix: &str,
-    out: &mut Vec<Diagnostic>,
-) {
-    let file = r.path.as_str();
-    for raw in &r.components {
-        if leaves_project(raw) {
-            out.push(Diagnostic::new(
-                file,
-                format!("component path \"{raw}\" leaves the project"),
-            ));
-            continue;
-        }
-        let dir = normalise(raw);
-        if dir.is_empty() {
-            out.push(Diagnostic::new(
-                file,
-                format!("component path \"{raw}\" is the record's own directory"),
-            ));
-            continue;
-        }
-        let rel = format!("{dir}/.uss/record.yaml");
-        let named = join(prefix, &rel);
-        let Some(data) = project.read(&rel) else {
-            out.push(Diagnostic::new(
-                file,
-                format!("component record \"{named}\" not found"),
-            ));
-            continue;
-        };
-        let child = match parse_record(src, &named, &data) {
-            Ok(child) => child,
-            Err(e) => {
-                out.extend(
-                    e.problems
-                        .iter()
-                        .map(|p| Diagnostic::new(&named, p.clone())),
-                );
-                continue;
-            }
-        };
-        if child.standard.version != r.standard.version {
-            out.push(Diagnostic::new(
-                file,
-                format!(
-                    "component record \"{named}\" pins USS {}; the root record pins USS {}",
-                    child.standard.version, r.standard.version
-                ),
-            ));
-            continue;
-        }
-        let sub = SubProject {
-            inner: project,
-            prefix: dir.clone(),
-        };
-        out.extend(check_in(src, c, &child, &sub, &join(prefix, &dir)));
-    }
-}
-
-/// Checks `r`, whose directory is `prefix` below the root record's directory.
-fn check_in(
-    src: &dyn Source,
-    c: &Catalog,
-    r: &Record,
-    project: &dyn ProjectFiles,
-    prefix: &str,
-) -> Vec<Diagnostic> {
-    let mut out = Vec::new();
-    check_own(c, r, project, &mut out);
-    check_components(src, c, r, project, prefix, &mut out);
-    out
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::catalog::load;
     use crate::evaluate::project::MemProject;
+    use crate::record::parse_record;
     use crate::source::{Embedded, MemSource};
     use crate::testfixture::standard;
 

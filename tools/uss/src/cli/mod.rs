@@ -6,7 +6,9 @@ use std::path::{Path, PathBuf};
 use clap::{Parser, Subcommand};
 
 use crate::catalog::{Catalog, Rule, load, load_registry};
-use crate::evaluate::{applicable, check_record, evaluate, leaves_project, normalise};
+use crate::evaluate::{
+    applicable, check_record, evaluate, leaves_project, normalise, version_mismatch, walk,
+};
 use crate::record::{Record, Results, parse_results};
 use crate::release::only_uss_changes;
 use crate::report::render;
@@ -144,9 +146,7 @@ fn run_lint(src: &dyn Source, out: &mut dyn Write) -> i32 {
 /// The message for a record that pins another version of the standard.
 #[must_use]
 pub fn version_error(pinned: &str, carried: &str) -> String {
-    format!(
-        "record pins USS {pinned}; this uss carries USS {carried}. Use uss {pinned}: download it from the v{pinned} release, or run: cargo install --locked --git https://github.com/HaleTechCo/Universal-Software-Standard --tag v{pinned} uss"
-    )
+    version_mismatch(pinned, carried).unwrap_or_default()
 }
 
 /// Loads the catalog from `src` and the record at `record_path`, and checks
@@ -172,12 +172,8 @@ pub fn load_project(
         let _ = writeln!(err, "{e}");
         1
     })?;
-    if record.standard.version != catalog.registry.version {
-        let _ = writeln!(
-            err,
-            "{}",
-            version_error(&record.standard.version, &catalog.registry.version)
-        );
+    if let Some(message) = version_mismatch(&record.standard.version, &catalog.registry.version) {
+        let _ = writeln!(err, "{message}");
         return Err(1);
     }
     Ok((catalog, record))
@@ -368,47 +364,6 @@ fn shown(path: &Path) -> String {
     path.to_string_lossy().replace('\\', "/")
 }
 
-/// Collects `record` and, depth first, the records of its components.
-/// Problems with a component or its record go to `problems`.
-fn collect_records(
-    src: &dyn Source,
-    path: &Path,
-    record: Record,
-    records: &mut Vec<(PathBuf, Record)>,
-    problems: &mut Vec<String>,
-) {
-    let name = shown(path);
-    let root = project_root(path);
-    let components = record.components.clone();
-    let version = record.standard.version.clone();
-    records.push((path.to_path_buf(), record));
-    for raw in &components {
-        if leaves_project(raw) {
-            problems.push(format!(
-                "{name}: component path \"{raw}\" leaves the project"
-            ));
-            continue;
-        }
-        let dir = normalise(raw);
-        if dir.is_empty() {
-            problems.push(format!(
-                "{name}: component path \"{raw}\" is the record's own directory"
-            ));
-            continue;
-        }
-        let child_path = root.join(dir).join(".uss").join("record.yaml");
-        match read_record(src, &child_path) {
-            Err(e) => problems.push(format!("{name}: {e}")),
-            Ok(child) if child.standard.version != version => problems.push(format!(
-                "{name}: component record \"{}\" pins USS {}; the root record pins USS {version}",
-                shown(&child_path),
-                child.standard.version
-            )),
-            Ok(child) => collect_records(src, &child_path, child, records, problems),
-        }
-    }
-}
-
 /// Checks that the audit commit `sha` is in the clone and an ancestor of
 /// `HEAD`, and that nothing outside `.uss/` changed since. Problems go to `problems`.
 fn check_commit(
@@ -507,12 +462,15 @@ fn run_release_check(
         .iter()
         .map(ToString::to_string)
         .collect();
-    let mut records = Vec::new();
-    collect_records(src, record_path, root, &mut records, &mut problems);
     let repo = project_root(record_path);
     let mut audited = Vec::new();
-    for (path, record) in &records {
-        match audit_record(src, &catalog, &repo, path, record, &mut problems) {
+    for found in walk(src, &root, &project).records {
+        let path = if found.dir.is_empty() {
+            record_path.to_path_buf()
+        } else {
+            repo.join(&found.dir).join(".uss").join("record.yaml")
+        };
+        match audit_record(src, &catalog, &repo, &path, &found.record, &mut problems) {
             Ok(Some(a)) => audited.push(a),
             Ok(None) => {}
             Err(e) => {
@@ -522,9 +480,6 @@ fn run_release_check(
         }
     }
     if !problems.is_empty() {
-        // `check_record` and `collect_records` both report a bad component path.
-        let mut seen = std::collections::BTreeSet::new();
-        problems.retain(|p| seen.insert(p.clone()));
         let written = problems.iter().try_for_each(|p| writeln!(out, "{p}"));
         return written.map_or(EXIT_USAGE, |()| 1);
     }
@@ -1354,6 +1309,13 @@ mod tests {
             "stdout: {out}"
         );
         assert!(!report.exists());
+        let mut seen = std::collections::BTreeSet::new();
+        for line in out.lines() {
+            assert!(
+                seen.insert(line),
+                "line appears twice: {line}\nstdout: {out}"
+            );
+        }
     }
 
     #[test]

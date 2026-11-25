@@ -1,6 +1,7 @@
 //! Evaluating a project record against the catalog.
 
 mod check;
+mod components;
 mod facts;
 mod project;
 mod score;
@@ -8,9 +9,21 @@ mod score;
 pub use check::check_record;
 #[cfg(feature = "cli")]
 pub(crate) use check::{leaves_project, normalise};
+pub use components::{Found, Walk, walk};
 pub use facts::{applicable, resolve_facts};
-pub use project::{MemProject, ProjectFiles, SubProject};
+pub use project::{MemProject, ProjectFiles, SubProject, project_root};
 pub use score::{Evaluation, RuleOutcome, Score, Status, evaluate};
+
+/// The message for a record that pins another version of the standard than
+/// the one `carried` by this build. `None` when the versions are equal.
+#[must_use]
+pub fn version_mismatch(pinned: &str, carried: &str) -> Option<String> {
+    (pinned != carried).then(|| {
+        format!(
+            "record pins USS {pinned}; this uss carries USS {carried}. Use uss {pinned}: download it from the v{pinned} release, or run: cargo install --locked --git https://github.com/HaleTechCo/Universal-Software-Standard --tag v{pinned} uss"
+        )
+    })
+}
 
 #[cfg(test)]
 mod tests {
@@ -36,6 +49,16 @@ mod tests {
 
     fn ids(rules: &[&Rule]) -> Vec<String> {
         rules.iter().map(|r| r.id.clone()).collect()
+    }
+
+    #[test]
+    fn version_mismatch_text() {
+        assert_eq!(version_mismatch("0.1.0", "0.1.0"), None);
+        let text = version_mismatch("0.2.0", "0.1.0").unwrap();
+        assert!(
+            text.starts_with("record pins USS 0.2.0; this uss carries USS 0.1.0."),
+            "{text}"
+        );
     }
 
     #[test]
@@ -111,6 +134,10 @@ mod tests {
             .filter(|rule| is_core(rule))
             .count();
         assert_eq!((floor, core), (59, 317));
+        assert!(
+            applicable(&c, &r).iter().all(|rule| is_core(rule)),
+            "a non-core rule applies to the all-false record"
+        );
         assert!(
             floor * 4 <= core,
             "{floor} of {core} core rules is over the spec §6.4 budget"

@@ -15,6 +15,12 @@
 {% endfor %}
 
 {% endif %}
+{% if uncovered_stack %}
+## Stack without a module
+
+No USS module covers these stack entries, so the audit applied the core rules to them directly: {% for id in uncovered_stack %}`{{ id }}`{% if not loop.last %}, {% endif %}{% endfor %}.
+
+{% endif %}
 {% if sections %}
 ## Results
 

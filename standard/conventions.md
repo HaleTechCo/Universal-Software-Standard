@@ -239,7 +239,10 @@ and each entry sets a stack fact:
 | `stack.tools` | `tool.<id>`, such as `tool.maven` |
 
 An expression can use only the stack identifiers that `registry.yaml` lists,
-so a stack entry that the registry does not list matches no rule.
+so a stack entry that the registry does not list matches no rule. The audit
+report lists each stack entry that no module covers, which is each one that no
+module file's `Applies when` header names: the audit applied the core rules to
+it directly.
 
 ### Expressions
 
@@ -616,11 +619,11 @@ results:
 results, with the layout in `templates/audit-report.md.j2`. `uss report` and
 `uss release-check` first run the checks of `uss check` on the record, and
 refuse a record that fails them. The report shows the compliance statement
-and the category scores first. Then it shows every applicable rule with its
-outcome and evidence, grouped by outcome in the order fail, unverified,
-deviation, declined and pass. In each group, the rules are sorted by level,
-from MUST to MAY, then by ID. Then it lists the deviations and the
-suppressions. Scores and reports MUST NOT be computed or written by hand.
+and the category scores first. Then it lists the stack entries that no module
+covers. Then it shows every applicable rule with its outcome and evidence,
+grouped by outcome in the order fail, unverified, deviation, declined and
+pass. In each group, the rules are sorted by level, from MUST to MAY, then by
+ID. Then it lists the deviations and the suppressions. Scores and reports MUST NOT be computed or written by hand.
 
 To record an audit:
 

@@ -25,6 +25,33 @@ impl ProjectFiles for MemProject {
     }
 }
 
+/// Returns the root of the project that holds the record at `record_path`:
+/// the parent of the `.uss` directory the record is in, or the record's own
+/// directory. The result has forward slashes, and is `.` when it is empty.
+#[must_use]
+pub fn project_root(record_path: &str) -> String {
+    let path = record_path.replace('\\', "/");
+    let mut parts: Vec<&str> = path.split('/').collect();
+    parts.pop();
+    if parts.last() == Some(&".uss") {
+        parts.pop();
+    }
+    let root = parts.join("/");
+    if !root.is_empty() {
+        // A drive root such as `C:` alone would be a drive-relative path.
+        return if root.ends_with(':') {
+            format!("{root}/")
+        } else {
+            root
+        };
+    }
+    if path.starts_with('/') {
+        "/".to_string()
+    } else {
+        ".".to_string()
+    }
+}
+
 /// A component's view of its parent's files: every path is looked up under `prefix`.
 pub struct SubProject<'a> {
     /// The parent's files.
@@ -46,5 +73,23 @@ impl ProjectFiles for SubProject<'_> {
 
     fn read(&self, rel: &str) -> Option<Vec<u8>> {
         self.inner.read(&self.full(rel))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn project_root_strings() {
+        for (record, want) in [
+            (".uss/record.yaml", "."),
+            ("proj/.uss/record.yaml", "proj"),
+            ("proj\\.uss\\record.yaml", "proj"),
+            ("x/record.yaml", "x"),
+            ("record.yaml", "."),
+        ] {
+            assert_eq!(project_root(record), want, "record path {record:?}");
+        }
     }
 }
