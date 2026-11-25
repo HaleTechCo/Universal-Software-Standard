@@ -128,29 +128,35 @@ in `USS-SEC-013`.
 5. If a fact changes, run `uss applicable .uss/record.yaml`. Ask about the
    new rules only.
 6. Commit the record if you changed it.
-7. Make sure that `git status --porcelain` prints nothing. If it prints
-   changes, ask the developer to commit them.
-8. Start the results file `.uss/audits/<date>.yaml`, with the date of today.
-   Set `standard.version` to the version that the record pins.
-9. Set `commit` to the full 40-character SHA that `git rev-parse HEAD`
-   prints. Set `auditor` to your name. For example:
+7. Find the results file of a stopped audit, if there is one. It is a file in
+   `.uss/audits/` that `git status --porcelain --untracked-files=all` lists,
+   and its `commit` is the SHA that `git rev-parse HEAD` prints.
+8. Make sure that `git status --porcelain --untracked-files=all` prints
+   nothing, except that file. If it prints other changes, ask the developer to
+   commit them.
+9. If you found a stopped audit, continue it. Go to the step "Audit the rules
+   that apply". Start at the first area with no results.
+10. Start the results file `.uss/audits/<date>.yaml`, with the date of today.
+    Set `standard.version` to the version that the record pins.
+11. Set `commit` to the full 40-character SHA that `git rev-parse HEAD`
+    prints. Set `auditor` to your name. For example:
 
-   ```yaml
-   standard:
-     version: 0.1.0
-   commit: 0123456789abcdef0123456789abcdef01234567
-   date: 2026-11-25
-   auditor: claude
-   results:
-     USS-SEC-013:
-       result: pass
-       evidence: src/db/query.go:42
-   ```
+    ```yaml
+    standard:
+      version: 0.1.0
+    commit: 0123456789abcdef0123456789abcdef01234567
+    date: 2026-11-25
+    auditor: claude
+    results:
+      USS-SEC-013:
+        result: pass
+        evidence: src/db/query.go:42
+    ```
 
-10. Audit the rules that apply, one area at a time. For each rule, apply its
+12. Audit the rules that apply, one area at a time. For each rule, apply its
     Verify exactly as written. Add nothing to it. Leave nothing out.
     `uss applicable --full .uss/record.yaml` prints the Verify of each rule.
-11. Give each rule one result:
+13. Give each rule one result:
     - `pass`: the project meets the rule.
     - `fail`: the project does not meet the rule, and the record has no
       deviation for it.
@@ -159,40 +165,39 @@ in `USS-SEC-013`.
     - `declined`: the record declines the MAY rule (`adopt: false`).
     - `unverified`: you cannot decide. Do not guess. Write the reason as the
       evidence.
-12. Give evidence for each `pass`, `fail` and `deviation` result. Name a
+14. Give evidence for each `pass`, `fail` and `deviation` result. Name a
     `file:line`, a configuration key, a CI job, or a command and its output.
     For `deviation`, name the deviation document.
-13. Write results only for the rules that apply. Do not write
+15. Write results only for the rules that apply. Do not write
     `not-applicable` for a rule that applies.
-14. If a Verify examines each release, and no release exists yet, write
+16. If a Verify examines each release, and no release exists yet, write
     `pass`. Give the evidence "no release yet". If the Verify needs a
     published artifact, such as binaries, an SBOM, signatures or provenance,
     write `fail`.
-15. Save the results file after each area. A rule that applies with no result
-    counts as `unverified`. After an interruption, continue at the first area
-    with no results.
-16. Add each suppression in the checks of the project to `suppressions`, with
+17. Save the results file after each area, so that a stopped audit can
+    continue. A rule that applies with no result counts as `unverified`.
+18. Add each suppression in the checks of the project to `suppressions`, with
     `file`, `line`, `rule` and `reason`. The `rule` is the rule of the check,
     such as `clippy::unwrap_used`, not a USS rule ID.
-17. If the code gives no reason for a suppression, write "no reason given".
-18. Add the audit to `audits` in the record, with `date`, `results` and
+19. If the code gives no reason for a suppression, write "no reason given".
+20. Add the audit to `audits` in the record, with `date`, `results` and
     `report`.
-19. Run `uss check .uss/record.yaml`. Correct each problem that it reports.
+21. Run `uss check .uss/record.yaml`. Correct each problem that it reports.
     `uss report` refuses a record with problems.
-20. Run `uss report .uss/audits/<date>.yaml`. It writes the report, then
+22. Run `uss report .uss/audits/<date>.yaml`. It writes the report, then
     prints the compliance statement and the scores. Do not edit the report.
-21. Commit the record, the results file and the report together. Show the
+23. Commit the record, the results file and the report together. Show the
     statement and the scores to the developer.
-22. Fix the project only when the developer tells you to. Fix the MUST and
+24. Fix the project only when the developer tells you to. Fix the MUST and
     MUST NOT failures first.
-23. Then fix the SHOULD and SHOULD NOT failures that the developer chose to
+25. Then fix the SHOULD and SHOULD NOT failures that the developer chose to
     comply with. Fix one area at a time.
-24. Apply the Verify of the rule to each fix. Change the result to `pass`
+26. Apply the Verify of the rule to each fix. Change the result to `pass`
     only when the Verify passes.
-25. After each area, commit the fixes. Set `commit` to the new SHA that
+27. After each area, commit the fixes. Set `commit` to the new SHA that
     `git rev-parse HEAD` prints.
-26. Audit again each rule whose evidence the fixes changed.
-27. Run `uss report .uss/audits/<date>.yaml` again. Commit the record, the
+28. Audit again each rule whose evidence the fixes changed.
+29. Run `uss report .uss/audits/<date>.yaml` again. Commit the record, the
     results file and the report together.
 
 ### Projects with several released units

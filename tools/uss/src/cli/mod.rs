@@ -1620,7 +1620,9 @@ mod tests {
 
     /// Returns why `args`, the words after `uss`, are not a command that the
     /// `uss` command tree accepts, or `None` when they are. Only the
-    /// subcommand and the long options are checked.
+    /// subcommand and the long options are checked: each `--name` before the
+    /// subcommand against the options of `uss`, and each one after it against
+    /// the options of the subcommand.
     fn command_problem(uss: &clap::Command, args: &[&str]) -> Option<String> {
         let args = match args {
             ["--standard-root", _, rest @ ..] => rest,
@@ -1630,20 +1632,30 @@ mod tests {
         if matches!(args, [] | ["--version" | "-V" | "--help" | "-h"]) {
             return None;
         }
-        let Some(name) = args.iter().find(|word| !word.starts_with('-')) else {
+        let Some(at) = args.iter().position(|word| !word.starts_with('-')) else {
             return Some("no subcommand".to_string());
         };
+        let (before, name, after) = (&args[..at], args[at], &args[at + 1..]);
         let Some(sub) = uss.find_subcommand(name) else {
             return Some(format!("unknown subcommand {name}"));
         };
-        let has = |cmd: &clap::Command, long: &str| {
-            cmd.get_arguments().any(|arg| arg.get_long() == Some(long))
+        // The first long option in `words` that `cmd` does not have.
+        let unknown = |cmd: &clap::Command, words: &[&str]| -> Option<String> {
+            words
+                .iter()
+                .filter_map(|word| word.strip_prefix("--"))
+                .map(|option| option.split_once('=').map_or(option, |(long, _)| long))
+                .find(|&long| {
+                    !long.is_empty() && !cmd.get_arguments().any(|a| a.get_long() == Some(long))
+                })
+                .map(str::to_string)
         };
-        args.iter()
-            .filter_map(|word| word.strip_prefix("--"))
-            .map(|option| option.split_once('=').map_or(option, |(long, _)| long))
-            .find(|&long| !long.is_empty() && !has(sub, long) && !has(uss, long))
-            .map(|long| format!("unknown option --{long} for {name}"))
+        // After `build()`, a subcommand also holds `--standard-root` and `--help`.
+        unknown(uss, before)
+            .map(|long| format!("unknown option --{long} for uss"))
+            .or_else(|| {
+                unknown(sub, after).map(|long| format!("unknown option --{long} for {name}"))
+            })
     }
 
     /// The `uss` command tree, built so that it holds the global and the
@@ -1693,10 +1705,27 @@ mod tests {
                 Some("unknown subcommand `odd`".to_string()),
             ]
         );
-        let valid: [&[&str]; 4] = [&[], &["-V"], &["--help"], &["show", "--help"]];
+        let valid: [&[&str]; 6] = [
+            &[],
+            &["-V"],
+            &["--help"],
+            &["show", "--help"],
+            &["show", "--standard-root", "x"],
+            &["--standard-root=x", "show"],
+        ];
         for args in valid {
             assert_eq!(command_problem(&uss, args), None, "{args:?}");
         }
+        // Clap refuses an option of `uss` after a subcommand that does not
+        // carry it, and an option of a subcommand before that subcommand.
+        assert_eq!(
+            command_problem(&uss, &["show", "--version"]),
+            Some("unknown option --version for show".to_string())
+        );
+        assert_eq!(
+            command_problem(&uss, &["--full", "applicable", "x.yaml"]),
+            Some("unknown option --full for uss".to_string())
+        );
         assert_eq!(
             command_problem(&uss, &["--quiet"]),
             Some("no subcommand".to_string())
