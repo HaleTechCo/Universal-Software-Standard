@@ -4,9 +4,72 @@ commit: 0adeb2b4783a1866e161a9f9e41e4bc2637f1bd7
 date: 2026-11-25
 auditor: claude
 results:
+  USS-ARC-001:
+    result: fail
+    evidence: 'docs/adr/ holds two ADRs: 0001 records the language with context, options (Go, Rust, Python, TypeScript) and reason (docs/adr/0001-validator-in-rust.md:6-21), and 0002 the YAML crate. No ADR records the split into deployable parts: one uss binary that embeds standard/, schema/, templates/, AGENTS.md and CHANGELOG.md (docs/architecture.md:32-37), and the Claude plugin served from the repository root (.claude-plugin/marketplace.json:7-13, source "./"). The design spec and the plan state these choices with no other option (docs/superpowers/specs/2026-11-21-universal-software-standard-design.md:170 "packaging as a Claude plugin plus a tool-agnostic AGENTS.md", :775; docs/superpowers/plans/2026-11-25-uss-workflows-skills-self-audit.md:81-88 and :106-113). The project uses no data store, main framework or external service.'
+  USS-ARC-005:
+    result: fail
+    evidence: 'docs/architecture.md:25-30 states one boundary in prose (the library does no file, network or process I/O; all I/O is in cli/), and CI builds and lints the library without the cli feature for wasm32 (tools/xtask/src/main.rs:157-189; tools/uss/src/lib.rs:4-5), so library code that names the cli module fails. But no file states the allowed dependencies between the library modules (catalog, expr, record, evaluate, report, release, yaml, text, source; docs/architecture.md:39-54), and no CI job or test checks the no-I/O rule (no test searches the library for std::fs, std::process or std::net). The project has several modules, so the single-module case does not apply.'
   USS-BAK-013:
     result: fail
-    evidence: 'No automatic mirror: .github/workflows/ci.yml:11-28 has one job (check) and no mirror step; `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/hooks` -> HTTP 200 [] (no webhook); `git remote -v` lists only origin (github.com); no file outside standard/ names a mirror (`git grep -i mirror`: no match). A pull mirror on another host would not show here; the developer''s answers name none.'
+    evidence: 'No automatic mirror: .github/workflows/ci.yml:11-28 has one job (check) and no mirror step; `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/hooks` -> HTTP 200 [] (no webhook); `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/keys` -> [] (no deploy key; a pull mirror of a private repository needs a credential); `git remote -v` lists only origin (github.com); `git grep -n -i mirror 0adeb2b -- . '':!standard/''` matches only planning text (docs/superpowers/plans/2026-11-24-uss-remaining-core-areas.md:664 and :1017, docs/superpowers/plans/2026-11-25-uss-workflows-skills-self-audit.md:951, docs/superpowers/specs/2026-11-21-universal-software-standard-design.md:141, :366, :372 and :402), none a mirror configuration. A pull mirror on another host would not show here; the developer''s answers name none.'
+  USS-CON-001:
+    result: pass
+    evidence: '`git grep -n -i -E ''todo!|unimplemented!|\bTODO\b|FIXME|XXX|not implemented|not yet implemented|placeholder|stub|dummy|fake|sample'' 0adeb2b -- tools/` -> no match (exit 1). A search for a block that holds only None, Vec::new(), String::new(), Ok(()), true, false, 0, "" or Default::default() matches only tools/uss/src/cli/mod.rs:274, a separator choice inside an expression, not a function body. No mock or sample data is returned as a result.'
+  USS-CON-002:
+    result: pass
+    evidence: 'AGENTS.md:335-344 "Definition of Done" lists four conditions: `cargo xtask check` passes; each change in behaviour has tests; when a command or an option changes, each document that names it changes in the same commit; the author read the source of each reference added or changed. CONTRIBUTING.md:47-51 points to it, and .github/pull_request_template.md:5-13 repeats it as a checklist.'
+  USS-CON-003:
+    result: fail
+    evidence: 'The condition that a tool can check (`cargo xtask check` passes, AGENTS.md:339) runs in CI job check (.github/workflows/ci.yml:11-28), but it is not a required check: `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/branches/main` -> protected: false, protection.required_status_checks: enforcement_level off, contexts [], checks []. Branch protection and rulesets are not available on this private repository on the free plan (HTTP 403, see USS-SUP-008).'
+  USS-CTB-001:
+    result: fail
+    evidence: 'No one command sets up the environment: CONTRIBUTING.md:10-18 and AGENTS.md:303-311 list five steps, three of them commands (install rustup, clone, `rustup toolchain install`, `git config core.hooksPath .githooks`, `cargo xtask check`); `cargo xtask check` does not turn on the hook (tools/xtask/src/main.rs:127-213), and there is no dev container. In a fresh clone of 0adeb2b on this machine (rustup and the 1.100.0 toolchain already installed), the clone and the three commands exited 0, and `cargo build --locked` and `cargo test --locked -p uss` then exited 0.'
+  USS-CTB-002:
+    result: pass
+    evidence: 'The guides install each tool for the project only: rustup installs the toolchain that rust-toolchain.toml:1-5 pins (CONTRIBUTING.md:12-15, AGENTS.md:305-308), and `cargo xtask check` installs cargo-deny under the repository''s .tools with --root (tools/xtask/src/main.rs:103-121, CONTRIBUTING.md:17-18). No guide uses a system package manager or administrator rights (README.md, CONTRIBUTING.md, AGENTS.md and docs/troubleshooting.md name only rustup, cargo, git and Claude Code commands).'
+  USS-CTB-003:
+    result: pass
+    evidence: '`cargo xtask check` is documented (CONTRIBUTING.md:33, AGENTS.md:315) and CI calls it: the only job runs `rustup toolchain install`, then `cargo xtask check` (.github/workflows/ci.yml:22-28). No check is required by branch protection (`gh api -X GET repos/HaleTechCo/Universal-Software-Standard/branches/main` -> protected: false), so the CI job is the list, and the command runs all of its checks.'
+  USS-CTB-004:
+    result: pass
+    evidence: '.githooks/pre-commit:5-6 runs `cargo fmt --all --check` and `cargo run --locked -q -p uss -- lint`, two fast checks that CI also runs (tools/xtask/src/main.rs:134-135 and :192-197); CONTRIBUTING.md:16 and AGENTS.md:309 turn it on with `git config core.hooksPath .githooks`.'
+  USS-CTB-005:
+    result: pass
+    evidence: 'CONTRIBUTING.md:37-45 states about 9 seconds for a warm `cargo xtask check` and about 140 seconds cold on Windows 11 (x86-64). Warm runs on 0adeb2b on this machine (Windows 11, x86-64): `time cargo xtask check` -> real 0m6.257s and 0m6.023s, exit 0, below 9 seconds plus 25%. A first run in a fresh clone took 233 seconds, which included building and installing cargo-deny (the guide says that such a run also downloads it). The guide is not on the default branch yet, so the runs are on the audited commit.'
+  USS-CTB-006:
+    result: pass
+    evidence: 'CONTRIBUTING.md covers the setup (:10-20), the workflow for a change (:22-29: issue, branch, commit message, pull request), how to run the checks (:31-45) and what makes a change acceptable (:47-58, which points to the Definition of Done in AGENTS.md).'
+  USS-CTB-007:
+    result: fail
+    evidence: 'AGENTS.md is at the root and gives the set-up, build, test and check commands (:303-320) and the conventions (:322-333). In a fresh clone of 0adeb2b, each of those commands exited 0 (`rustup toolchain install`, `git config core.hooksPath .githooks`, `cargo xtask check`, `cargo build --locked`, `cargo test --locked -p uss`, `cargo run --locked -p uss -- lint`), and the workflow commands `uss version`, `uss show <file>` (8 files), `uss applicable [--full] .uss/record.yaml` and `uss check .uss/record.yaml` exited 0 through `cargo run --locked -q -p uss --` (AGENTS.md:319-320), except that the first run of `uss show CHANGELOG.md` exited 101 with its stderr lost, and three runs after it exited 0; `uss release-check` ran and exited 1 ("no audit recorded"). But AGENTS.md:38 `cargo install --locked --git https://github.com/HaleTechCo/Universal-Software-Standard --tag v<version> uss` cannot run as written for the pinned 0.1.0: `git ls-remote --tags origin` prints nothing, so tag v0.1.0 does not exist. `cargo install --locked --path tools/uss` (AGENTS.md:42) was not run, because this audit installs nothing.'
+  USS-CTB-008:
+    result: fail
+    evidence: 'CODE_OF_CONDUCT.md (Contributor Covenant 3.0) gives no contact for reports: CODE_OF_CONDUCT.md:74-75 says "The contact for reports is added before the first release." The developer has not given a contact yet.'
+  USS-CTB-009:
+    result: fail
+    evidence: 'CONTRIBUTING.md asks for no Signed-off-by line and names no Developer Certificate of Origin; CONTRIBUTING.md:115-118 says only that a contribution is under the MIT licence and "USS asks for no other agreement" (no CLA). No CI job or app checks sign-offs (.github/workflows/ci.yml:11-28 has one job, `cargo xtask check`). No commit came from outside the team: all 137 commits up to 0adeb2b have one author, and none has a Signed-off-by line.'
+  USS-CTB-010:
+    result: pass
+    evidence: '.github/ISSUE_TEMPLATE/bug.md:1-5 (bug report), .github/ISSUE_TEMPLATE/rule.md:1-5 ("Request a feature, propose a new rule, or ask for a change to a rule") and .github/pull_request_template.md:1-18.'
+  USS-CTB-011:
+    result: fail
+    evidence: 'CONTRIBUTING.md names no label for first contributions (it has no "good first issue" or other label name). The label exists (`gh api -X GET repos/HaleTechCo/Universal-Software-Standard/labels` lists "good first issue"), and no open issue carries it (`.../issues?state=open&labels=good first issue` -> 0).'
+  USS-CTB-012:
+    result: fail
+    evidence: '.github/workflows/ci.yml:6 runs the check job on pull_request, but the host settings stop runs from forks: `gh api -X GET repos/HaleTechCo/Universal-Software-Standard` -> private: true, allow_forking: false; `gh api -X GET orgs/HaleTechCo` -> members_can_fork_private_repositories: false; `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/actions/permissions/fork-pr-workflows-private-repos` -> run_workflows_from_fork_pull_requests: false.'
+  USS-CTB-013:
+    result: pass
+    evidence: 'CONTRIBUTING.md:100-108: the maintainer reviews each pull request; a change needs the approval of the maintainer and passing checks before it merges (GOVERNANCE.md); the first response comes within 7 days.'
+  USS-CTB-015:
+    result: pass
+    evidence: 'No contributor from outside the team had a change merged in the last 12 months (this is the first audit): all 137 commits up to 0adeb2b (2026-11-21 to 2026-11-25) have one author, the maintainer, and their Co-Authored-By trailers name AI assistants; `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/pulls?state=all` -> 0 pull requests. CONTRIBUTING.md:110-113 says how outside contributors get credit.'
+  USS-CTB-016:
+    result: fail
+    evidence: 'One person has admin access: `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/collaborators?affiliation=all` -> one collaborator, role admin; `gh api -X GET orgs/HaleTechCo/members?role=admin` -> one member, the same account. The project publishes to no package registry (Cargo.toml:11 publish = false).'
+  USS-CTB-017:
+    result: pass
+    evidence: 'GOVERNANCE.md:31-37: if the maintainer leaves, HaleTechCo, the owner of the repository, appoints a new maintainer or archives the repository and says so in the README.'
   USS-DEP-001:
     result: pass
     evidence: 'tools/uss/Cargo.toml:20-26 and :32 use Cargo''s default caret form (clap 4.6, jsonschema 0.63.0, minijinja 3.1.0, regex 1.13.2, serde 1.0.229, serde-saphyr 2.2, serde_json 1.0.154, tempfile 3.27.0), each below the next major (or next minor for 0.x); tools/xtask/Cargo.toml has no dependencies; no *, branch or unbounded >=.'
@@ -37,27 +100,192 @@ results:
   USS-DEP-012:
     result: fail
     evidence: 'No change that added a dependency (8336df2, 156616f, 380e755, b53c316, f47a1af) carries a health record covering maintenance, deprecation or archive, more than one maintainer and the standard library; the commit messages give a purpose only. ADR 0002 (docs/adr/0002-yaml-crate.md:15-55, in 156616f) covers serde-saphyr''s releases and advisories but not its number of maintainers.'
+  USS-DEP-013:
+    result: pass
+    evidence: 'Each declared dependency is in use: tools/uss/Cargo.toml:19-26 and :31-32 declare clap (tools/uss/src/cli/mod.rs:6), jsonschema (record/mod.rs:179), minijinja (report.rs:3-4), regex (catalog/markdown.rs:6), serde (record/mod.rs:12), serde-saphyr (yaml.rs:4, :19), serde_json (record/mod.rs:171) and tempfile (tests, cli/mod.rs:681); tools/xtask/Cargo.toml declares none. No unused-dependency tool is installed (`cargo machete`, `cargo udeps`, `cargo shear` -> "no such command"), so each one was checked by a search of the code.'
   USS-DEP-014:
     result: pass
     evidence: '.github/dependabot.yml:3-14 configures cargo at / (the workspace manifests Cargo.toml, tools/uss/Cargo.toml, tools/xtask/Cargo.toml) and github-actions at / (.github/workflows). No dependency update was merged in the window: Cargo.lock history (5 commits, 2026-11-22) only adds packages, and `gh api -X GET .../pulls?state=all` -> HTTP 200 [].'
   USS-DEP-015:
     result: pass
     evidence: '.github/dependabot.yml:7-8 and :13-14 set cooldown default-days: 3 for cargo and github-actions.'
+  USS-DOC-001:
+    result: pass
+    evidence: 'README.md:3-14 says what USS and the uss tool do; README.md:42-52 and :97-106 say how to install it (from a checkout or a release tag); README.md:19-40 say how to start (/uss:adopt, /uss:audit, `uss applicable .uss/record.yaml`).'
+  USS-DOC-002:
+    result: fail
+    evidence: 'docs/architecture.md names the components, what each does and how they interact (:3-5, :21-64) and where each lives (:7-19), but three directories at the top level are missing and not explained: .cargo/ (the xtask alias), .githooks/ (the pre-commit hook) and .uss/ (this repository''s record and audits). `git ls-tree -d --name-only 0adeb2b` lists 11 directories; the table covers 8.'
+  USS-DOC-003:
+    result: pass
+    evidence: 'The settings that the code reads are its command-line options (the clap definitions in tools/uss/src/cli/mod.rs:26-99); no production code reads an environment variable or a configuration file (report.rs:243 USS_UPDATE_GOLDEN is test code under report.rs:216 #[cfg(test)]; build.rs:36-38 reads variables that Cargo sets at build time). docs/cli.md lists each option with its default and effect: --standard-root, -h, -V (:32-40); applicable --json and --full (:54-65); export --json (:67-72); report --record and --out (:83-96); release-check --record, --out and --require-compliant (:98-109).'
+  USS-DOC-004:
+    result: pass
+    evidence: 'docs/cli.md:18-20 states that no option turns off or weakens a security feature or a check, and that --standard-root changes the standard that uss reads while the record must pin its version. The options in tools/uss/src/cli/mod.rs:26-99 confirm it: none turns off a check, a validation or the path confinement.'
+  USS-DOC-006:
+    result: fail
+    evidence: 'docs/troubleshooting.md lists 7 problems (README.md:81 links to it). Six give a cause and a fix, but "The skills /uss:adopt and /uss:audit do not appear" (docs/troubleshooting.md:74-82) gives steps and no cause. No bug report was closed in the last 12 months (`gh api -X GET repos/HaleTechCo/Universal-Software-Standard/issues?state=closed` -> 0), so no repeated error lacks an entry.'
+  USS-DOC-007:
+    result: unverified
+    evidence: 'The writing rules pass on all 155 numbered steps of AGENTS.md, README.md, CONTRIBUTING.md, docs/troubleshooting.md and GOVERNANCE.md: a word count of each sentence finds no procedural sentence over 20 words; instructions are in the imperative and the active voice; each sentence holds one instruction (the sentences that do not start with a verb are conditions or descriptions, such as AGENTS.md:29-31). Conformance to the ASD-STE100 dictionary is unverified: the specification is not available to this audit (ASD gives it out on request), and no STE checker is installed.'
+  USS-DST-001:
+    result: declined
+    evidence: '.uss/record.yaml:126 USS-DST-001: { adopt: false }'
+  USS-DST-002:
+    result: fail
+    evidence: 'Adopted (.uss/record.yaml:127). The Verify needs published binaries, and none exists before the first release: `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/releases` -> [], and `git ls-remote --tags origin` prints nothing. README.md:83-106 documents only `cargo install` from a tag.'
+  USS-DST-003:
+    result: declined
+    evidence: '.uss/record.yaml:128 USS-DST-003: { adopt: false }'
+  USS-DST-006:
+    result: declined
+    evidence: '.uss/record.yaml:129 USS-DST-006: { adopt: false }'
+  USS-DST-007:
+    result: declined
+    evidence: '.uss/record.yaml:130 USS-DST-007: { adopt: false }'
+  USS-DST-008:
+    result: fail
+    evidence: 'Adopted (.uss/record.yaml:131). The repository holds the plugin in the Claude Code format (.claude-plugin/plugin.json, .claude-plugin/marketplace.json, skills/adopt/SKILL.md, skills/audit/SKILL.md); README.md:54-67 and :88-95 say how to install it; each skill says when to use it (its description) and sends the agent to the workflows in AGENTS.md, which give the uss commands; Claude Code 2.1.330 loads it: `claude plugin validate .` in a fresh clone of 0adeb2b -> exit 0, "Provides: skills: uss:adopt, skills: uss:audit", with 2 warnings (CLAUDE.md at the plugin root, no icon). It fails on one point: the project names Claude Code (README.md:54, :91) but names none of its documentation, and the Verify asks for an agent whose documentation the project names.'
+  USS-DST-009:
+    result: pass
+    evidence: 'no release yet: `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/releases` -> [] and `git ls-remote --tags origin` prints nothing, so the latest release offers no install method. README.md already gives install, upgrade and uninstall steps for the two planned methods: `cargo install` from a tag (install :97-106, upgrade :108-116, uninstall :139) and the plugin (install :88-95, update :117-121, uninstall :140-141).'
+  USS-DST-010:
+    result: pass
+    evidence: 'no release yet: no previous or latest release exists (`gh api -X GET repos/HaleTechCo/Universal-Software-Standard/releases` -> []), so no release can be installed over another.'
+  USS-DST-011:
+    result: pass
+    evidence: 'no release yet: no earlier version exists (`gh api -X GET repos/HaleTechCo/Universal-Software-Standard/releases` -> []); uss reads no configuration file (docs/cli.md:14-15).'
+  USS-DST-012:
+    result: pass
+    evidence: 'no release yet: README.md:125-135 gives rollback steps, but no previous release exists to upgrade from and roll back to (`gh api -X GET repos/HaleTechCo/Universal-Software-Standard/releases` -> []).'
+  USS-DST-013:
+    result: pass
+    evidence: 'no release yet: the release offers no install method (`gh api -X GET repos/HaleTechCo/Universal-Software-Standard/releases` -> []). README.md:83-145 gives no offline steps for the planned methods yet.'
+  USS-DST-014:
+    result: pass
+    evidence: 'no release yet: no release artifact exists (`gh api -X GET repos/HaleTechCo/Universal-Software-Standard/releases` -> []), so no artifact lacks an x86-64 or an ARM64 build.'
+  USS-DST-015:
+    result: pass
+    evidence: 'no release yet: no signed release artifact exists (`gh api -X GET repos/HaleTechCo/Universal-Software-Standard/releases` -> []); USS-SUP-014 judges whether artifacts are signed.'
+  USS-EXT-001:
+    result: declined
+    evidence: '.uss/record.yaml:132 USS-EXT-001: { adopt: false }'
+  USS-I18N-001:
+    result: pass
+    evidence: 'Text is a Rust String (UTF-8): input files must be UTF-8 (tools/uss/src/yaml.rs:18 rejects other bytes), JSON goes through serde_json, and reports are written as UTF-8 with no byte order mark (cli/mod.rs:401, :543); no code converts through a code page. Test with "Zoë 漢字 😀" as a directory name in the command-line paths, as project.name in a record and as an evidence string in a results file: `uss check` -> exit 0; `uss report --out "docs/Zoë 漢字 😀/Zoë 漢字 😀.md"` -> exit 0, the file exists, and the string appears twice in it as the bytes 5a 6f c3 ab 20 e6 bc a2 e5 ad 97 20 f0 9f 98 80, the same as the input; `uss check` on a record with the string as a fact name printed it with the same bytes.'
+  USS-I18N-002:
+    result: fail
+    evidence: 'No resource file holds the text that the command line prints: messages are literals in the code, for example tools/uss/src/cli/files.rs:116 "cannot read the record", cli/mod.rs:193 "export: only --json is supported", cli/mod.rs:246 the `uss show` message and evaluate/check.rs:103 "decision for {id}, which does not apply"; the help text is in doc comments (cli/mod.rs:26-99). Only the report text is apart from the code, in templates/audit-report.md.j2.'
+  USS-IND-004:
+    result: pass
+    evidence: 'The documented features need no commercial product: uss needs the Rust toolchain (MIT or Apache-2.0) to build and git (GPL-2.0) for release-check (tools/uss/src/cli/git.rs:19-34). The Claude plugin, which needs Claude Code, is optional: README.md:21-31 says to tell any agent to follow the workflow in AGENTS.md, and the workflows are plain text that any agent reads. The GitHub Actions template (templates/ci/uss-release.yml) is an optional integration.'
+  USS-LIC-001:
+    result: pass
+    evidence: 'LICENSE:1-21 holds the MIT licence text; Cargo.toml:9 license = "MIT" (a valid SPDX expression), which tools/uss/Cargo.toml:6 and tools/xtask/Cargo.toml:6 inherit (license.workspace = true); .claude-plugin/plugin.json:8 "license": "MIT".'
+  USS-LIC-002:
+    result: pass
+    evidence: 'The only licence is MIT (LICENSE:1, Cargo.toml:9, .claude-plugin/plugin.json:8), which the Open Source Initiative has approved.'
+  USS-LIC-003:
+    result: pass
+    evidence: 'deny.toml:5-7 is the written policy: it allows MIT, Apache-2.0, Unicode-3.0, MIT-0, BSD-3-Clause and Zlib, all permissive and compatible with releasing uss under MIT. CI runs `cargo-deny check` on every crate of the graph, direct and transitive, on each pull request and push (tools/xtask/src/main.rs:123, :190-191), and it denies a licence that the list does not allow and an unlicensed crate. The run on main (45650698265 at f414a61, same allow list) printed "advisories ok, bans ok, licenses ok, sources ok" on all 3 OSes, and so did `cargo xtask check` on 0adeb2b.'
+  USS-LIC-004:
+    result: pass
+    evidence: 'no release yet: no release artifact is published (`gh api -X GET repos/HaleTechCo/Universal-Software-Standard/releases` -> []), so no artifact lacks its notices. The uss binary embeds no notices file for its dependencies yet (tools/uss/build.rs embeds standard/, schema/, templates/, AGENTS.md and CHANGELOG.md).'
   USS-OBS-002:
     result: fail
     evidence: 'No setting sets a log level: docs/cli.md:12-20 says uss reads no environment variable or configuration file and lists the options, none for logging; the Cli and Command definitions (tools/uss/src/cli/mod.rs:33-99) have no log-level option.'
   USS-PRF-001:
     result: fail
-    evidence: 'No written performance budget: no document or configuration outside standard/ names a start-up time or other measure with a limit (`git grep -i -E ''budget|benchmark|startup time''` finds only the rule-count budget in tools/uss/src/evaluate/mod.rs:115).'
+    evidence: 'No written performance budget: no document or configuration outside standard/ names a start-up time or other measure with a limit. `git grep -n -i -E ''budget|benchmark|startup time'' 0adeb2b -- . '':!standard/''` matches tools/uss/src/evaluate/mod.rs:115, :119 and :143 (the rule-count floor budget of spec section 6.4, not a performance measure), Initial_Idea.md:111 (CIS benchmarks) and planning text in docs/superpowers/plans/ and docs/superpowers/specs/; none is a performance budget.'
   USS-PRF-002:
     result: pass
     evidence: 'The project has budgeted no measure (USS-PRF-001 fails), so no budgeted measure is without a CI job; .github/workflows/ci.yml:11-28 has no benchmark job. This pass follows the Verify text, which has nothing to judge when there is no budget.'
   USS-PRF-005:
     result: pass
     evidence: 'uss has no idle state: each command runs to completion and exits (`target/debug/uss.exe check .uss/record.yaml` exits 0 after 158 ms; `uss` with no arguments prints help and exits 2 after 22 ms), so no process stays at rest. Code search for loops: catalog/markdown.rs:260, catalog/mod.rs:543, evaluate/facts.rs:32, expr.rs:177 and :186, source.rs:47, cli/mod.rs:1630 and :1638 (test code); each consumes input or stops at a fixed point, none polls a condition.'
+  USS-QLT-001:
+    result: fail
+    evidence: 'CI runs Clippy on the Rust code on each pull request and push to main (.github/workflows/ci.yml:3-6; tools/xtask/src/main.rs:136-150, with -D warnings) and fails on any finding; the run on main (45650698265) reported none. But .githooks/pre-commit:1-6 is POSIX shell code, and no linter or static analyser for shell runs in CI (the only job runs the steps in tools/xtask/src/main.rs:127-213).'
+  USS-QLT-002:
+    result: pass
+    evidence: 'No rustfmt.toml exists, so the documented defaults of rustfmt set the format, and the contributor documentation names the formatter (CONTRIBUTING.md:20; .githooks/pre-commit:5 `cargo fmt --all --check`). CI runs `cargo fmt --all --check` (tools/xtask/src/main.rs:134-135), which exits non-zero when it would change a file, and that fails the job (main.rs:83-87).'
+  USS-QLT-003:
+    result: fail
+    evidence: 'rustc and Clippy warnings are errors: `cargo clippy --locked --workspace --all-targets --all-features -- -D warnings` and the wasm32 Clippy step (tools/xtask/src/main.rs:136-174) check all code that the build and test steps compile. But the clean CI build on main (run 45650698265; job logs read with `gh api -X GET .../actions/jobs/<id>/logs`) prints warnings that fail nothing, on all 3 OSes: Cargo''s "warning: be sure to add `.../.tools/bin` to your PATH to be able to run the installed binaries" (from `cargo install` of cargo-deny, main.rs:109-121), rustup''s "warning: default toolchain implicitly overridden with `1.100.0-...` by rustup toolchain file", and cargo-deny''s "warning[duplicate]: found 2 duplicate entries for crate ''syn''" (deny.toml:11 multiple-versions = "warn").'
+  USS-QLT-004:
+    result: pass
+    evidence: 'The compiler''s unused lints (dead_code, unused_imports, unused_variables, unreachable_code) are warn by default (`clippy-driver -W help`: dead-code warn), and CI denies warnings (tools/xtask/src/main.rs:146-148); Clippy reports none on 0adeb2b or on main. `git grep -n -E ''^\s*//[^/!]'' 0adeb2b -- tools/` finds 31 plain comments, all prose; none parses as a statement or a declaration. The only block comments are inside test strings (tools/uss/src/cli/mod.rs:1317, :1391).'
+  USS-QLT-005:
+    result: fail
+    evidence: 'Ten lines of production code assign the result of writing an error message to stderr to the discard name, with no comment that says why ignoring it is safe: tools/uss/src/cli/mod.rs:180, :184, :193, :210, :244, :379, :393, :403, :533 and :544 (`let _ = writeln!(err, ...)`). Also tools/uss/src/cli/files.rs:32-35 drops the error of read_dir and of each directory entry with no comment. clippy::let_underscore_must_use, which reports the first form, is not on (see USS-QLT-006).'
+  USS-QLT-006:
+    result: fail
+    evidence: 'Clippy: Cargo.toml:13-24 leaves out six lints of the profile baseline (standard/vendors/rust-lang/clippy.md:30-51): dbg_macro, let_underscore_must_use, todo, undocumented_unsafe_blocks, unimplemented and unused_result_ok, which stay at their default level, allow (`clippy-driver -W help`); unfulfilled_lint_expectations and unused are left out too, but they are warn by default and CI denies warnings. cargo-deny: deny.toml:1-15 leaves out the baseline settings of standard/vendors/embarkstudios/cargo-deny.md:32-55 db-urls, unmaintained = "all" (default workspace, cargo-deny-0.22.0 src/advisories/cfg.rs:288), unused-ignored-advisory = "deny" (default warn, :296), unused-license-exception = "deny" (default warn, src/licenses/cfg.rs:244) and required-git-spec = "rev" (default none, src/sources/cfg.rs:123).'
+  USS-QLT-007:
+    result: pass
+    evidence: 'No rule is turned off for the whole project: Cargo.toml:13-24 sets no lint to allow; clippy.toml:1-3 relaxes unwrap_used, expect_used and panic in tests only (listed under suppressions); deny.toml:1-15 has no ignore list, and multiple-versions = "warn" (:11) lowers a check without turning it off.'
   USS-QLT-008:
     result: pass
     evidence: 'No security rule is off for the whole project: Cargo.toml:13-24 turns no lint off; clippy.toml:1-3 relaxes clippy::unwrap_used, expect_used and panic only in tests, and Clippy has no security group; deny.toml:1-3 keeps the advisories check on with no ignore.'
+  USS-QLT-009:
+    result: pass
+    evidence: 'The only inline suppressions are four #[expect] attributes, each naming one lint with reason = "...": tools/uss/src/catalog/profiles.rs:477-480, catalog/registry.rs:20-23, catalog/rules.rs:531-534 and evaluate/check.rs:223. `git grep -n -E ''#!?\[(allow|expect|warn|deny|forbid)\(|#!\[|cfg_attr\(.*(allow|expect)|rustfmt::skip|clippy::'' 0adeb2b -- tools/` finds no other (the other matches are test strings in record/mod.rs:355-357). Cargo.toml:23-24 denies allow_attributes and allow_attributes_without_reason. No other tool has an inline suppression (no noqa, shellcheck, nolint or eslint-disable directive outside standard/ and the planning documents).'
+  USS-QLT-010:
+    result: pass
+    evidence: 'No suppression covers all rules or a whole file: no inner attribute (#![...]) exists in tools/ (same search as USS-QLT-009), and each of the four #[expect] attributes names one lint and covers one item.'
+  USS-QLT-011:
+    result: pass
+    evidence: 'Rust offers #[expect]; all four suppressions use it (see USS-QLT-009), and none uses #[allow]; Cargo.toml:23 allow_attributes = "deny" rejects #[allow].'
+  USS-QLT-012:
+    result: pass
+    evidence: 'unfulfilled_lint_expectations (warn by default, `clippy-driver -W help`) reports an #[expect] that suppresses nothing, and CI turns warnings into errors (tools/xtask/src/main.rs:146-148 and :170-172, -D warnings), so a stale #[expect] fails the build. The clippy.toml settings are configuration, not inline suppressions.'
+  USS-QLT-013:
+    result: pass
+    evidence: 'No test is skipped or disabled: no #[ignore] in tools/. Two tests return early when git is not installed (tools/uss/src/cli/mod.rs:1194-1197 new_repo, :1420-1423), a condition of the machine, not a disabled test; they run in CI, where git is installed.'
+  USS-QLT-014:
+    result: pass
+    evidence: 'The project measures no coverage and excludes nothing: no coverage tool runs in CI (tools/xtask/src/main.rs:127-213), and `git grep -n -i -E ''coverage|no_coverage|tarpaulin|llvm-cov|codecov''` in tools/, .github/, Cargo.toml and .cargo/ finds only the Coverage column of the vendor profiles in the catalog code, no exclusion.'
+  USS-REL-001:
+    result: fail
+    evidence: 'The documentation does not define the public API of uss: standard/conventions.md:553-575 applies SemVer to the standard and names the conventions, rule format, record format and compliance definition, but no document says that the commands, options and exit codes of the command line (docs/cli.md) or the format of the audit results are part of what a user can depend on. No release exists yet (`gh api -X GET repos/HaleTechCo/Universal-Software-Standard/releases` -> []), so no version is compared.'
+  USS-REL-002:
+    result: pass
+    evidence: 'no release yet: `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/releases` -> [] and `git ls-remote --tags origin` prints nothing, so no release lacks a tag.'
+  USS-REL-003:
+    result: pass
+    evidence: 'no release yet: no release artifact exists to rebuild (`gh api -X GET repos/HaleTechCo/Universal-Software-Standard/releases` -> []). No document gives rebuild steps yet.'
+  USS-REL-004:
+    result: pass
+    evidence: 'SECURITY.md:31-39: the latest 0.x release gets fixes and security fixes until the next release is published (a rule that gives a date); earlier releases get neither (ended).'
+  USS-REL-005:
+    result: pass
+    evidence: 'no release yet: CHANGELOG.md:1 is "# Changelog", the only line of the file, and no release tag exists (`git ls-remote --tags origin` prints nothing), so no release lacks an entry and no entry departs from Common Changelog.'
+  USS-REL-006:
+    result: pass
+    evidence: 'no release yet: CHANGELOG.md has no entry (CHANGELOG.md:1 is its only line), so no security fix lacks an advisory ID.'
+  USS-REL-007:
+    result: pass
+    evidence: 'no release yet: CHANGELOG.md has no entry and `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/releases` -> [], so no release contains a breaking change.'
+  USS-REL-008:
+    result: pass
+    evidence: 'no release yet: no release with a breaking change exists (`gh api -X GET repos/HaleTechCo/Universal-Software-Standard/releases` -> []; CHANGELOG.md has no entry).'
+  USS-REL-009:
+    result: pass
+    evidence: 'no release yet: CHANGELOG.md has no entry, so no release removed a feature.'
+  USS-REL-010:
+    result: pass
+    evidence: 'no release yet: no release holds a breaking change (CHANGELOG.md has no entry; `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/releases` -> []).'
+  USS-REL-011:
+    result: pass
+    evidence: 'no release yet: no release commit exists (`gh api -X GET repos/HaleTechCo/Universal-Software-Standard/releases` -> [], no tag), so `uss release-check` has no release to examine.'
+  USS-REL-012:
+    result: pass
+    evidence: 'no release yet: `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/releases` -> [], so no release lacks the report.'
+  USS-RUST-001:
+    result: fail
+    evidence: 'CI runs `cargo clippy --locked --workspace --all-targets --all-features -- -D warnings` (tools/xtask/src/main.rs:136-150) and fails on a non-zero status (main.rs:83-87); the run on main (45650698265) had no finding. But six lints of the Clippy profile baseline (standard/vendors/rust-lang/clippy.md:37-50) stay at allow: dbg_macro, let_underscore_must_use, todo, undocumented_unsafe_blocks, unimplemented and unused_result_ok. Cargo.toml:17-24 does not set them, no rustflags or crate attribute sets them, and `clippy-driver -W help` gives allow as their default.'
+  USS-RUST-002:
+    result: pass
+    evidence: 'CI runs `cargo fmt --all --check` (tools/xtask/src/main.rs:134-135) in the check job (.github/workflows/ci.yml:28), and a non-zero status fails the job (main.rs:83-87, :220-225).'
   USS-RUST-003:
     result: pass
     evidence: 'Cargo.toml:13-14 [workspace.lints.rust] unsafe_code = "forbid"; both crates inherit it with [lints] workspace = true (tools/uss/Cargo.toml:28-29, tools/xtask/Cargo.toml:10-11).'
@@ -93,7 +321,7 @@ results:
     evidence: 'No secret scanner runs in CI: .github/workflows/ci.yml:11-28 has one job, `cargo xtask check`, whose steps are fmt, clippy, test, wasm32 clippy and build, cargo-deny, uss lint and uss check (tools/xtask/src/main.rs:127-213).'
   USS-SEC-009:
     result: fail
-    evidence: 'Records and results are checked against schema/record.schema.json and schema/audit-results.schema.json (types, enums, patterns for IDs, dates, versions and the SHA, additionalProperties false), and paths must be plain names (tools/uss/src/cli/files.rs:73-85); but no length is validated: neither schema sets a maxLength (project.name, deviations[].document and approved-by, audits[].results and report, components, auditor, evidence, suppressions), and the files are read whole with no size limit (cli/files.rs:117, cli/mod.rs:348).'
+    evidence: 'Records and results are checked against schema/record.schema.json and schema/audit-results.schema.json (types, enums, patterns for IDs, dates, versions and the SHA, additionalProperties false), and paths must be plain names (tools/uss/src/cli/files.rs:73-85); but no length is validated: neither schema sets a maxLength (project.name, deviations[].document and approved-by, audits[].results and report, components, auditor, evidence, suppressions), and the files are read whole with no size limit (cli/files.rs:116, cli/mod.rs:348). serde-saphyr''s default parse budget (max_depth 64, max_nodes 250 000, max_total_scalar_bytes 64 MiB; serde-saphyr-2.2.0 src/de/budget.rs:292-296, applied through tools/uss/src/yaml.rs:19) is a library-wide ceiling, not a length check per field.'
   USS-SEC-010:
     result: pass
     evidence: 'No shell is called: git runs as Command::new("git") with an argument array (tools/uss/src/cli/git.rs:19-34), and the SHA it passes is schema-checked as 40 hex digits; xtask starts programs with argument arrays (tools/xtask/src/main.rs:64-88).'
@@ -135,10 +363,10 @@ results:
     evidence: 'Rust 1.100.0 is the current stable (`rustup check`: stable 1.100.0, 2026-11-09). cargo-deny 0.22.0 is the release before the latest, 0.22.1 (`gh api -X GET repos/EmbarkStudios/cargo-deny/releases`: 0.22.1 2026-11-24, 0.22.0 2026-11-19, one release line, no backports), so it counts as supported. CI runs on GitHub''s ubuntu-latest, windows-latest and macos-latest images (.github/workflows/ci.yml:17).'
   USS-SUP-007:
     result: fail
-    evidence: 'The default branch is not protected: `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/branches/main/protection`, `.../rulesets` and `.../rules/branches/main` -> HTTP 403 ''Upgrade to GitHub Pro or make this repository public to enable this feature'' (private repository, organisation plan free; the token has admin access), so no rule can block force-pushes or deletion; no release tag exists.'
+    evidence: 'The default branch is not protected: `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/branches/main` -> protected: false, protection.enabled: false, protection.required_status_checks.enforcement_level: off. `.../branches/main/protection`, `.../rulesets` and `.../rules/branches/main` -> HTTP 403 ''Upgrade to GitHub Pro or make this repository public to enable this feature'' (private repository, organisation plan free; the token has admin access), so no rule blocks force-pushes or deletion; no release tag exists.'
   USS-SUP-008:
     result: fail
-    evidence: 'No required checks: branch protection and rulesets are unavailable for this private repository on the free plan (`gh api -X GET .../branches/main/protection` and `.../rulesets` -> HTTP 403 ''Upgrade to GitHub Pro or make this repository public to enable this feature''), so a change can merge without CI.'
+    evidence: 'No required checks: `gh api -X GET repos/HaleTechCo/Universal-Software-Standard/branches/main` -> protected: false, protection.enabled: false, protection.required_status_checks: enforcement_level off, contexts [], checks []. Branch protection and rulesets are unavailable for this private repository on the free plan (`.../branches/main/protection` and `.../rulesets` -> HTTP 403 ''Upgrade to GitHub Pro or make this repository public to enable this feature''), so a change can merge without CI.'
   USS-SUP-010:
     result: pass
     evidence: '.github/workflows/ci.yml:8-9 sets permissions: contents: read at the top level and the check job asks for no more; `gh api -X GET .../actions/permissions/workflow` -> HTTP 200 default_workflow_permissions: read.'
@@ -181,9 +409,39 @@ results:
   USS-TST-012:
     result: fail
     evidence: 'The parsers of untrusted input (records and results: tools/uss/src/record/mod.rs, record/results.rs, yaml.rs) have no fuzz target: there is no fuzz/ directory or cargo-fuzz target, and CI runs no fuzzing (.github/workflows/ci.yml:11-28).'
+  USS-UX-001:
+    result: fail
+    evidence: 'Several messages say what went wrong but give no next step: `uss check missing.yaml` -> "missing.yaml: cannot read the record: The system cannot find the file specified. (os error 2)" (tools/uss/src/cli/files.rs:116); `uss report --out <missing dir>/report.md <results>` -> "...: cannot write the report: The system cannot find the path specified. (os error 3)" (cli/mod.rs:403); `uss check` problems such as "decision for USS-DST-001, which does not apply" (evaluate/check.rs:103) and "unknown fact "has-clii"" name the item but give no fix. Some messages do give one (the version mismatch, the `uss show` message at cli/mod.rs:246, and the "For more information, try ''--help''" of clap).'
+  USS-UX-002:
+    result: fail
+    evidence: '`uss report` overwrites an existing file at once, with no confirmation, no --force option and no undo (tools/uss/src/cli/mod.rs:397-401 calls std::fs::write with no check): `uss report --out keep.txt .uss/audits/2026-11-25.yaml` replaced a user file keep.txt (exit 0); `uss report --out .uss/audits/victim.yaml .uss/audits/victim.yaml` replaced the results file itself with the report (exit 0); with no --out, it replaced a hand-written .uss/audits/2026-11-25.md.'
+  USS-UX-003:
+    result: pass
+    evidence: 'docs/cli.md:14-17: uss reads no environment variable and no configuration file, and each setting is an option. In the fresh clone of 0adeb2b, with no flags, the first task of README.md:33-38, `uss applicable .uss/record.yaml` (run as `cargo run --locked -q -p uss -- applicable .uss/record.yaml`), exited 0 and listed the rules; the record is the input of the task, not a setting. The install step (`cargo install`) was not run, because this audit installs nothing.'
+  USS-UX-005:
+    result: pass
+    evidence: 'uss creates no configuration, data, cache or state file: its only file writes are the report files that the user names or that come from the results path (tools/uss/src/cli/mod.rs:401, :543), and no production code reads a home, profile, XDG or Known Folder location. On Windows 11, a listing of %USERPROFILE%, %APPDATA% and %LOCALAPPDATA% two levels deep before and after a run of 30 uss commands showed no change (2155 entries each). Linux and macOS were not run; the code has no path that differs by platform.'
+  USS-UX-006:
+    result: fail
+    evidence: 'Checked against the Command Line Interface Guidelines (clig.dev, read 2026-11-25) for the features that uss has. It contradicts "Use standard names for flags, if there is a standard" (-o, --output: Output file): the output option is --out, with no -o (tools/uss/src/cli/mod.rs:83, :94). It contradicts "If input or output is a file, support - to read from stdin or write to stdout": `uss check -` -> "-: cannot read the record: The system cannot find the file specified. (os error 2)", and `uss report --out - <results>` wrote a file named "-". `uss --help` gives no support path or link to the documentation ("Provide a support path for feedback and issues").'
+  USS-UX-007:
+    result: pass
+    evidence: '`uss --help` -> exit 0, 895 bytes of usage on stdout; `uss --version` -> exit 0, "uss 0.1.0"; -h and -V give the same.'
+  USS-UX-008:
+    result: pass
+    evidence: 'docs/cli.md:22-30 lists 0 (success), 1 (problems found, or a file cannot be read or written) and 2 (wrong command line, or the output cannot be written). Runs: `uss check .uss/record.yaml` -> 0; `uss check` on a record with an unknown fact -> 1; `uss check missing.yaml` -> 1; `uss report --out <missing dir>/report.md <results>` -> 1; `uss bogus`, `uss applicable` with no record, `uss applicable --bogus` and `uss export` with no --json -> 2; `uss export --json` into a pipe closed after 10 bytes -> 2.'
+  USS-UX-009:
+    result: fail
+    evidence: 'Commands that print data and have no machine-readable option: `uss show` with no PATH prints the list of files (tools/uss/src/cli/mod.rs:229), `uss check` and `uss lint` print lists of problems, and `uss report` prints the statement and the scores. Only `uss applicable` and `uss export` have --json (cli/mod.rs:53, :69); their output parses with Python json.load (a list of 145 items; an object with version, categories, facts, rules and profiles).'
+  USS-UX-010:
+    result: pass
+    evidence: 'No command prints ANSI colour. With colour forced on (CLICOLOR_FORCE=1), 15 commands (help, errors, version, lint, applicable, check, show, export, release-check) printed 0 ESC bytes with NO_COLOR unset, set to 1 and set empty. uss writes the help and errors of clap through e.render().to_string() (tools/uss/src/cli/mod.rs:606), which is plain text, and no other code writes an escape code. Not run in a pseudo-terminal: this Windows machine has no tool for one.'
+  USS-UX-011:
+    result: fail
+    evidence: '`uss report` writes the problems that stop it to standard output: with a record that has problems, `uss report --record .uss/record-badfact.yaml --out r1.md .uss/audits/2026-11-25.yaml` -> exit 1, 8 problem lines on stdout, stderr empty (tools/uss/src/cli/mod.rs:372); with a result for a rule that does not apply -> exit 1, ".uss/audits/extra.yaml: USS-DAT-001: rule does not apply to this project" on stdout, stderr empty (cli/mod.rs:386). The other commands keep them apart: errors such as "cannot read the record" go to stderr (cli/mod.rs:180), and `uss check` prints its findings, which are its result, on stdout.'
 suppressions:
   - file: tools/uss/src/catalog/profiles.rs
-    line: 476
+    line: 477
     rule: 'clippy::too_many_lines'
     reason: 'one table row per check keeps every pinned message in one place'
   - file: tools/uss/src/catalog/registry.rs

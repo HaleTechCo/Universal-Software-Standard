@@ -144,7 +144,10 @@ deviations: []
 #   - date: YYYY-MM-DD
 #     results: .uss/audits/YYYY-MM-DD.yaml
 #     report: .uss/audits/YYYY-MM-DD.md
-audits: []
+audits:
+  - date: 2026-11-25
+    results: .uss/audits/2026-11-25.yaml
+    report: .uss/audits/2026-11-25.md
 
 # The directories of child components, relative to the project root. Each
 # one has its own .uss/record.yaml. Example: [libs/core, cli]
