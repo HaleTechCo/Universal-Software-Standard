@@ -736,6 +736,11 @@ The header comes after the `#` title and has these fields, and no other:
 | Prefix | only when the profile has rules | The prefix of the profile's rules (section 2). |
 | Applies when | only when the profile has rules | A condition for the profile's rules (section 5). |
 
+A project may use a tool version outside the profile's `Versions`. The auditor
+then checks that each tool rule or setting that the baseline and the mappings
+name exists in that version. A mapping whose tool rule does not exist there
+gives no evidence for its rule.
+
 The profile has these `##` sections, and no other:
 
 1. `## Baseline configuration`: exactly one fenced code block that holds the

@@ -136,14 +136,20 @@ build.
   images that the project builds with or runs on (from the version files,
   Dockerfiles and CI configuration) all still receive security fixes from their
   supplier at the audit date, as the supplier's support policy or release
-  history shows. Where neither shows it, the auditor records `unverified`.
+  history shows. Where the supplier gives security fixes only in its latest
+  release (such as Rust), the release before the latest also counts as
+  supported. Where neither shows it, the auditor records `unverified`.
 - **References:** The supplier's support policy for each platform; CWE-1104
 
 The project MUST NOT build with or run on a runtime, compiler, build tool or
-base image that its supplier no longer supports with security fixes.
+base image that its supplier no longer supports with security fixes. Where the
+supplier gives security fixes only in its latest release (such as Rust), the
+release before the latest counts as supported.
 
 **Rationale:** A flaw found in an unsupported platform is not fixed, so every
-project that uses it keeps the flaw.
+project that uses it keeps the flaw. The allowance for the release before the
+latest is a USS addition: it gives a project about one release cycle to update
+a pin.
 
 ## Source and CI protection
 

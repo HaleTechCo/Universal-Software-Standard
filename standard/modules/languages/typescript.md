@@ -44,7 +44,9 @@ type-aware rule set that covers correctness, style and imports.
 **Rationale:** The three groups find different defects, and the rules that
 read types find the ones that syntax alone cannot show, such as a promise that
 nobody awaits. A rule set that leaves one group out lets that kind of defect
-through, however clean the report is.
+through, however clean the report is. A project on a TypeScript major that
+the type-aware linter does not support needs a type-aware linter that supports
+that major.
 
 ### USS-TS-002: Lint with ESLint and typescript-eslint
 
@@ -180,17 +182,26 @@ project gets, with no change of language.
   pinned to one exact version with three numbers: the `packageManager` field
   of `package.json` (`name@version`, such as `pnpm@12.23.0`, with an optional
   hash after the version), or `devEngines.packageManager` with an exact
-  `version`. A range, or a version with no patch number, fails.
+  `version`. A range, or a version with no patch number, fails. The CI
+  configuration installs the pinned Node.js release and package manager, for
+  example with `actions/setup-node` reading the version file through
+  `node-version-file`, and Corepack (or the package manager's own setup)
+  reading `packageManager`. A CI job that takes whichever version the runner
+  has fails.
 - **References:** npm Docs, package.json: `devEngines` (npm 11.20.0, read
   2026-11-24); pnpm Docs, package.json: `packageManager` and
-  `devEngines` (read 2026-11-24); Corepack README (read 2026-11-24)
+  `devEngines` (read 2026-11-24); Corepack README (read 2026-11-24, read again
+  2026-11-25); actions/setup-node, Advanced usage, Node version file (read
+  2026-11-25)
 
 The repository MUST pin the exact Node.js release and the package manager's
-version, such as in the `packageManager` field.
+version, such as in the `packageManager` field, and CI MUST install those
+versions.
 
 **Rationale:** Node.js and the package manager differ in behaviour and in
 security fixes from release to release, so a build that takes whichever
-version is installed is not repeatable. Corepack, which reads the
+version is installed is not repeatable, and a pin that CI ignores pins
+nothing. Corepack, which reads the
 `packageManager` field, is not bundled with Node.js 25 and later, so the
 project's CI installs it or uses a package manager that reads the field
 itself.

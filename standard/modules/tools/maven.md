@@ -103,7 +103,7 @@ rule keeps a project from switching that off.
 
 ## Dependencies
 
-### USS-MVN-004: Pin release versions
+### USS-MVN-004: Bound each dependency version
 
 - **Level:** MUST
 - **Applies when:** has-dependencies
@@ -227,7 +227,9 @@ into a failed build before the code runs.
   declares and the code does not use. `skip` is not `true`.
 - **References:** Apache Maven Dependency Plugin 3.11.0, `analyze` goal (read
   2026-11-24); Apache Maven Dependency Plugin 3.11.0, `analyze-only` goal (read
-  2026-11-24); Apache Maven 3.10.2, Command-Line Options (read 2026-11-24)
+  2026-11-24); Apache Maven 3.10.2, Command-Line Options (read 2026-11-24);
+  Apache Maven Dependency Plugin 3.11.0, `analyze` goal, parameter
+  `ignoredUnusedDeclaredDependencies` (read 2026-11-25)
 
 CI MUST run `dependency:analyze` with `failOnWarning` on.
 
@@ -235,7 +237,11 @@ CI MUST run `dependency:analyze` with `failOnWarning` on.
 dependency that the code uses and no POM declares, which only works while
 another dependency happens to bring it in, and a declared dependency that
 nothing uses, which adds code to build, scan and update. It reads bytecode, so
-a dependency that the program loads by reflection can show as unused.
+a dependency that the program loads by reflection can show as unused. A
+project that keeps a dependency that the analysis reports as unused (because
+it deviates from USS-DEP-013, or because the program loads the dependency by
+reflection) lists it in `ignoredUnusedDeclaredDependencies`, with a reason
+(USS-QLT-007).
 
 ### USS-MVN-008: Scope non-runtime dependencies
 

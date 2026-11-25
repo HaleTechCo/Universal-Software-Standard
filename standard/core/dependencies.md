@@ -41,9 +41,11 @@ the Supply chain area.
   that admits at most one major version (an exact version, or a range that
   stops before the next major version). A requirement that is `*`, `latest`,
   a branch name, or a lower bound with no upper bound (an unbounded `>=`) is a
-  failure. Where the ecosystem has a default range syntax, a requirement is
-  read by the ecosystem's rules: for example `1.2` in Cargo means
-  `>=1.2.0, <2.0.0`, and `~=1.2` in Python means `>=1.2, ==1.*`.
+  failure. A peer dependency range (npm `peerDependencies`, or the same field
+  of another ecosystem) may admit several major versions, such as
+  `^18 || ^19`, if it has an upper bound. Where the ecosystem has a default
+  range syntax, a requirement is read by the ecosystem's rules: for example
+  `1.2` in Cargo means `>=1.2.0, <2.0.0`, and `~=1.2` in Python means `>=1.2, ==1.*`.
 - **References:** The Cargo Book, Specifying Dependencies (read 2026-11-23);
   Python Packaging User Guide, Version specifiers (read 2026-11-23),
   Compatible release; Apache Maven Enforcer, Version Ranges (read 2026-11-23)
@@ -51,12 +53,14 @@ the Supply chain area.
 Every dependency in every manifest MUST be limited to a bounded range no wider
 than one major version (a "soft pin"), and never `*`, `latest`, a branch or an
 unbounded `>=`. Examples of such a range are `1.2` in Cargo, `^1.2.0` in npm,
-`~=1.2` in Python and `[1.2,2.0)` in Maven.
+`~=1.2` in Python and `[1.2,2.0)` in Maven. A peer dependency range may admit
+several major versions, such as `^18 || ^19`, if it has an upper bound.
 
 **Rationale:** A range with no upper bound accepts a new major version, which
 can break the build or bring in changed or hostile code without any change to
 the project. A bounded range keeps updates within the versions that the
-project expects.
+project expects. A peer dependency range may span several majors, because a
+library can support several majors of its host.
 
 ### USS-DEP-002: Commit a lockfile
 
