@@ -8,33 +8,40 @@
 
 OpenSSF Scorecard scores the practices of a repository, not its code. Each of
 its checks (such as Pinned-Dependencies, Branch-Protection and
-Token-Permissions) gives a score from 0 to 10, mostly from the repository
-host's API and from the files in the repository. No module recommends it: the
-specification names it (section 6.6), and the Supply chain rules cite its
-checks as evidence. The checks and scores that the mappings name are those of
-Scorecard 5.7.0, from its check documentation (`docs/checks.md`) and its
-source, and the action's inputs are those of `ossf/scorecard-action` 2.6.0
-(README and `action.yaml`), all read 2026-11-24. The baseline below runs the
-Scorecard GitHub Action, pinned by commit (USS-SUP-003), on pushes to the
-default branch and on a weekly schedule, and publishes the results. Put it in
-`.github/workflows/scorecard.yml`, and set `branches` to the default branch.
+Token-Permissions) gives a score from 0 to 10, mostly from the repository host's
+API and from the files in the repository. No module recommends it: the
+specification names it (section 6.6), and the Supply chain rules cite its checks
+as evidence. The checks and scores that the mappings name are those of Scorecard
+5.7.0, from its check documentation (`docs/checks.md`) and its source, and the
+action's inputs are those of `ossf/scorecard-action` 2.6.0 (README and
+`action.yaml`), all read 2026-11-24. The baseline below runs the Scorecard
+GitHub Action, pinned by commit (USS-SUP-003), on pushes to the default branch
+and on a weekly schedule, and publishes the results. Put it in
+`.github/workflows/scorecard.yml`, and set `branches` to the default branch. The
+baseline has no `branch_protection_rule` trigger, which the action's example has
+for the Branch-Protection check: a change to branch protection is then scored at
+the next push or weekly run. The action's README lists only `push` and
+`schedule` as supported triggers, so the baseline keeps to those.
 
-A check supports a mapped rule only at the score that its mapping row names;
-a lower score leaves the rule to be judged as the rule says. A score is also
-only as good as what the check can see, so each row says what the check does
-not see. Scorecard is not a gate: the action has no input that fails the job
-on a low score, so the score is read in the viewer
+A check supports a mapped rule only at the score that its mapping row names; a
+lower score leaves the rule to be judged as the rule says. A score is also only
+as good as what the check can see, so each row says what the check does not see.
+Pinned-Dependencies also counts download-then-run findings (such as `curl |
+sh`), which lower the score that the USS-SUP-003, USS-SUP-004, USS-DEP-003 and
+USS-TS-010 rows read; USS-SUP-005 has no row, because the check never sees a
+checksum. Scorecard is not a gate: the action has no input that fails the job on
+a low score, so the score is read in the viewer
 (`https://scorecard.dev/viewer/?uri=github.com/<owner>/<repo>`, which needs
 `publish_results: true`) or in the SARIF file in code scanning. Several checks
 read GitHub only (the documentation says so for Pinned-Dependencies,
-Token-Permissions, SAST, CI-Tests and Signed-Releases), so a project on
-another host judges the rules below as they say. Scorecard reads Repository
-Rules with the default token, and classic branch protection only with the
-extra token permissions that the action's authentication document describes
-(`repo_token`). A private repository adds the read permissions that the
-action's README lists. The checks Binary-Artifacts, CII-Best-Practices,
-Contributors, Maintained, Packaging and Webhooks have no row, because none of
-them tests what a USS rule requires.
+Token-Permissions, SAST, CI-Tests and Signed-Releases), so a project on another
+host judges the rules below as they say. Scorecard reads Repository Rules with
+the default token, and classic branch protection only with the extra token
+permissions that the action's authentication document describes (`repo_token`).
+A private repository adds the read permissions that the action's README lists.
+The checks Binary-Artifacts, CII-Best-Practices, Contributors, Maintained,
+Packaging and Webhooks have no row, because none of them tests what a USS rule
+requires.
 
 Community-maintained: written by USS contributors until the vendor takes it
 over.
@@ -96,7 +103,7 @@ jobs:
 
 | Rule | Category | Tool rules or settings | Coverage | How to verify |
 |---|---|---|---|---|
-| USS-DEP-003 | Safety | Pinned-Dependencies at 10 (probe `pinsDependencies`, dependency types `npmCommand` and `pipCommand`: it reports `npm install` and `npm update`, and a `pip install` without `--require-hashes`, and it accepts `npm ci` and `pip install --require-hashes`) | partial: the check reads npm and pip commands only, in workflows, shell scripts and Dockerfiles, so a pnpm, Yarn, Bun, uv, Cargo, Go or Maven install is not seen; it does not show that CI fails when a pip lockfile is out of date; its score also counts every other dependency type, so a score under 10 can come from them | Read the Pinned-Dependencies score and its findings for npm and pip commands in the viewer, and expect no such finding; judge each install step that the check does not read as the rule says. |
+| USS-DEP-003 | Safety | Pinned-Dependencies at 10 (probe `pinsDependencies`, dependency types `npmCommand` and `pipCommand`: it reports `npm install` and `npm update`, and a `pip install` without `--require-hashes`, and it accepts `npm ci` and `pip install --require-hashes`) | partial: the check reads npm, pip and Go commands, in workflows, shell scripts and Dockerfiles, so a pnpm, Yarn, Bun, uv, Cargo or Maven install is not seen; for `go get` and `go install` it reports a package that has no commit hash or full semantic version (`@latest` or no version), and it accepts one with a full version, which is a pinned version and not an install from `go.sum`, so it does not show a lockfile install; it does not show that CI fails when a pip lockfile is out of date; its score also counts every other dependency type, so a score under 10 can come from them | Read the Pinned-Dependencies score and its findings for npm, pip and Go commands in the viewer, and expect no such finding; judge each install step that the check does not read as the rule says. |
 | USS-DEP-007 | Safety | Vulnerabilities at 10 (probe `hasOSVVulnerabilities`: Scorecard scans the repository recursively, and its commit, with the OSV-Scanner library and reports each open vulnerability that OSV knows, and the score is 10 minus their number) | partial: the baseline workflow scans on pushes to the default branch and weekly, not on each pull request; the check does not show that vendored code is covered through the record of USS-DEP-010, and it reads Python `requirements.txt` files without their transitive dependencies; a finding does not fail the job | Read the Vulnerabilities score in the viewer and expect 10; read the CI configuration for a dependency scan on each pull request, each push and a schedule. |
 | USS-DEP-008 | Safety | Vulnerabilities at 10 (an open vulnerability lowers the score, and one that an `osv-scanner.toml` file next to the manifest ignores by ID is not reported) | partial: the check does not require a reason, an expiry date or an issue link for an ignore entry, and it reads no VEX statement, so the auditor reads each entry | Read the Vulnerabilities score in the viewer and expect 10; read each ignore entry for the reason, the expiry date and the issue link that the rule requires. |
 | USS-DEP-014 | Safety | Dependency-Update-Tool at 10 (probe `dependencyUpdateToolConfigured`: it finds the configuration of Dependabot or Renovate, and scores 10 when it finds one and 0 when it finds none) | partial: the check does not show that the configuration covers every manifest, or that the tool opened the pull requests that were merged | Read the Dependency-Update-Tool score in the viewer and expect 10; read the configuration for each manifest and the merged update pull requests. |
@@ -111,7 +118,7 @@ jobs:
 | USS-SUP-011 | Safety | Dangerous-Workflow at 10 (probe `hasDangerousWorkflowUntrustedCheckout`: it reports a `pull_request_target` or `workflow_run` workflow that checks out a ref that holds `github.event.pull_request` or `github.event.workflow_run`; the score is 10 or 0) | partial: the check does not decide whether a reported checkout is safe, and it sees only an explicit `ref` of those forms | Read the Dangerous-Workflow score in the viewer and expect 10; read each privileged trigger for a checkout of the change's code. |
 | USS-SUP-012 | Safety | Dangerous-Workflow at 10 (probe `hasDangerousWorkflowScriptInjection`: it reports a script that holds an untrusted context expression, such as `github.head_ref` or a listed `github.event.*` field; the score is 10 or 0) | partial: the check knows a fixed list of expressions, so another untrusted value in a script is not seen, and it does not show that such data reaches a script only through an environment variable or a file | Read the Dangerous-Workflow score in the viewer and expect 10; read each script for untrusted event data that is not on the list. |
 | USS-SUP-013 | Safety | SBOM at 10 (probes `hasSBOM` and `hasReleaseSBOM`: a file whose name ends in `.cdx.json`, `.cdx.xml`, `.spdx`, `.spdx.json`, `.spdx.xml`, `.spdx.yaml`, `.spdx.rdf` or `.spdx.rdf.xml`, among the assets of the five latest releases) | partial: the check matches the file name and does not read the content, so it does not show the components or the dependency relationships, and one such file in one of the five releases gives 10, so the auditor checks each release | Read the SBOM score in the viewer and expect 10; open the SBOM of each release for the components and the direct dependencies. |
-| USS-SUP-014 | Safety | Signed-Releases at 8 or more (probes `releasesAreSigned` and `releasesHaveProvenance`: a release asset that ends in `.asc`, `.minisig`, `.sig`, `.sign`, `.sigstore` or `.sigstore.json` gives 8 for that release, and SLSA provenance gives 10; the score is the mean over the five latest releases) | partial: the check looks for one signature file per release and not one for each artifact, it does not verify a signature, it sees no signature that is held in a registry, and it counts a GitHub immutable release as provenance, so a 10 can rest on that alone; because the score is a mean, one unsigned release can hide among higher ones | Read the Signed-Releases score and its per-release lines in the viewer; check that each artifact of each release has a signature and read how it is verified. |
+| USS-SUP-014 | Safety | Signed-Releases at 8 or more (probes `releasesAreSigned` and `releasesHaveProvenance`: a release asset that ends in `.asc`, `.minisig`, `.sig`, `.sign`, `.sigstore` or `.sigstore.json` gives 8 for that release, and SLSA provenance gives 10; the score is the mean over the five latest releases) | partial: the check looks for one signature file per release and not one for each artifact, it does not verify a signature, it sees no signature that is held in a registry, and it counts a GitHub immutable release as provenance, so a 10 can rest on that alone; because the score is a mean, one unsigned release can hide among higher ones | Read the Signed-Releases score and its per-release lines in the viewer; a score of 8 or more counts only when each release's line shows a signature file (an immutable release scores 10 without one); check that each artifact of each release has a signature and read how it is verified. |
 | USS-TS-010 | Safety | Pinned-Dependencies at 10 (probe `pinsDependencies`, dependency type `npmCommand`: it reports `npm install` and `npm update`, and it accepts `npm ci`) | partial: the check reads npm commands only, so a pnpm, Yarn or Bun install is not seen, and it does not read the lock file or show that it is current | Read the Pinned-Dependencies score and its npmCommand findings in the viewer, and expect no such finding; judge each other install step as the rule says. |
 | USS-TST-001 | Reliability | CI-Tests at 10 (probe `testsRunInCI`: each of the recent merged pull requests has a successful check run or status whose name holds one of appveyor, buildkite, circleci, e2e, github-actions, jenkins, mergeable, test, travis-ci or woodpecker) | partial: the check reads names, not what a job runs, so it does not show that the whole suite runs, that a failing test fails the job, or that the job runs on each push to the default branch; a project whose job names are not on the list can score low | Read the CI-Tests score in the viewer and expect 10; read the CI configuration for the whole suite and for the failure of the job on a failing test. |
 | USS-TST-011 | Reliability | Fuzzing at 10 (probe `fuzzed`: the repository is in the OSS-Fuzz project list, it deploys ClusterFuzzLite, or it holds Go fuzz functions or a listed property-based test library; the score is 10 or 0) | partial: one fuzzer of any parser gives 10, so the check does not show a target for each parser or that sanitizers are on, and it does not see a libFuzzer, AFL++ or cargo-fuzz target that is not run through OSS-Fuzz or ClusterFuzzLite | Read the Fuzzing score in the viewer; list the parsers of untrusted input and read the fuzz target, the sanitizers and a recent run for each. |
