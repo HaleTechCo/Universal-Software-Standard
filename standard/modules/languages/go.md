@@ -10,7 +10,8 @@ and the timeouts of HTTP clients and servers. It uses one vendor profile:
 `standard/vendors/golangci/golangci-lint.md`. It names `govulncheck` without a
 profile. Go links only the packages that the code imports, so USS-DEP-005 is
 met by the toolchain; tool dependencies use the `tool` directive of `go.mod`.
-The core rules that this module does not refine apply as written.
+USS-GO-004 is the Go safety check that USS-SAF-001 makes binding. The core
+rules that this module does not refine apply as written.
 
 ## Checks
 
@@ -45,9 +46,10 @@ one out lets that kind of defect through, however clean the report is.
   when it reports an issue, unless the configuration sets `issues-exit-code`
   to another value, which fails this rule). The golangci-lint configuration
   includes the baseline of the golangci-lint profile
-  (`standard/vendors/golangci/golangci-lint.md`). A project on another linter
-  fails this rule (it records a Standard Deviation) and meets USS-GO-001
-  through that tool's own rule set.
+  (`standard/vendors/golangci/golangci-lint.md`). A project that uses another
+  tool fails this rule (it records a Standard Deviation) and meets the outcome
+  rule through that tool, configured to at least the baseline that
+  USS-QLT-006 sets.
 - **References:** golangci-lint Docs, Configuration file (read 2026-11-24);
   golangci-lint Docs, Linters (read 2026-11-24)
 
@@ -149,17 +151,24 @@ release makes the build repeatable and a toolchain upgrade a reviewed change.
 - **Category:** Safety
 - **Refines:** USS-SUP-006
 - **Verify:** Take the Go release policy at the audit date: the two newest
-  major releases are supported. The major release in the `go` directive and
-  in the `toolchain` directive of `go.mod` (the `1.27` in `go 1.27.4`) is one
-  of those two. A directive that names an older major release fails.
+  major releases are supported. The major release of the toolchain that the
+  project builds with, which the `toolchain` directive of `go.mod` names (the
+  `1.27` in `toolchain go1.27.4`; a `go.mod` with no `toolchain` directive has
+  an implicit one with the release of its `go` directive), and the major
+  release of each Go release in the CI test matrix are one of those two. An
+  older major release fails. The `go` directive, as the minimum language
+  version of the module, is not judged by this rule.
 - **References:** Go Release Policy (go.dev/doc/devel/release, read
-  2026-11-24)
+  2026-11-24); Go Toolchains (go.dev/doc/toolchain, read 2026-11-24)
 
-The `go` and `toolchain` directives MUST NOT name a Go release that the Go
-project no longer supports.
+The toolchain that the project builds with (the `toolchain` directive of
+`go.mod`, written or implicit) and the Go releases in the CI matrix MUST NOT be
+releases that the Go project no longer supports.
 
-**Rationale:** An unsupported Go release gets no security fixes, and a module
-that names it invites its users to build with it.
+**Rationale:** An unsupported Go release gets no security fixes, so a project
+that builds or tests with it keeps every flaw that is found after its end. A
+declared minimum such as the `go` directive is a compatibility promise
+(USS-DEP-016), not a platform that the project runs on.
 
 ### USS-GO-008: Build release binaries with -trimpath
 
@@ -252,15 +261,20 @@ misleads readers about what the release uses.
 - **Category:** Safety
 - **Refines:** USS-DEP-007
 - **Verify:** CI runs `govulncheck` over the module (such as
-  `govulncheck ./...`). A project on another scanner fails this rule (it
-  records a Standard Deviation) and meets USS-DEP-007 through that tool's own
-  settings. Optional evidence that cannot fail this rule: `govulncheck` exits
-  with a non-zero status when it finds a vulnerability, except when it runs
-  with `-format json`, `-format sarif` or `-format openvex`, so a job that
-  uses those formats fails on a finding only through a further step.
-- **References:** govulncheck Documentation (pkg.go.dev, read 2026-11-24)
+  `govulncheck ./...`), and the job fails on a finding. With its text output
+  and its default scan level (`symbol`), `govulncheck` exits with a non-zero
+  status when the code calls a vulnerable function. With `-format json`,
+  `-format sarif` or `-format openvex` it exits with status 0 whatever it
+  finds, so a job that uses one of those formats fails on a finding only
+  through a further step that does so; a job with no such step fails this
+  rule. A project that uses another tool fails this rule (it records a
+  Standard Deviation) and meets the outcome rule through that tool, configured
+  to at least the baseline that USS-QLT-006 sets.
+- **References:** govulncheck Documentation (pkg.go.dev, read 2026-11-24);
+  golang/vuln source, `internal/scan/flags.go` and `internal/scan/text.go`
+  (read 2026-11-24)
 
-CI SHOULD scan the module with `govulncheck`.
+CI SHOULD scan the module with `govulncheck` in a job that fails on a finding.
 
 **Rationale:** `govulncheck` runs from the module directory with the package
 syntax of the `go` command, so it needs no separate manifest, and a scan costs

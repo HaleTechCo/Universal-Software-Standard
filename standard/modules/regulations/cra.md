@@ -12,12 +12,15 @@ obligations of manufacturers) applies from 11 September 2026, and the rest of
 the Regulation applies from 11 December 2027 (Article 71(2)). A product placed
 on the market before 11 December 2027 is subject to the Regulation only if it is
 substantially modified from that date, except that Article 14 applies to every
-such product (Article 69(2) and (3)). The article and annex references were read
-in the Official Journal text on 2026-11-24. The module maps the obligations of
-the manufacturer to USS rules and adds nine rules for what the core rules leave
-open. The role of the open-source software steward and the other special regimes
-of the Regulation are not mapped here: a qualified person judges them. The core
-rules that the module does not name apply as written.
+such product (Article 69(2) and (3)). USS asks for this module's rules as soon
+as `sold-in-eu` is true, ahead of the dates from which the Regulation's
+obligations apply, so that a project is ready when they do. The article and
+annex references were read in the Official Journal text on 2026-11-24. The
+module maps the obligations of the manufacturer to USS rules and adds nine rules
+for what the core rules leave open. The role of the open-source software steward
+and the other special regimes of the Regulation are not mapped here: a qualified
+person judges them. The core rules that the module does not name apply as
+written.
 
 ## Disclaimer
 

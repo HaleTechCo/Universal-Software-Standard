@@ -68,9 +68,9 @@ hardening rules is still judged as those rules say.
   `checks.ignorePaths` (or `--ignore-paths`) and excludes no check other than
   `required-label-owner` and `required-annotation-email` in `checks.exclude` (or
   `--exclude`). The job fails when `kube-linter lint` exits with status 1, which
-  it does when it reports a lint error. A project that uses another linter fails
-  this rule and records a Standard Deviation; it meets USS-K8S-001 through that
-  linter's own profile.
+  it does when it reports a lint error. A project that uses another tool fails
+  this rule (it records a Standard Deviation) and meets the outcome rule through
+  that tool, configured to at least the baseline that USS-QLT-006 sets.
 - **References:** kube-linter 0.8.3, documentation, Configuring KubeLinter and
   KubeLinter checks (read 2026-11-24); kube-linter 0.8.3, source of the `lint`
   command and `main` (read 2026-11-24)
@@ -223,7 +223,8 @@ the token.
 **Rationale:** A ServiceAccount's setting can change without the workload
 changing, and a Pod that sets nothing mounts a token. The setting on the Pod
 spec keeps the token away from a workload that has no use for it, whatever its
-ServiceAccount says.
+ServiceAccount says. This rule is deliberately stricter than USS-HRD-008, which
+also accepts the setting on the ServiceAccount.
 
 ### USS-K8S-008: Ship a default-deny network policy
 

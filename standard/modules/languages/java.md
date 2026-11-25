@@ -83,9 +83,10 @@ ignore.
   the annotation processor path), CI builds with it, and the build fails on a
   finding (an Error Prone check at ERROR is a compile error). The compiler
   arguments include the baseline of the Error Prone profile
-  (`standard/vendors/google/error-prone.md`). A project on another bug-pattern
-  checker fails this rule (it records a Standard Deviation) and meets
-  USS-JAVA-002 through that tool's own profile or settings.
+  (`standard/vendors/google/error-prone.md`). A project that uses another tool
+  fails this rule (it records a Standard Deviation) and meets the outcome rule
+  through that tool, configured to at least the baseline that USS-QLT-006
+  sets.
 - **References:** Error Prone documentation, Installation and Flags (read
   2026-11-24); Error Prone 2.53.0, Bug Patterns (read 2026-11-24)
 
@@ -108,9 +109,9 @@ the compiler's types, which a check on the bytecode cannot always see.
   bug). The configuration includes the baseline of the SpotBugs profile
   (`standard/vendors/spotbugs/spotbugs.md`); another build tool sets the same
   effort, threshold, plugin and failure options under its own names. A project
-  on another static analyser fails this rule (it records a Standard
-  Deviation) and meets USS-QLT-001 and USS-SEC-028 through that tool's own
-  profile or settings.
+  that uses another tool fails this rule (it records a Standard Deviation) and
+  meets the outcome rule through that tool, configured to at least the
+  baseline that USS-QLT-006 sets.
 - **References:** SpotBugs Maven Plugin 4.10.5.0, `spotbugs` and `check` goals
   (read 2026-11-24); Find Security Bugs 1.14.0, Bug Patterns (read 2026-11-24)
 
@@ -134,8 +135,10 @@ that a static security analysis exists to find.
   build runs NullAway as an Error Prone check, CI builds with it, and the build
   fails on a finding (NullAway at ERROR is a compile error). The compiler
   arguments include the baseline of the NullAway profile
-  (`standard/vendors/uber/nullaway.md`). A project on another nullness checker
-  fails this rule (it records a Standard Deviation).
+  (`standard/vendors/uber/nullaway.md`). A project that uses another tool
+  fails this rule (it records a Standard Deviation) and meets the outcome rule
+  through that tool, configured to at least the baseline that USS-QLT-006
+  sets.
 - **References:** JSpecify 1.0.1, User Guide (read 2026-11-24); NullAway 0.14.4,
   Configuration and JSpecify Support (read 2026-11-24)
 
@@ -158,9 +161,9 @@ across tools, and NullAway checks each use against them at compile time.
   `--dry-run` and `--set-exit-if-changed` (which exits with status 1 when
   there are formatting changes; `--dry-run` alone prints the paths and does
   not fail), or a build plugin that runs google-java-format and fails on a
-  difference. A project on another formatter fails this rule (it records a
-  Standard Deviation) and meets USS-QLT-002 through that formatter's own
-  check mode.
+  difference. A project that uses another tool fails this rule (it records a
+  Standard Deviation) and meets the outcome rule through that tool, configured
+  to at least the baseline that USS-QLT-006 sets.
 - **References:** google-java-format 2.0.0, README and usage text (read
   2026-11-24)
 
@@ -203,25 +206,27 @@ change to the code.
 - **Applies when:** always
 - **Category:** Safety
 - **Refines:** USS-SUP-006
-- **Verify:** Take the feature release of the JDK that the project builds with
-  (the pin of USS-JAVA-007, such as 25 for `25.0.1`) and the feature release
-  that it targets (`--release`, or `maven.compiler.release` in Maven; `source`
-  and `target` where it uses those), and the support roadmap that the vendor of
-  the project's JDK publishes (such as the Eclipse Temurin support roadmap for a
-  Temurin JDK). At the audit date, the roadmap shows that each of the two
-  feature releases still receives security updates. A feature release whose end
-  date has passed fails. Where neither the roadmap nor the vendor's release
-  history shows it, the auditor records `unverified`.
-- **References:** Eclipse Temurin, Support (Adoptium, read 2026-11-24); javac
-  documentation, JDK 25, `--release` (read 2026-11-24)
+- **Verify:** Take the feature release of each JDK that the project builds and
+  tests with: the pin of USS-JAVA-007 (such as 25 for `25.0.1`) and each JDK in
+  the CI test matrix. Take the support roadmap that the vendor of each of those
+  JDKs publishes (such as the Eclipse Temurin support roadmap for a Temurin
+  JDK). At the audit date, the roadmap shows that each of those feature
+  releases still receives security updates. A feature release whose end date
+  has passed fails. The release that the code targets (`--release`, or
+  `maven.compiler.release` in Maven; `source` and `target` where it uses
+  those) is not judged by this rule. Where neither the roadmap nor the vendor's
+  release history shows it, the auditor records `unverified`.
+- **References:** Eclipse Temurin, Support (Adoptium, read 2026-11-24)
 
-The project MUST NOT build with, or target, a feature release of Java that its
-JDK vendor no longer supports with security fixes.
+The project MUST NOT build or test with a JDK whose feature release its vendor
+no longer supports with security fixes.
 
 **Rationale:** A flaw that is found in a release that the vendor no longer
 updates is not fixed, so every build and every program on that release keeps
 it. The vendor's own roadmap says which releases it still updates, and the
-answer differs between vendors.
+answer differs between vendors. A declared minimum such as the `--release`
+target is a compatibility promise (USS-DEP-016), not a platform that the
+project runs on.
 
 ## Language hazards
 

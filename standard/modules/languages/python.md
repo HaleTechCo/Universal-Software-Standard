@@ -10,7 +10,8 @@ checks its dependencies. It uses four vendor profiles:
 `standard/vendors/astral-sh/ruff.md`, `standard/vendors/python/mypy.md`,
 `standard/vendors/osprey-oss/deptry.md` and
 `standard/vendors/google/osv-scanner.md`. It names two tools without a
-profile: uv, which sets the package manager's settings, and pytest. The core
+profile: uv, which sets the package manager's settings, and pytest.
+USS-PY-003 is the Python safety check that USS-SAF-001 makes binding. The core
 rules that this module does not refine apply as written.
 
 ## Checks
@@ -44,9 +45,9 @@ one out lets that kind of defect through, however clean the report is.
 - **Verify:** CI runs `ruff check` and `ruff format --check` on all Python
   code, and each fails the job on a finding. The Ruff configuration includes
   the baseline of the Ruff profile (`standard/vendors/astral-sh/ruff.md`).
-  A project on another linter or formatter fails this rule (it records a
-  Standard Deviation) and meets USS-PY-001 and USS-QLT-002 through that
-  tool's own rule set.
+  A project that uses another tool fails this rule (it records a Standard
+  Deviation) and meets the outcome rule through that tool, configured to at
+  least the baseline that USS-QLT-006 sets.
 - **References:** Ruff Docs, The Ruff Linter (read 2026-11-24); Ruff Docs,
   The Ruff Formatter (read 2026-11-24)
 
@@ -84,9 +85,10 @@ build error and not a runtime failure.
 - **Refines:** USS-SAF-001
 - **Verify:** CI runs `mypy` on all Python code, and the job fails on any
   error. The mypy configuration includes the baseline of the mypy profile
-  (`standard/vendors/python/mypy.md`). A project on another type checker
-  fails this rule (it records a Standard Deviation) and meets USS-PY-003
-  through that tool's own strict mode.
+  (`standard/vendors/python/mypy.md`). A project that uses another tool
+  fails this rule (it records a Standard Deviation) and meets the outcome rule
+  through that tool, configured to at least the baseline that USS-QLT-006
+  sets.
 - **References:** mypy 2.4.1 documentation, The mypy configuration file
 
 The project SHOULD type-check with mypy, configured per its vendor profile
@@ -149,18 +151,21 @@ a build that takes whichever version is installed is not repeatable.
 - **Category:** Safety
 - **Refines:** USS-SUP-006
 - **Verify:** Take the status table of the Python Developer's Guide at the
-  audit date. No released minor version that `requires-python` admits, and
-  no version in the CI test matrix, has the status end-of-life. A
-  `requires-python` that admits an end-of-life version (such as `>=3.10`
-  after the end of life of 3.10) fails.
+  audit date. The Python version that the project pins (the version of
+  USS-PY-006, such as in `.python-version`) and each Python version in the CI
+  test matrix do not have the status end-of-life. A pinned or tested version
+  that is end-of-life fails. `requires-python`, the lowest version that the
+  project declares it supports, is not judged by this rule.
 - **References:** Python Developer's Guide, Status of Python versions (read
   2026-11-24)
 
-`requires-python` and the CI matrix MUST NOT include a Python version that is
+The pinned Python version and the versions in the CI matrix MUST NOT be
 end-of-life.
 
-**Rationale:** An end-of-life version gets no security fixes, and a project
-that declares it supported invites its users to run on it.
+**Rationale:** An end-of-life version gets no security fixes, so a project
+that builds, tests or runs on it keeps every flaw that is found after its end
+of life. A declared minimum such as `requires-python` is a compatibility
+promise (USS-DEP-016), not a platform that the project runs on.
 
 ## Dependencies
 
@@ -238,9 +243,9 @@ matches `pyproject.toml`.
 - **Verify:** The repository holds a `uv.lock`. CI installs the dependencies
   with uv (such as `uv sync --locked`), and gets its Python version through
   uv (such as `uv python install`, or uv's use of `.python-version`). A
-  project on another tool (such as Poetry, PDM or pip-tools) fails this rule
-  (it records a Standard Deviation) and meets USS-PY-010 and USS-PY-006
-  through that tool's own lock file and version pin.
+  project that uses another tool fails this rule (it records a Standard
+  Deviation) and meets the outcome rule through that tool, configured to at
+  least the baseline that USS-QLT-006 sets.
 - **References:** uv Docs, Locking and syncing (read 2026-11-24); uv Docs,
   Python versions (read 2026-11-24)
 
@@ -298,9 +303,10 @@ change to the project.
 - **Refines:** USS-DEP-004, USS-DEP-013
 - **Verify:** CI runs `deptry` on the project, and the job fails on a
   violation. The deptry configuration includes the baseline of the deptry
-  profile (`standard/vendors/osprey-oss/deptry.md`). A project on another
-  tool fails this rule (it records a Standard Deviation) and meets
-  USS-PY-013 through that tool's own profile or check.
+  profile (`standard/vendors/osprey-oss/deptry.md`). A project that uses
+  another tool fails this rule (it records a Standard Deviation) and meets the
+  outcome rule through that tool, configured to at least the baseline that
+  USS-QLT-006 sets.
 - **References:** deptry Docs, Usage and Configuration (read 2026-11-24)
 
 The project SHOULD check its declared and imported dependencies with deptry,
@@ -318,9 +324,9 @@ dependencies, from the metadata that `pyproject.toml` already holds.
 - **Verify:** CI runs OSV-Scanner over the project's lock file (`uv.lock` or
   `pylock.toml`) with a configuration that includes the baseline of the
   OSV-Scanner profile (`standard/vendors/google/osv-scanner.md`), and the
-  job fails on a finding. A project on another scanner fails this rule (it
-  records a Standard Deviation) and meets USS-DEP-007 through that tool's own
-  profile or settings.
+  job fails on a finding. A project that uses another tool fails this rule (it
+  records a Standard Deviation) and meets the outcome rule through that tool,
+  configured to at least the baseline that USS-QLT-006 sets.
 - **References:** OSV-Scanner Docs, Supported Artifacts and Manifests (read
   2026-11-24)
 

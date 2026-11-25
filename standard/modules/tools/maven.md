@@ -10,11 +10,12 @@ its dependencies. Maven is the module's subject, so the module names plugin
 goals and configuration elements directly; the compiler and the language are
 in the Java module (`standard/modules/languages/java.md`). It uses one vendor
 profile: `standard/vendors/google/osv-scanner.md`. It names four tools without
-a profile, because none has a rule set: the Maven Wrapper, the Maven Enforcer
-plugin, the Maven Dependency plugin and the maven-lockfile plugin. The rules
-were checked against Maven 3.10.2, the current release; Maven 4 is still a
-release candidate. The core rules that this module does not refine apply as
-written.
+a profile. The Maven Wrapper, the Maven Enforcer plugin and the Maven
+Dependency plugin are Maven's own, so their settings are part of the Maven
+configuration that is this module's subject, and the module states them
+itself; the maven-lockfile plugin has no rule set. The rules were checked
+against Maven 3.10.2, the current release; Maven 4 is still a release
+candidate. The core rules that this module does not refine apply as written.
 
 ## Build
 
@@ -112,27 +113,36 @@ rule keeps a project from switching that off.
   and `dependencyManagement` tables, a BOM that the project imports with scope
   `import`, and the dependencies in profiles) has an effective version that
   names one release: a version written directly, set by a property, or taken
-  from `dependencyManagement` or an imported BOM. A soft requirement (`1.2.3`)
-  and a hard requirement (`[1.2.3]`) pass. A range (`[1.0,2.0)`, `(,1.0]` or
-  `[1.5,)`), `LATEST` and `RELEASE` fail. A version that ends in `-SNAPSHOT`
-  fails in a released build, which is a build whose project version has no
-  `-SNAPSHOT`, such as the build of a release tag.
+  from `dependencyManagement` or an imported BOM. That version is an exact
+  release version, as a soft requirement (`1.2.3`) or a hard requirement
+  (`[1.2.3]`), or a range bounded within one major version: both bounds are
+  written, the lower bound is a version of that major version, and the upper
+  bound is the next major version, excluded (such as `[1.2,2.0)`), or a
+  version below it (such as `[1.2,1.9]`). A range with no lower or no upper
+  bound (such as `(,1.0]` or `[1.5,)`), a range whose upper bound is beyond
+  the next major version (such as `[1.0,3.0)`), a list of ranges that admits
+  more than one major version (such as `(,1.0],[1.2,)`), `LATEST` and
+  `RELEASE` fail. A version that ends in `-SNAPSHOT` fails in a released
+  build, which is a build whose project version has no `-SNAPSHOT`, such as
+  the build of a release tag.
 - **References:** Apache Maven 3.10.2, POM Reference, Dependency Version
   Requirement Specification (read 2026-11-24); Apache Maven 4 API
   documentation, maven-artifact, deprecated list: `Artifact.LATEST_VERSION` and
   `Artifact.RELEASE_VERSION` (read 2026-11-24); Apache Maven Enforcer 3.7.0,
   `requireReleaseDeps` (read 2026-11-24)
 
-Each dependency MUST have a release version, directly or through
-`dependencyManagement` or a BOM, and never `LATEST`, `RELEASE` or a
-`-SNAPSHOT` version in a released build.
+Each dependency MUST have an exact release version or a range bounded within
+one major version (such as `[1.2,2.0)`), directly or through
+`dependencyManagement` or a BOM, and never `LATEST`, `RELEASE`, a `-SNAPSHOT`
+version in a released build or an unbounded range.
 
-**Rationale:** A range, `LATEST` and `RELEASE` let the build pick a version
-that nobody has tested, and a snapshot changes under the same version number.
-Maven discourages `LATEST` and `RELEASE` in its own documentation, and USS
-forbids them because each resolves to whatever is newest at build time, an
-unbounded version that no two builds share. A release version names one set of
-files, so the same POM builds the same dependencies.
+**Rationale:** An unbounded range, `LATEST` and `RELEASE` let the build pick a
+new major version that nobody has tested, and a snapshot changes under the
+same version number. Maven's own API documentation discourages `LATEST` and
+`RELEASE`, because they make builds that cannot be reproduced and expose a
+project to supply-chain attacks, and USS forbids them because they are not
+bounded. A range within one major version keeps updates within the versions
+that the project expects, as USS-DEP-001 asks.
 
 ### USS-MVN-005: Fail on dependency version conflicts
 
@@ -264,9 +274,9 @@ APIs in the shipped artifact are extra code to attack and to keep updated.
   `--no-resolve` and offline mode turn it off, and a scan that sets either
   fails), with a configuration that includes the baseline of the OSV-Scanner
   profile (`standard/vendors/google/osv-scanner.md`), and the job fails on a
-  finding. A project on another scanner fails this rule (it records a Standard
-  Deviation) and meets USS-DEP-007 through that tool's own profile or
-  settings.
+  finding. A project that uses another tool fails this rule (it records a
+  Standard Deviation) and meets the outcome rule through that tool, configured
+  to at least the baseline that USS-QLT-006 sets.
 - **References:** OSV-Scanner Docs, Supported Languages and Lockfiles (read
   2026-11-24)
 

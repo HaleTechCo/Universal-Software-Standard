@@ -12,8 +12,9 @@ locks and checks its dependencies. It uses three vendor profiles:
 `standard/vendors/google/osv-scanner.md`. It names two tools without a
 profile: Prettier, which sets the format, and pnpm, which sets the package
 manager's settings. The rules that name a package manager accept npm, Yarn and
-Bun as well, except the rule that recommends pnpm. The core rules that this
-module does not refine apply as written.
+Bun as well, except the rule that recommends pnpm. USS-TS-004 (for TypeScript)
+and USS-TS-005 (for JavaScript) are the safety checks that USS-SAF-001 makes
+binding. The core rules that this module does not refine apply as written.
 
 ## Checks
 
@@ -55,9 +56,10 @@ through, however clean the report is.
   job fails on a finding (ESLint exits with status 1 when a rule at error
   level fires or when the warnings exceed `--max-warnings`). The ESLint
   configuration includes the baseline of the ESLint profile
-  (`standard/vendors/eslint/eslint.md`). A project on another linter fails
-  this rule (it records a Standard Deviation) and meets USS-TS-001 through
-  that tool's own rule set.
+  (`standard/vendors/eslint/eslint.md`). A project that uses another tool
+  fails this rule (it records a Standard Deviation) and meets the outcome rule
+  through that tool, configured to at least the baseline that USS-QLT-006
+  sets.
 - **References:** ESLint 10.15.0 documentation, Configuration Files and
   Command Line Interface; typescript-eslint 8.74.0 documentation, Shared
   configs
@@ -78,9 +80,9 @@ floor.
 - **Verify:** CI runs `prettier --check` (or `-c`) over all of the project's
   TypeScript and JavaScript files, and the job fails when Prettier exits with
   a non-zero status (status 1 when a file is not formatted, status 2 when
-  Prettier itself fails). A project on another formatter fails this rule (it
-  records a Standard Deviation) and meets USS-QLT-002 through that
-  formatter's own check mode.
+  Prettier itself fails). A project that uses another tool fails this rule (it
+  records a Standard Deviation) and meets the outcome rule through that tool,
+  configured to at least the baseline that USS-QLT-006 sets.
 - **References:** Prettier documentation, CLI (read 2026-11-24)
 
 The project SHOULD format with Prettier, and CI SHOULD run `prettier --check`.
@@ -201,19 +203,21 @@ itself.
 - **Refines:** USS-SUP-006
 - **Verify:** Take the release schedule of Node.js at the audit date. A release
   line is end-of-life when the schedule marks it EOL or its end date has
-  passed. No released line that `engines.node` admits, and no line in the CI
-  test matrix, is end-of-life. An `engines.node` that admits an end-of-life
-  line fails (such as `>=20` after 2026-04-30, or `>=22`, which admits the
-  end-of-life lines 23 and 25); `^22.12.0 || ^24.0.0 || ^26.0.0` passes.
+  passed. The line of the Node.js release that the project pins (the release
+  of USS-TS-007) and each line in the CI test matrix are not end-of-life. A
+  pinned or tested line that is end-of-life fails. `engines.node`, the range
+  of releases that the project declares it supports, is not judged by this
+  rule, so an `engines.node` of `>=22` does not fail it.
 - **References:** Node.js Release Working Group, release schedule (read
-  2026-11-24); Node.js, Previous Releases (read 2026-11-24); npm Docs,
-  package.json: `engines` (npm 11.20.0, read 2026-11-24)
+  2026-11-24); Node.js, Previous Releases (read 2026-11-24)
 
-`engines.node` and the CI matrix MUST NOT include a Node.js release line that
-is end-of-life.
+The pinned Node.js release and the release lines in the CI matrix MUST NOT be
+end-of-life.
 
-**Rationale:** An end-of-life line gets no security fixes, and a project that
-declares it supported invites its users to run on it.
+**Rationale:** An end-of-life line gets no security fixes, so a project that
+builds, tests or runs on it keeps every flaw that is found after its end of
+life. A declared minimum such as `engines.node` is a compatibility promise
+(USS-DEP-016), not a platform that the project runs on.
 
 ## Dependencies
 
@@ -286,9 +290,9 @@ and the frozen mode stops the install when it no longer matches
 - **Refines:** USS-DEP-003, USS-DEP-004
 - **Verify:** The repository holds a `pnpm-lock.yaml`, and CI installs the
   dependencies with pnpm (such as `pnpm install --frozen-lockfile`). A
-  project on another package manager (such as npm, Yarn or Bun) fails this
-  rule (it records a Standard Deviation) and meets USS-TS-010 and USS-TS-013
-  through that manager's own lock file and checks.
+  project that uses another tool fails this rule (it records a Standard
+  Deviation) and meets the outcome rule through that tool, configured to at
+  least the baseline that USS-QLT-006 sets.
 - **References:** pnpm Docs, Motivation (read 2026-11-24); pnpm Docs, pnpm
   install (read 2026-11-24)
 
@@ -352,9 +356,10 @@ change to the project.
   `--no-exit-code` and a `--max-issues` above 0 hide issues, so the job does
   not use them). The knip configuration that knip reads (such as `knip.jsonc`)
   includes the baseline of the knip profile
-  (`standard/vendors/webpro-nl/knip.md`). A project on another tool fails this
-  rule (it records a Standard Deviation) and meets USS-TS-013 and the outcome
-  rules through that tool's own profile or check.
+  (`standard/vendors/webpro-nl/knip.md`). A project that uses another tool
+  fails this rule (it records a Standard Deviation) and meets the outcome rule
+  through that tool, configured to at least the baseline that USS-QLT-006
+  sets.
 - **References:** knip 6.48.0 documentation, Configuration, Rules & Filters
   and CLI (read 2026-11-24)
 
@@ -427,9 +432,9 @@ them.
   (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock` or `bun.lock`) with a
   configuration that includes the baseline of the OSV-Scanner profile
   (`standard/vendors/google/osv-scanner.md`), and the job fails on a finding.
-  A project on another scanner fails this rule (it records a Standard
-  Deviation) and meets USS-DEP-007 through that tool's own profile or
-  settings.
+  A project that uses another tool fails this rule (it records a Standard
+  Deviation) and meets the outcome rule through that tool, configured to at
+  least the baseline that USS-QLT-006 sets.
 - **References:** OSV-Scanner Docs, Supported Languages and Lockfiles (read
   2026-11-24)
 

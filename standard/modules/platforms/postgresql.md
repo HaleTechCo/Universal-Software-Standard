@@ -59,8 +59,9 @@ the rules of the core area still judge what a migration does to stored data.
   PostgreSQL major version that the project supports, `excluded_rules` lists
   no rule and `excluded_paths` lists no path. The job passes no `--exclude` or
   `--exclude-path` option (each replaces the list of the configuration file).
-  A project that uses another linter fails this rule and records a Standard
-  Deviation; it meets USS-PG-001 through that linter's own profile.
+  A project that uses another tool fails this rule (it records a Standard
+  Deviation) and meets the outcome rule through that tool, configured to at
+  least the baseline that USS-QLT-006 sets.
 - **References:** Squawk 2.74.0, documentation, Squawk CLI and Rules (read
   2026-11-24); Squawk 2.74.0, source of `config.rs` and `reporter.rs` (read
   2026-11-24)

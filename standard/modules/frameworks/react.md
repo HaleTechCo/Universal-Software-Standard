@@ -62,8 +62,9 @@ unread.
   `standard/vendors/facebook/eslint-plugin-react-hooks.md`: the flat
   `recommended` configuration of eslint-plugin-react-hooks, and then
   `react-hooks/rules-of-hooks` and `react-hooks/exhaustive-deps` set to
-  `"error"`. A project on another linter fails this rule and records a
-  Standard Deviation; it meets USS-REACT-001 through that linter's own profile.
+  `"error"`. A project that uses another tool fails this rule (it records a
+  Standard Deviation) and meets the outcome rule through that tool, configured
+  to at least the baseline that USS-QLT-006 sets.
 - **References:** eslint-plugin-react-hooks 7.1.1, README (read 2026-11-24);
   ESLint 10.15.0 documentation, Command Line Interface (exit codes)
 
@@ -123,8 +124,9 @@ so the checker of USS-ACC-002 on the rendered pages is still needed.
   `standard/vendors/oxc-project/oxlint.md`: `plugins` lists `jsx-a11y`, each
   `jsx-a11y` rule of the baseline is set to `"error"` (or `"deny"`), and
   `options.denyWarnings` is `true` (or `--deny-warnings` is passed). A project
-  that uses another linter fails this rule and records a Standard Deviation; it
-  meets USS-REACT-003 through that linter's own rules.
+  that uses another tool fails this rule (it records a Standard Deviation) and
+  meets the outcome rule through that tool, configured to at least the
+  baseline that USS-QLT-006 sets.
 - **References:** Oxlint 1.95.0, documentation, Configuration and CLI (read
   2026-11-24); Oxlint 1.95.0, source of the exit status in `result.rs` and
   `lint.rs` (read 2026-11-24)
@@ -144,26 +146,34 @@ project is on. The profile fixes the rule set and the exit status that make
 - **Category:** Safety
 - **Refines:** USS-SEC-014
 - **Verify:** Search the project's code for `dangerouslySetInnerHTML`. For each
-  use, trace the value of `__html` back to its source. It is the result of a
-  call to a vetted HTML sanitizer (a maintained library built to sanitize HTML,
-  such as DOMPurify), and nothing is added to it after that call. A value
-  that comes from a regular expression, an escape function or a hand-written
-  filter, from a Markdown or other converter with no sanitizer after it, or
-  from a constant string, fails.
+  use, trace the value of `__html` back to its source. It passes when it is a
+  string literal written in the project's source code with no interpolated
+  value (a quoted string, or a template literal with no `${...}`), which is
+  static markup that the project authored. Any other value passes only when it
+  is the result of a call to a vetted HTML sanitizer (a maintained library
+  built to sanitize HTML, such as DOMPurify), and nothing is added to it after
+  that call. A value that comes from a regular expression, an escape function
+  or a hand-written filter, from a Markdown or other converter with no
+  sanitizer after it, from a file or a response, or from a template literal
+  with an interpolated value, fails.
 - **References:** React documentation, Common components,
   `dangerouslySetInnerHTML` (read 2026-11-24); DOMPurify 3.5.0, README (read
   2026-11-24); CWE-79
 
 `dangerouslySetInnerHTML` MUST NOT receive a value that a vetted HTML sanitizer,
-such as DOMPurify, has not cleaned. A vetted sanitizer is a maintained library
-built to sanitize HTML; a regular expression or a hand-written filter is not
-one.
+such as DOMPurify, has not cleaned, unless the value is a string literal written
+in the project's source code with no interpolated value. A vetted sanitizer is
+a maintained library built to sanitize HTML; a regular expression or a
+hand-written filter is not one.
 
 **Rationale:** The prop sets the `innerHTML` of an element, so any script in the
 value runs with the rights of the page, which is cross-site scripting (CWE-79).
 React escapes text that it renders itself, and this prop is the way around that
 escape. A sanitizer removes the markup that can run code, and a check that
-the author wrote by hand can miss a form that it does not know.
+the author wrote by hand can miss a form that it does not know. A string literal
+with no interpolated value is markup that the project wrote and reviews like its
+code, so no outside input can reach it; any other value can carry input that
+the author did not write.
 
 ### USS-REACT-006: Render the root in StrictMode
 

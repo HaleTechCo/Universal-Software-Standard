@@ -12,7 +12,9 @@ USS-RUST-001 names it directly. This repository's own `Cargo.toml` lint table
 is an example of the Clippy baseline. The module uses two vendor profiles:
 `standard/vendors/rust-lang/clippy.md` and
 `standard/vendors/embarkstudios/cargo-deny.md`. It names Miri without a
-profile. The core rules that this module does not refine apply as written.
+profile. USS-RUST-003 and USS-RUST-004 are the Rust safety checks that
+USS-SAF-001 makes binding. The core rules that this module does not refine
+apply as written.
 
 ## Checks
 
@@ -221,7 +223,10 @@ default caret form `1.2` implies `<2.0.0`), and each git dependency MUST name a
 **Rationale:** A requirement with no upper bound accepts a new incompatible
 version, and a branch or tag of a git repository moves, so the same manifest
 can build different code with no change to the project. A `rev` names one
-commit.
+commit. Cargo treats a change of the leftmost non-zero component of a version
+as incompatible, so for a `0.x` version the next minor version is the next
+incompatible version. This is Cargo's reading: the rules for other ecosystems
+bound a range below the next major version.
 
 ### USS-RUST-010: Check dependencies with cargo-deny
 
@@ -234,9 +239,10 @@ commit.
   exits with a non-zero status (the status is a bit set of the checks that
   reported an error). The `deny.toml` that it reads (or the file named with
   `--config`) includes the baseline of the cargo-deny profile
-  (`standard/vendors/embarkstudios/cargo-deny.md`). A project on another
-  dependency checker fails this rule (it records a Standard Deviation) and
-  meets the outcome rules through that tool's own settings.
+  (`standard/vendors/embarkstudios/cargo-deny.md`). A project that uses
+  another tool fails this rule (it records a Standard Deviation) and meets the
+  outcome rule through that tool, configured to at least the baseline that
+  USS-QLT-006 sets.
 - **References:** cargo-deny Book, the `check` command and the configuration
   pages (read 2026-11-24)
 
