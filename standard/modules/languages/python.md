@@ -103,9 +103,11 @@ that the profile names, so the type check has a fixed floor.
 - **Refines:** USS-QLT-003
 - **Verify:** The test runner's configuration turns Python warnings into
   errors (for pytest, a `filterwarnings` list with an `error` entry that no
-  later entry overrides, as pytest applies the last entry that matches). Each
-  entry that ignores a warning names a warning category or a message, and has
-  a comment that gives the reason. A bare `ignore` entry fails.
+  later entry overrides, as pytest applies the last entry that matches). The
+  only later entries allowed are ones that each ignore one named warning (a
+  category or a message) and have a comment that gives the reason. A later
+  entry that ignores warnings broadly (a bare `ignore`, with no named
+  warning) or has no reason fails.
 - **References:** pytest documentation, How to capture warnings (read
   2026-11-24)
 
