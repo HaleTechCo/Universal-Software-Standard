@@ -102,10 +102,10 @@ that the profile names, so the type check has a fixed floor.
 - **Category:** Maintainability
 - **Refines:** USS-QLT-003
 - **Verify:** The test runner's configuration turns Python warnings into
-  errors (for pytest, a `filterwarnings` list whose first entry is `error`).
-  Each later entry that ignores a warning names a warning category or a
-  message, and has a comment that gives the reason. A bare `ignore` entry
-  fails.
+  errors (for pytest, a `filterwarnings` list with an `error` entry that no
+  later entry overrides, as pytest applies the last entry that matches). Each
+  entry that ignores a warning names a warning category or a message, and has
+  a comment that gives the reason. A bare `ignore` entry fails.
 - **References:** pytest documentation, How to capture warnings (read
   2026-11-24)
 
@@ -188,9 +188,10 @@ the project points at it.
 - **Verify:** Each specifier in `[project] dependencies`, in each
   `[project.optional-dependencies]` list and in each `[dependency-groups]`
   list admits no version of the next major release or later: it is `==`, a
-  compatible release (`~=`), or has an upper bound (`<` or `<=`) below the
-  next major version. `>=1.2,<2` and `~=1.2` pass. `>=1.2`, `>=1.2,<3` and
-  an unversioned name fail.
+  compatible release (`~=`), or has an upper bound that excludes the next
+  major version (`<` with the next major version, or `<=` with a version
+  below it). `>=1.2,<2` and `~=1.2` pass. `>=1.2`, `>=1.2,<3`, `>=1.2,<=2`
+  and an unversioned name fail.
 - **References:** PEP 440
 
 Each dependency specifier MUST have an upper bound below the next major
@@ -212,7 +213,7 @@ project.
   that fails when the lock file is out of date with `pyproject.toml` (such
   as `uv sync --locked`). A step that resolves versions afresh, or that uses
   the lock file without checking that it is current (such as `--frozen`),
-  fails unless a separate CI step checks that the lock file is current.
+  fails.
 - **References:** PEP 751; uv Docs, Locking and syncing (read 2026-11-24);
   uv Docs, Resolution (2026-11-05)
 
@@ -275,9 +276,6 @@ the tools stay out of what users install.
   dependencies, and the job fails on an import of a third-party package that
   is not declared (for deptry, the job runs `deptry .` and fails on its
   non-zero exit status, which deptry returns when it finds any violation).
-  A check that reads only static imports misses imports made at run time
-  (such as `importlib.import_module`), so a clean report is partial
-  evidence, and the auditor looks for such imports in the code.
 - **References:** deptry Docs, Rules and Violations (read 2026-11-24);
   deptry 0.25.1 source, `python/deptry/core.py` (exit status)
 
@@ -335,12 +333,13 @@ TypeScript and Maven projects.
 - **Applies when:** has-dependencies
 - **Category:** Safety
 - **Refines:** USS-DEP-015
-- **Verify:** The uv configuration (`[tool.uv]` in `pyproject.toml`) sets
-  `exclude-newer` to a duration of at least three days (such as `3 days`,
-  `1 week` or `P7D`). An absolute timestamp, `false` and a missing setting
-  fail.
+- **Verify:** The uv configuration that applies to the project (`[tool.uv]`
+  in `pyproject.toml`, or `uv.toml`) sets `exclude-newer` to a duration of at
+  least three days (such as `3 days`, `1 week` or `P7D`). An absolute
+  timestamp, `false` and a missing setting fail.
 - **References:** uv Docs, Settings (read 2026-11-24), exclude-newer; uv
-  Docs, Resolution (2026-11-05), dependency cooldowns
+  Docs, Configuration files (read 2026-11-24); uv Docs, Resolution
+  (2026-11-05), dependency cooldowns
 
 uv's `exclude-newer` SHOULD be set as a relative age of at least three days,
 so resolution ignores releases younger than that.
