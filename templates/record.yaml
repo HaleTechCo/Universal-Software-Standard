@@ -160,6 +160,9 @@ facts:
   # Does it process personal data of people in the EU?
   # Answer this. false is not a default.
   processes-eu-personal-data: false
+  # Is it a product or service that the European Accessibility Act covers?
+  # Answer this. false is not a default.
+  covered-by-eaa: false
 
 # One decision for every applicable MAY rule. Run
 # uss applicable .uss/record.yaml to list the rules that apply. Form:

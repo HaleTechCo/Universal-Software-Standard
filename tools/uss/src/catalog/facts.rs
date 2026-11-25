@@ -301,8 +301,9 @@ mod tests {
             "is-foss",
             "sold-in-eu",
             "processes-eu-personal-data",
+            "covered-by-eaa",
         ];
-        assert_eq!(want.len(), 44);
+        assert_eq!(want.len(), 45);
         let mut got: Vec<&str> = facts
             .values()
             .filter(|f| matches!(f.source, FactSource::Question(_)))

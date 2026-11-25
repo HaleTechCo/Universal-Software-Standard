@@ -245,6 +245,11 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 - **Definition:** Yes when it processes personal data of people who are in the European Union.
 - **Implies:** handles-personal-data
 
+### covered-by-eaa
+
+- **Question:** Is it a product or service that the European Accessibility Act covers?
+- **Definition:** Yes when it is, or is part of, a product or a service that the European Accessibility Act covers and that is offered to consumers in the European Union, such as an e-commerce service, a consumer banking service, an e-book or its dedicated reading software, an electronic communications service, a service that gives access to audiovisual media, the website or mobile application of an air, bus, rail or waterborne passenger transport service, or the operating system of a consumer computer or phone. A product placed on the market before 28 June 2025 does not count. A service from a microenterprise (fewer than 10 persons and an annual turnover or balance sheet total of at most EUR 2 million) does not count.
+
 ### has-plugin-interface
 
 - **Enabled by:** USS-EXT-001
