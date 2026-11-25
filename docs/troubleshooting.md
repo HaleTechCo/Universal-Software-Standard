@@ -28,11 +28,13 @@ The message is `record pins USS X; this uss carries USS Y`.
   cargo install --locked --path tools/uss --force
   ```
 
-- Fix, option 2: read the checkout without an install. Give its path in
-  place of `<checkout>`:
+- Fix, option 2: read the checkout without an install. Give
+  `--standard-root <checkout>` to each `uss` command. Give the path of the
+  checkout in place of `<checkout>`. For example:
 
   ```sh
   uss --standard-root <checkout> version
+  uss --standard-root <checkout> check .uss/record.yaml
   ```
 
 ## `uss check` reports problems
@@ -67,9 +69,25 @@ shallow`.
 
 ## `cargo install` fails
 
-- Cause: the Rust toolchain is missing or too old. The workspace needs Rust
-  1.100 or later.
-- Fix: run `rustup update`. Run the install command again.
+- Cause: the Rust toolchain is missing or too old. `uss` needs Rust 1.100 or
+  later.
+- Cause: the message says that `uss` requires rustc 1.100 or newer, but the
+  default toolchain is newer. A `rust-toolchain.toml` file in the current
+  directory, or in a directory above it, selects an older toolchain. It
+  overrides the default toolchain.
+- Fix:
+  1. Run `rustup toolchain install stable`. It installs the stable toolchain,
+     or updates it.
+  2. Run the install command again with `+stable` after `cargo`. The
+     toolchain that you give in the command overrides `rust-toolchain.toml`.
+     For example:
+
+     ```sh
+     cargo +stable install --locked --git https://github.com/HaleTechCo/Universal-Software-Standard --tag v<version> uss
+     ```
+
+  3. In GitHub Actions, give the toolchain in the same way. The template
+     `templates/ci/uss-release.yml` does this with `USS_RUST_TOOLCHAIN`.
 
 ## `uss` says that a file is not valid UTF-8
 

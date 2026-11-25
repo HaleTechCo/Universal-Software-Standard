@@ -77,6 +77,18 @@ Also follow these rules:
 Read each source that a rule cites before you add or change the reference.
 Run `cargo run --locked -p uss -- lint` after each change.
 
+`cargo xtask check` also runs `uss check .uss/record.yaml` on the record of
+this repository. Two changes make that check fail until the record has an
+answer:
+
+- A new fact with a Question in `standard/applicability.md`. Answer the fact
+  in `.uss/record.yaml`.
+- A new MAY rule that applies to this repository. Add a decision for it to
+  `decisions` in `.uss/record.yaml`.
+
+Make the change to the record in the same pull request. The maintainer
+confirms the answer or the decision in the review.
+
 ## Vendor profiles
 
 A vendor profile says how one checking tool meets the rules. The vendor of the

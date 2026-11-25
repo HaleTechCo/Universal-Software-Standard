@@ -4,6 +4,8 @@ This project follows the Universal Software Standard (USS). The version of USS
 is the version that `.uss/record.yaml` pins.
 
 - Before you change the project, run `uss applicable --full .uss/record.yaml`.
+  Save its output to a file outside the project. Read the rules one area at a
+  time.
 - Follow every applicable MUST and MUST NOT rule. A Standard Deviation from
   one makes the project not compliant.
 - Follow every applicable SHOULD and SHOULD NOT rule. Skip one only if the

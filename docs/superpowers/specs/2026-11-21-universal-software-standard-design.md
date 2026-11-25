@@ -661,8 +661,8 @@ Written once in this repo's `AGENTS.md` (works with any coding agent) and
 packaged as Claude skills (§9). The skills follow the AGENTS.md text, never a
 separate copy of it. The workflows read the standard and the workflows
 themselves only through `uss show` and `uss applicable --full` (§9), at the
-version the record pins, and the agent installs `uss` before it starts because
-scores are never computed by hand.
+version the record pins. The agent installs `uss` before it starts: it reads
+the standard through `uss`, and scores are never computed by hand.
 
 **Questions come in batches.** The facts come in one table: each fact with its
 question, an answer filled in from the scan, and the evidence for it; the
@@ -704,7 +704,9 @@ time, each with its score category, answered in one reply per area.
 5. **Full audit** of every applicable rule: result plus evidence. Anything the
    agent cannot determine is `unverified`, never guessed.
 6. Write the record and the audit results, and generate the report with its
-   compliance statement and scores.
+   compliance statement and scores. A project whose AGENTS.md / CLAUDE.md has
+   no USS snippet gets it, as in 8.1, and is offered the CI template when it
+   publishes releases on GitHub.
 7. **Remediate**, with the developer's go-ahead: MUST failures first, then the
    SHOULDs the developer chose to comply with; in batches by area; each fix
    verified before its result changes to `pass`; report updated as it goes.
@@ -794,7 +796,7 @@ Universal-Software-Standard/
 ├── tools/uss/                 validator: Rust library + `uss` CLI
 ├── tools/xtask/               `cargo xtask check`: every check in one command
 ├── .uss/                      this repo's own record and audits
-├── .githooks/pre-commit       runs `cargo xtask check`
+├── .githooks/pre-commit       runs `cargo fmt --all --check` and `uss lint`
 └── .github/                   CODEOWNERS (vendor profile ownership),
                                dependabot.yml, issue and PR templates,
                                workflows/ (CI)
@@ -807,9 +809,9 @@ linting, applicability, compliance, scores, report rendering) and does no
 filesystem, network or process I/O: it works on file contents handed to it.
 The CLI does the I/O (reading files, calling `git`). That keeps the library
 able to run inside a VS Code extension or a web page through WebAssembly, or
-to be embedded elsewhere, without a rewrite. The standard's files, `AGENTS.md` and
-`CHANGELOG.md` are embedded in the binary, so a binary's version is always the
-version of the standard and of the workflows.
+to be embedded elsewhere, without a rewrite. The standard's files, `AGENTS.md`
+and `CHANGELOG.md` are embedded in the binary, so a binary's version is always
+the version of the standard and of the workflows.
 Distribution: release binaries per OS, plus
 `cargo install --git <repo> --tag vX.Y.Z uss` for people with Rust. Commands:
 

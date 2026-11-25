@@ -1556,6 +1556,22 @@ mod tests {
             "docs/troubleshooting.md",
             include_str!("../../../../docs/troubleshooting.md"),
         ),
+        (
+            "docs/architecture.md",
+            include_str!("../../../../docs/architecture.md"),
+        ),
+        (
+            "docs/dependencies.md",
+            include_str!("../../../../docs/dependencies.md"),
+        ),
+        (
+            "docs/adr/0003-deployable-parts.md",
+            include_str!("../../../../docs/adr/0003-deployable-parts.md"),
+        ),
+        (
+            ".github/ISSUE_TEMPLATE/bug.md",
+            include_str!("../../../../.github/ISSUE_TEMPLATE/bug.md"),
+        ),
     ];
 
     const ADOPT_SKILL: &str = include_str!("../../../../skills/adopt/SKILL.md");
@@ -1834,10 +1850,21 @@ mod tests {
         assert_eq!(release["types"], serde_json::json!(["published"]));
         assert_eq!(doc["permissions"], serde_json::json!({"contents": "read"}));
 
+        // The toolchain that installs uss meets its rust-version.
+        let toolchain = doc["env"]["USS_RUST_TOOLCHAIN"].as_str().unwrap();
+        let numbers = |version: &str| -> Vec<u64> {
+            version.split('.').map(|n| n.parse().unwrap()).collect()
+        };
+        assert!(
+            numbers(toolchain) >= numbers(env!("CARGO_PKG_RUST_VERSION")),
+            "USS_RUST_TOOLCHAIN {toolchain} is older than the rust-version of uss"
+        );
+
         let pinned = regex::Regex::new("^[^@]+@[0-9a-f]{40}$").unwrap();
         let mut uses = 0;
         let mut checkout = false;
         let mut release_check = false;
+        let mut installs = 0;
         for job in doc["jobs"].as_object().unwrap().values() {
             for step in job["steps"].as_array().unwrap() {
                 if let Some(action) = step["uses"].as_str() {
@@ -1852,26 +1879,39 @@ mod tests {
                 if let Some(run) = step["run"].as_str() {
                     assert!(!run.contains("${{"), "expression in run: {run}");
                     release_check |= run.lines().any(|l| l.starts_with("uss release-check"));
+                    // Each cargo command names the toolchain, so that a
+                    // rust-toolchain.toml file of the project does not apply.
+                    for line in run.lines().filter(|l| l.starts_with("cargo ")) {
+                        assert!(
+                            line.starts_with("cargo \"+${USS_RUST_TOOLCHAIN}\" install "),
+                            "toolchain not named: {line}"
+                        );
+                        installs += 1;
+                    }
                 }
             }
         }
-        assert!(uses > 0 && checkout && release_check);
+        assert!(uses > 0 && checkout && release_check && installs > 0);
     }
 
     #[test]
     fn documented_commands_exist() {
         let uss = uss_command();
         let mut problems = Vec::new();
+        let mut commands = 0;
         for (name, text) in DOC_FILES {
             for (line, snippet) in snippets_of(name, text) {
                 let Some(args) = uss_args(&snippet) else {
                     continue;
                 };
+                commands += 1;
                 if let Some(problem) = command_problem(&uss, &args) {
                     problems.push(format!("{name}:{line}: {snippet}: {problem}"));
                 }
             }
         }
+        // A parser that finds no command would pass every document.
+        assert!(commands > 0, "no uss command found in the documents");
         assert!(problems.is_empty(), "{}", problems.join("\n"));
     }
 

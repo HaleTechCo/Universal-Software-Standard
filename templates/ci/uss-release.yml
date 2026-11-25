@@ -20,6 +20,10 @@ permissions:
 env:
   # The USS version. Change it when you upgrade the pinned version.
   USS_VERSION: "0.1.0"
+  # The Rust toolchain that installs uss. Use the rust-version of uss at
+  # USS_VERSION, or a later one. When you change USS_VERSION, compare this
+  # value with the one in `uss show templates/ci/uss-release.yml`.
+  USS_RUST_TOOLCHAIN: "1.100.0"
 
 jobs:
   release-check:
@@ -34,14 +38,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      # The toolchain must meet the `rust-version` of `uss`.
       - name: Install the Rust toolchain
-        run: |
-          rustup toolchain install 1.100.0 --profile minimal
-          rustup default 1.100.0
+        run: rustup toolchain install "${USS_RUST_TOOLCHAIN}" --profile minimal
 
+      # The +toolchain argument overrides a rust-toolchain.toml file in the
+      # project, which can select an older toolchain.
       - name: Install uss
-        run: cargo install --locked --git https://github.com/HaleTechCo/Universal-Software-Standard --tag "v${USS_VERSION}" uss
+        run: cargo "+${USS_RUST_TOOLCHAIN}" install --locked --git https://github.com/HaleTechCo/Universal-Software-Standard --tag "v${USS_VERSION}" uss
 
       # Add --require-compliant to fail the job when a record is not compliant.
       - name: Check the release

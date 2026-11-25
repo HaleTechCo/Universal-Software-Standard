@@ -18,8 +18,8 @@ Status: version 0.x, in development. No version is released yet. See the
 
 ## Start
 
-Use the Claude plugin, or tell any agent to follow the workflow in
-`AGENTS.md`:
+Use the Claude plugin, or tell any agent to follow a workflow in the output
+of `uss show AGENTS.md`:
 
 - `/uss:adopt` adopts USS in a new project.
 - `/uss:audit` audits an existing project.
@@ -27,8 +27,9 @@ Use the Claude plugin, or tell any agent to follow the workflow in
 - `/uss:audit upgrade <version>` moves a project to another USS version.
 - `/uss:audit headless` audits with no person present.
 
-Without the plugin, say "follow the workflow in AGENTS.md to adopt USS" or
-"... to audit this project".
+Without the plugin, say "follow the workflow in the output of
+`uss show AGENTS.md` to adopt USS" or "... to audit this project". The
+`AGENTS.md` of your project does not hold these workflows.
 
 You can also run the tool. This command lists the rules that apply to a
 project:
@@ -134,8 +135,9 @@ that you need.
 2. If you moved a project to the new version, restore its `.uss` directory
    from version control. The record pins the version that it was written for.
 3. Run `uss version`. Check that it prints the earlier version.
-4. Keep the plugin as it is. It has no version of its own: its skills follow
-   the workflows of the installed `uss`, which `uss show AGENTS.md` prints.
+4. Keep the plugin as it is. Its version is the version of the standard that
+   it came with. But its skills follow the workflows of the installed `uss`,
+   which `uss show AGENTS.md` prints.
 
 ### Uninstall
 

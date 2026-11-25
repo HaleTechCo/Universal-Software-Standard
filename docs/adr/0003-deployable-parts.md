@@ -61,9 +61,10 @@ The other options were rejected:
 ### Consequences
 
 * A change to the standard reaches users only through a new build of `uss`.
-* The plugin has no version of its own. Its skills read `AGENTS.md` at the
-  plugin root, which tells the agent to follow the workflows of the installed
-  `uss` (`uss show AGENTS.md`).
+* The plugin's version is the version of the standard (a test ties
+  `plugin.json` to it). Its skills read `AGENTS.md` at the plugin root, which
+  tells the agent to follow the workflows of the installed `uss`
+  (`uss show AGENTS.md`).
 * The crate embeds files outside its own directory, so it cannot go to
   crates.io (`publish = false`). Users install it with `cargo install --git`
   from a release tag. Release binaries are a later step.

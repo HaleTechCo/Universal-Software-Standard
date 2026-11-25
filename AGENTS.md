@@ -45,29 +45,43 @@ These workflows apply USS to one project. They use these terms:
    - With no record, it is the version of the installed `uss`.
    - With no record and no `uss`, it is the latest release on the releases
      page.
-5. Run `uss version`. If it fails, or prints another version, install `uss`
-   at the version that you found.
-6. To install a release, find it on the releases page. Its tag is
-   `v<version>`. Run this command:
+5. Run `uss version`. If it prints the version that you found, skip the rest
+   of this step. Otherwise, install `uss` at that version:
+   1. Look for the release on the releases page. Its tag is `v<version>`.
+   2. The install needs a Rust toolchain at the `rust-version` of `uss` or
+      later. A `rust-toolchain.toml` file in the project can select an older
+      toolchain.
+   3. If the releases page lists the release, install it with these commands.
+      `+stable` selects the stable toolchain in place of the toolchain of the
+      project.
 
-   ```sh
-   cargo install --locked --git https://github.com/HaleTechCo/Universal-Software-Standard --tag v<version> uss
-   ```
+      ```sh
+      rustup toolchain install stable
+      cargo +stable install --locked --git https://github.com/HaleTechCo/Universal-Software-Standard --tag v<version> uss
+      ```
 
-7. If the releases page does not list the release, install `uss` from a USS
-   checkout at that version. Ask the developer for the path of the checkout.
-   With no version to match, the developer can give any checkout.
-8. In the root of the checkout, run `cargo install --locked --path tools/uss`.
-   Then go back to the project root.
-9. Read the workflows of that version with `uss show AGENTS.md`. If they are
+   4. `rustup toolchain install stable` installs the stable toolchain, or
+      updates it.
+   5. If the releases page does not list the release, install `uss` from a
+      USS checkout at that version. Ask the developer for the path of the
+      checkout. With no version to match, the developer can give any
+      checkout.
+   6. In the root of the checkout, run
+      `cargo install --locked --path tools/uss`. Then go back to the project
+      root.
+6. Read the workflows of that version with `uss show AGENTS.md`. If they are
    different from the copy that you read, follow them.
-10. Read sections 5, 8, 9, 11 and 12 of the conventions with
-    `uss show standard/conventions.md`. Section 12 tells you how to examine a
-    tool at a version outside its vendor profile.
-11. If the record pins that version, read the rules that apply with
-    `uss applicable --full .uss/record.yaml`. The output gives the rules in
-    the order of their IDs, so the rules of each area are together.
-12. Do not calculate applicability, scores or compliance yourself. Only `uss`
+7. Some outputs are too long to read at once, such as those of
+   `uss show standard/conventions.md` and `uss applicable --full`. Save each
+   such output to a file in a temporary directory outside the project. Read
+   the file in parts. Read the rules one area at a time.
+8. Read sections 5, 8, 9, 11 and 12 of the conventions with
+   `uss show standard/conventions.md`. Section 12 tells you how to examine a
+   tool at a version outside its vendor profile.
+9. If the record pins that version, read the rules that apply with
+   `uss applicable --full .uss/record.yaml`. The output gives the rules in
+   the order of their IDs, so the rules of each area are together.
+10. Do not calculate applicability, scores or compliance yourself. Only `uss`
     calculates them. If you cannot install `uss`, stop. Tell the developer
     why.
 
@@ -169,12 +183,23 @@ in `USS-SEC-013`.
    developer about each fact that the scan does not agree with.
 10. If a fact changes, run `uss applicable .uss/record.yaml`. Ask about the
     new rules only.
-11. Commit the record and the draft Standard Deviations, if you changed them.
-12. If you started or changed the record, read the rules that apply with
+11. Look for the USS snippet in `AGENTS.md` and `CLAUDE.md` in the project
+    root. The snippet starts with the heading "Universal Software Standard
+    (USS)".
+12. If the project has no USS snippet, add it as "Adopt a new project" says.
+    In that case, also offer the CI template if the project publishes
+    releases on GitHub.
+13. If the developer accepts the CI template, add it as "Adopt a new project"
+    says. With no person present, do not offer it.
+14. Commit the record, the draft Standard Deviations, the snippet and the CI
+    template, if you changed or added them.
+15. If you started or changed the record, read the rules that apply with
     `uss applicable --full .uss/record.yaml`.
-13. Start the results file `.uss/audits/<date>.yaml`, with the date of today.
+16. Start the results file `.uss/audits/<date>.yaml`, with the date of today.
     Set `standard.version` to the version that the record pins.
-14. Set `commit` to the full 40-character SHA that `git rev-parse HEAD`
+17. If that file exists and is committed, write the new audit in it. Remove
+    its results and its suppressions. Keep its entry in `audits`.
+18. Set `commit` to the full 40-character SHA that `git rev-parse HEAD`
     prints. Set `auditor` to who or what does the audit, such as `claude`.
     For example:
 
@@ -265,7 +290,7 @@ in `USS-SEC-013`.
 2. A rule that applies with no result counts as `unverified`. The exception
    is a MAY rule that the record declines: it counts as `declined`.
 3. Add the audit to `audits` in the record, with `date`, `results` and
-   `report`.
+   `report`. If `audits` already lists that results file, keep its one entry.
 4. Run `uss check .uss/record.yaml`. Correct each problem that it reports.
    `uss check` does not examine the content of the results file.
 5. Run `uss report .uss/audits/<date>.yaml`. It examines the results file. If
@@ -366,7 +391,9 @@ audit.
    that pins another version, so the upgrade happens on a branch.
 4. Change `standard.version` to the new version in every record.
 5. If the project has `.github/workflows/uss-release.yml`, change its
-   `USS_VERSION` to the new version.
+   `USS_VERSION` to the new version. Then compare its `USS_RUST_TOOLCHAIN`
+   with the value in `uss show templates/ci/uss-release.yml`. Keep the newer
+   of the two values.
 6. Run `uss check .uss/record.yaml`. It names each new fact that the record
    does not answer. It also names each fact that the new version does not
    have.
