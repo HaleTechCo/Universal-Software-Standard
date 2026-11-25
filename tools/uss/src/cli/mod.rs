@@ -5,14 +5,14 @@ use std::path::{Path, PathBuf};
 
 use clap::{Parser, Subcommand};
 
-use crate::catalog::{Catalog, Rule, load, load_registry};
+use crate::catalog::{Catalog, ExportRule, Rule, load, load_registry, rule_markdown};
 use crate::evaluate::{
     applicable, check_record, evaluate, leaves_project, normalise, version_mismatch, walk,
 };
 use crate::record::{Record, Results, parse_results};
 use crate::release::only_uss_changes;
 use crate::report::render;
-use crate::source::{Embedded, Source};
+use crate::source::{Embedded, Source, uss_files, uss_path};
 
 mod files;
 mod git;
@@ -51,8 +51,16 @@ enum Command {
         /// Print a JSON array instead of tab-separated lines.
         #[arg(long)]
         json: bool,
+        /// Print the full text of each rule instead of one line.
+        #[arg(long, conflicts_with = "json")]
+        full: bool,
         /// The project record (`.uss/record.yaml`).
         record: PathBuf,
+    },
+    /// Print a file of the standard, or list the files.
+    Show {
+        /// The file's path, such as `standard/registry.yaml`. Omit it to list the files.
+        path: Option<String>,
     },
     /// Export the rule catalog for other tools.
     Export {
@@ -206,11 +214,47 @@ fn run_export(src: &dyn Source, json: bool, out: &mut dyn Write, err: &mut dyn W
     writeln!(out, "{text}").map_or(EXIT_USAGE, |()| 0)
 }
 
-/// Prints the rules that apply to the record, as lines or as JSON.
+/// How `uss applicable` prints the rules.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ApplicableFormat {
+    Lines,
+    Json,
+    Full,
+}
+
+/// Prints a file of the standard, or the list of files when `path` is `None`.
+fn run_show(src: &dyn Source, path: Option<&str>, out: &mut dyn Write, err: &mut dyn Write) -> i32 {
+    let files = uss_files(src);
+    let Some(input) = path else {
+        let listed = files.iter().try_for_each(|f| writeln!(out, "{f}"));
+        return listed.map_or(EXIT_USAGE, |()| 0);
+    };
+    let path = uss_path(input);
+    // Only a listed file is read: this keeps `--standard-root` inside the standard.
+    let bytes = files
+        .contains(&path)
+        .then(|| src.read(&path))
+        .flatten()
+        .map(std::borrow::Cow::into_owned);
+    let Some(bytes) = bytes else {
+        let version = load_registry(src).map_or_else(
+            |_| env!("CARGO_PKG_VERSION").to_string(),
+            |registry| registry.version,
+        );
+        let _ = writeln!(
+            err,
+            "uss show: no file \"{path}\" in USS {version}. Run \"uss show\" to list the files."
+        );
+        return 1;
+    };
+    out.write_all(&bytes).map_or(EXIT_USAGE, |()| 0)
+}
+
+/// Prints the rules that apply to the record, as lines, as JSON, or in full.
 fn run_applicable(
     src: &dyn Source,
     record_path: &Path,
-    json: bool,
+    format: ApplicableFormat,
     out: &mut dyn Write,
     err: &mut dyn Write,
 ) -> i32 {
@@ -218,6 +262,18 @@ fn run_applicable(
         Ok(loaded) => loaded,
         Err(code) => return code,
     };
+    let json = format == ApplicableFormat::Json;
+    if format == ApplicableFormat::Full {
+        let texts: Vec<String> = applicable(&catalog, &record)
+            .into_iter()
+            .filter_map(|rule| rule_markdown(&ExportRule::from(rule)))
+            .collect();
+        let written = texts
+            .iter()
+            .enumerate()
+            .try_for_each(|(i, text)| writeln!(out, "{}{text}", if i == 0 { "" } else { "\n" }));
+        return written.map_or(EXIT_USAGE, |()| 0);
+    }
     let rows: Vec<(&Rule, String, &str)> = applicable(&catalog, &record)
         .into_iter()
         .filter_map(|rule| {
@@ -509,9 +565,15 @@ pub fn run(args: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
             match cli.command {
                 Command::Version => run_version(src.as_ref(), out, err),
                 Command::Lint => run_lint(src.as_ref(), out),
-                Command::Applicable { json, record } => {
-                    run_applicable(src.as_ref(), &record, json, out, err)
+                Command::Applicable { json, full, record } => {
+                    let format = match (json, full) {
+                        (true, _) => ApplicableFormat::Json,
+                        (_, true) => ApplicableFormat::Full,
+                        _ => ApplicableFormat::Lines,
+                    };
+                    run_applicable(src.as_ref(), &record, format, out, err)
                 }
+                Command::Show { path } => run_show(src.as_ref(), path.as_deref(), out, err),
                 Command::Export { json } => run_export(src.as_ref(), json, out, err),
                 Command::Check { record } => run_check(src.as_ref(), &record, out, err),
                 Command::Report {
@@ -645,6 +707,7 @@ mod tests {
             "schema/record.schema.json",
             "schema/audit-results.schema.json",
             "templates/audit-report.md.j2",
+            "templates/record.yaml",
         ]
         .map(|path| (path.to_string(), Embedded.read(path).unwrap().into_owned()));
         let files = crate::testfixture::standard().0.into_iter().chain(shipped);
@@ -707,6 +770,107 @@ mod tests {
         assert_eq!(keys, ["category", "file", "id", "level", "title"]);
         assert_eq!(first["level"], "MAY");
         assert_eq!(first["file"], "standard/core/extensibility.md");
+    }
+
+    #[test]
+    fn applicable_full_prints_rule_text() {
+        let root = fixture_root();
+        let rec = write_record(root.path(), "0.1.0");
+        let root_arg = root.path().to_str().unwrap();
+        let (code, out, err) =
+            run_capture(&["--standard-root", root_arg, "applicable", "--full", &rec]);
+        assert_eq!(code, 0, "stderr: {err}");
+        let catalog = load(&DirSource::new(root.path())).unwrap();
+        let expected = ["USS-EXT-001", "USS-GO-001", "USS-SEC-001"]
+            .map(|id| rule_markdown(&ExportRule::from(catalog.rule(id).unwrap())).unwrap())
+            .join("\n\n");
+        assert_eq!(out, format!("{expected}\n"));
+        assert!(out.starts_with("### USS-EXT-001: Offer a plugin interface\n"));
+    }
+
+    #[test]
+    fn applicable_full_conflicts_with_json() {
+        let root = fixture_root();
+        let rec = write_record(root.path(), "0.1.0");
+        let root_arg = root.path().to_str().unwrap();
+        let (code, _out, err) = run_capture(&[
+            "--standard-root",
+            root_arg,
+            "applicable",
+            "--full",
+            "--json",
+            &rec,
+        ]);
+        assert_eq!(code, 2, "stderr: {err}");
+    }
+
+    fn show(root: &Path, args: &[&str]) -> (i32, String, String) {
+        let mut full = vec!["--standard-root", root.to_str().unwrap(), "show"];
+        full.extend(args);
+        run_capture(&full)
+    }
+
+    #[test]
+    fn show_prints_file() {
+        let root = fixture_root();
+        let (code, out, err) = show(root.path(), &["templates/record.yaml"]);
+        assert_eq!(code, 0, "stderr: {err}");
+        let bytes = std::fs::read(root.path().join("templates/record.yaml")).unwrap();
+        assert_eq!(out.as_bytes(), bytes);
+    }
+
+    #[test]
+    fn show_lists_files() {
+        let root = fixture_root();
+        let (code, out, _err) = show(root.path(), &[]);
+        assert_eq!(code, 0);
+        let expected = uss_files(&DirSource::new(root.path())).join("\n") + "\n";
+        assert_eq!(out, expected);
+        assert!(out.contains("standard/registry.yaml\n"), "{out}");
+    }
+
+    #[test]
+    fn show_accepts_windows_paths() {
+        let root = fixture_root();
+        let (_, expected, _) = show(root.path(), &["templates/record.yaml"]);
+        let (code, out, err) = show(root.path(), &[".\\templates\\record.yaml"]);
+        assert_eq!(code, 0, "stderr: {err}");
+        assert_eq!(out, expected);
+    }
+
+    #[test]
+    fn show_unknown_path() {
+        let root = fixture_root();
+        let (code, out, err) = show(root.path(), &["standard/nope.md"]);
+        assert_eq!(code, 1);
+        assert_eq!(out, "");
+        assert!(
+            err.contains("no file \"standard/nope.md\""),
+            "stderr: {err}"
+        );
+        assert!(err.contains("uss show"), "stderr: {err}");
+    }
+
+    #[test]
+    fn show_refuses_outside_paths() {
+        let root = fixture_root();
+        std::fs::write(root.path().join("secret.txt"), "secret").unwrap();
+        for path in ["secret.txt", "standard/../secret.txt", "../secret.txt"] {
+            let (code, out, _err) = show(root.path(), &[path]);
+            assert_eq!(code, 1, "{path}");
+            assert_eq!(out, "", "{path}");
+        }
+    }
+
+    #[test]
+    fn show_needs_no_record() {
+        // The embedded standard, and no `.uss/` in the working directory.
+        let (code, out, err) = run_capture(&["show", "standard/registry.yaml"]);
+        assert_eq!(code, 0, "stderr: {err}");
+        assert!(out.contains("version:"), "{out}");
+        let (code, out, _err) = run_capture(&["show"]);
+        assert_eq!(code, 0);
+        assert!(out.contains("standard/registry.yaml\n"), "{out}");
     }
 
     #[test]

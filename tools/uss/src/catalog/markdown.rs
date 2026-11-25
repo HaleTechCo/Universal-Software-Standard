@@ -96,6 +96,33 @@ enum Block {
     Closed,
 }
 
+/// Follows fenced code blocks line by line.
+#[derive(Debug, Default)]
+struct Fences {
+    /// The marker that opened the current block.
+    marker: Option<&'static str>,
+}
+
+impl Fences {
+    /// Reads the next line. Returns whether the line is part of a fenced block
+    /// (fences included) and whether it opens one.
+    fn step(&mut self, line: &str) -> (bool, bool) {
+        if let Some(marker) = self.marker {
+            if line.starts_with(marker) {
+                self.marker = None;
+            }
+            return (true, false);
+        }
+        self.marker = ["```", "~~~"].into_iter().find(|m| line.starts_with(m));
+        (self.marker.is_some(), self.marker.is_some())
+    }
+
+    /// Whether a block is still open.
+    fn is_open(&self) -> bool {
+        self.marker.is_some()
+    }
+}
+
 /// Scans `data` into a [`Doc`], reporting malformed fields.
 pub(crate) fn parse_doc(file: &str, data: &[u8]) -> (Doc, Vec<Diagnostic>) {
     let raw = String::from_utf8_lossy(data);
@@ -106,7 +133,7 @@ pub(crate) fn parse_doc(file: &str, data: &[u8]) -> (Doc, Vec<Diagnostic>) {
         ..Doc::default()
     };
     let mut diags = Vec::new();
-    let mut fence: Option<&str> = None;
+    let mut fences = Fences::default();
     let mut fence_line = 0;
     let mut target = Target::None;
     let mut block = Block::Closed;
@@ -117,18 +144,12 @@ pub(crate) fn parse_doc(file: &str, data: &[u8]) -> (Doc, Vec<Diagnostic>) {
 
     for (i, line) in text.lines().enumerate() {
         let n = i + 1;
-        if let Some(marker) = fence {
-            if line.starts_with(marker) {
-                fence = None;
+        let (inside, opened) = fences.step(line);
+        if inside {
+            if opened {
+                fence_line = n;
+                block = Block::Closed;
             }
-            lines.push((line, true));
-            note(&mut doc, in_group, (line, n), true);
-            continue;
-        }
-        if let Some(marker) = ["```", "~~~"].into_iter().find(|m| line.starts_with(m)) {
-            fence = Some(marker);
-            fence_line = n;
-            block = Block::Closed;
             lines.push((line, true));
             note(&mut doc, in_group, (line, n), true);
             continue;
@@ -190,7 +211,7 @@ pub(crate) fn parse_doc(file: &str, data: &[u8]) -> (Doc, Vec<Diagnostic>) {
             note(&mut doc, in_group, (line, n), false);
         }
     }
-    if fence.is_some() {
+    if fences.is_open() {
         let mut d = Diagnostic::new(file, "unclosed code fence");
         d.line = fence_line;
         diags.push(d);
@@ -302,20 +323,12 @@ pub(crate) fn parse_table(lines: &[Line]) -> Result<Table, (usize, String)> {
 /// The lines of `text` outside fenced code blocks, each with its 1-based
 /// number.
 fn unfenced(text: &str) -> Vec<(usize, &str)> {
-    let mut fence: Option<&str> = None;
-    let mut out = Vec::new();
-    for (i, line) in text.lines().enumerate() {
-        if let Some(marker) = fence {
-            if line.starts_with(marker) {
-                fence = None;
-            }
-        } else if let Some(marker) = ["```", "~~~"].into_iter().find(|m| line.starts_with(m)) {
-            fence = Some(marker);
-        } else {
-            out.push((i + 1, line));
-        }
-    }
-    out
+    let mut fences = Fences::default();
+    text.lines()
+        .enumerate()
+        .filter(|(_, line)| !fences.step(line).0)
+        .map(|(i, line)| (i + 1, line))
+        .collect()
 }
 
 /// Finds the rule IDs that `data` names outside fenced code blocks, each with

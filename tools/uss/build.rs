@@ -1,14 +1,20 @@
 //! Build script: embeds the standard's files into the library.
 //!
-//! Walks `standard/`, `schema/` and `templates/` at the repository root and
-//! writes `$OUT_DIR/embedded.rs`, a sorted table of `(path, bytes)`.
+//! Walks `standard/`, `schema/` and `templates/` at the repository root, adds
+//! the root files that exist, and writes `$OUT_DIR/embedded.rs`, a sorted
+//! table of `(path, bytes)`.
 
 use std::error::Error;
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-/// Directories (relative to the repository root) that are embedded.
+/// Directories (relative to the repository root) that are embedded. A copy of
+/// `source::USS_DIRS`: a build script cannot import from the crate.
 const DIRS: [&str; 3] = ["standard", "schema", "templates"];
+
+/// Root files that are embedded when they exist. A copy of
+/// `source::ROOT_FILES`.
+const ROOT_FILES: [&str; 2] = ["AGENTS.md", "CHANGELOG.md"];
 
 /// Collects every file under `dir` as `(forward-slash path, absolute path)`.
 fn walk(dir: &Path, rel: &str, found: &mut Vec<(String, PathBuf)>) -> Result<(), Box<dyn Error>> {
@@ -38,6 +44,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!("cargo:rerun-if-changed={}", path.display());
         if path.is_dir() {
             walk(&path, dir, &mut found)?;
+        }
+    }
+    for name in ROOT_FILES {
+        let path = root.join(name);
+        // Watched whether or not it exists, so creating it rebuilds.
+        println!("cargo:rerun-if-changed={}", path.display());
+        if path.is_file() {
+            found.push((name.to_string(), path));
         }
     }
     found.sort();

@@ -176,6 +176,40 @@ impl From<&Rule> for ExportRule {
     }
 }
 
+/// Writes `rule` as Markdown, as the standard's files do: the heading, the
+/// fields (with the effective condition for `Applies when`), then the body.
+/// Returns `None` for a retired rule. The text has no final newline.
+#[must_use]
+pub fn rule_markdown(rule: &ExportRule) -> Option<String> {
+    let (level, applies, category, verify, references, body) = (
+        rule.level.as_ref()?,
+        rule.applies_when.as_ref()?,
+        rule.category.as_ref()?,
+        rule.verify.as_ref()?,
+        rule.references.as_ref()?,
+        rule.body.as_ref()?,
+    );
+    let mut lines = vec![
+        format!("### {}: {}", rule.id, rule.title),
+        String::new(),
+        format!("- **Level:** {level}"),
+        format!("- **Applies when:** {applies}"),
+        format!("- **Category:** {category}"),
+    ];
+    if !rule.refines.is_empty() {
+        lines.push(format!("- **Refines:** {}", rule.refines.join(", ")));
+    }
+    lines.push(format!("- **Verify:** {verify}"));
+    lines.push(format!("- **References:** {references}"));
+    if !rule.enables.is_empty() {
+        lines.push(format!("- **Enables:** {}", rule.enables.join(", ")));
+    }
+    lines.push(format!("- **File:** {}", rule.file));
+    lines.push(String::new());
+    lines.push(body.trim_end().to_string());
+    Some(lines.join("\n"))
+}
+
 impl From<&Profile> for ExportProfile {
     fn from(p: &Profile) -> Self {
         Self {
@@ -245,6 +279,44 @@ mod tests {
             .collect();
         keys.sort_unstable();
         keys
+    }
+
+    fn export_rule(id: &str) -> super::ExportRule {
+        let catalog = load(&testfixture::standard()).unwrap();
+        let export = catalog.export();
+        export.rules.into_iter().find(|r| r.id == id).unwrap()
+    }
+
+    #[test]
+    fn rule_markdown_layout() {
+        let go = export_rule("USS-GO-001");
+        assert_eq!(
+            super::rule_markdown(&go).unwrap(),
+            concat!(
+                "### USS-GO-001: Handle errors\n",
+                "\n",
+                "- **Level:** MUST\n",
+                "- **Applies when:** lang.go\n",
+                "- **Category:** Safety\n",
+                "- **Refines:** USS-SEC-001\n",
+                "- **Verify:** Check that no error value is discarded.\n",
+                "- **References:** Effective Go\n",
+                "- **File:** standard/modules/languages/go.md\n",
+                "\n",
+                "Go code MUST handle every returned error.",
+            )
+        );
+        let may = super::rule_markdown(&export_rule("USS-EXT-001")).unwrap();
+        assert!(!may.contains("Refines"), "{may}");
+        assert!(
+            may.contains("- **References:** Project design notes\n- **Enables:** has-plugin-interface\n- **File:**"),
+            "{may}"
+        );
+    }
+
+    #[test]
+    fn rule_markdown_retired_is_none() {
+        assert_eq!(super::rule_markdown(&export_rule("USS-SEC-004")), None);
     }
 
     #[test]

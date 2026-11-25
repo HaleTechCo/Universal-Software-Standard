@@ -33,7 +33,9 @@ pub(crate) mod registry;
 mod rules;
 
 pub use diag::Diagnostic;
-pub use export::{Export, ExportCategory, ExportFact, ExportMapping, ExportProfile, ExportRule};
+pub use export::{
+    Export, ExportCategory, ExportFact, ExportMapping, ExportProfile, ExportRule, rule_markdown,
+};
 pub use facts::{Fact, FactSource};
 pub use profiles::{Coverage, Maintainer, Mapping, Profile};
 pub use registry::{Category, Registry, load_registry};
@@ -734,6 +736,42 @@ See USS-SEC-099.
         );
         assert!(refine("USS-SEC-002", "uses-database").is_ok());
         assert!(refine("USS-SEC-003", "has-web-ui").is_ok());
+    }
+
+    #[test]
+    fn refines_reach_over_limit() {
+        let extra: Vec<String> = (1..=12).map(|i| format!("f{i:02}")).collect();
+        let facts = extra
+            .iter()
+            .map(|f| {
+                format!("### {f}\n\n- **Question:** Is {f}?\n- **Definition:** Yes when {f}.\n\n")
+            })
+            .collect::<Vec<_>>()
+            .concat();
+        let mut src = edited(
+            "standard/applicability.md",
+            "### has-ui\n",
+            &format!("{facts}### has-ui\n"),
+        );
+        let go = "standard/modules/languages/go.md";
+        let text = String::from_utf8(src.0[go].clone()).unwrap();
+        let wide = format!(
+            "has-ui or uses-database or has-web-ui or has-plugin-interface or {}",
+            extra.join(" or ")
+        );
+        let text = text.replacen(
+            "- **Applies when:** always",
+            &format!("- **Applies when:** {wide}"),
+            1,
+        );
+        src.0.insert(go.to_string(), text.into_bytes());
+        let diags = load(&src).unwrap_err();
+        assert_eq!(diags.len(), 1, "{diags:?}");
+        let text = text_of(&diags);
+        assert!(
+            text.contains("17 identifiers, over the limit of 16"),
+            "{text}"
+        );
     }
 
     #[test]

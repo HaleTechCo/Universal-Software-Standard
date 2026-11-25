@@ -5,6 +5,14 @@ use std::collections::BTreeMap;
 
 include!(concat!(env!("OUT_DIR"), "/embedded.rs"));
 
+/// Directories of the repository root that hold USS's own files. A copy is in
+/// `build.rs`.
+pub const USS_DIRS: [&str; 3] = ["standard", "schema", "templates"];
+
+/// Files at the repository root that are part of USS (the workflows and the
+/// changelog). A copy is in `build.rs`.
+pub const ROOT_FILES: [&str; 2] = ["AGENTS.md", "CHANGELOG.md"];
+
 /// A read-only set of USS files addressed by forward-slash paths relative to
 /// the USS root (for example `standard/registry.yaml`).
 pub trait Source {
@@ -14,6 +22,32 @@ pub trait Source {
     /// Lists every file under `dir`, recursively, as forward-slash paths
     /// relative to the root, sorted.
     fn list(&self, dir: &str) -> Vec<String>;
+}
+
+/// Lists the USS files in `src`: every file under [`USS_DIRS`], and each of
+/// [`ROOT_FILES`] that `src` can read, sorted.
+#[must_use]
+pub fn uss_files(src: &dyn Source) -> Vec<String> {
+    let mut files: Vec<String> = USS_DIRS.iter().flat_map(|dir| src.list(dir)).collect();
+    files.extend(
+        ROOT_FILES
+            .iter()
+            .filter(|name| src.read(name).is_some())
+            .map(|name| (*name).to_string()),
+    );
+    files.sort();
+    files
+}
+
+/// Turns a path typed by a person into a USS path: `\` becomes `/`, and each
+/// leading `./` is removed.
+#[must_use]
+pub fn uss_path(input: &str) -> String {
+    let mut path = input.replace('\\', "/");
+    while let Some(rest) = path.strip_prefix("./") {
+        path = rest.to_string();
+    }
+    path
 }
 
 /// Returns the sorted subset of `paths` that lie under `dir`.
@@ -73,6 +107,36 @@ mod tests {
                 .list("standard")
                 .contains(&"standard/registry.yaml".to_string())
         );
+    }
+
+    #[test]
+    fn uss_files_lists_dirs_and_root_files() {
+        let files = [
+            "standard/a.md",
+            "schema/s.json",
+            "templates/t.yaml",
+            "AGENTS.md",
+            "README.md",
+            "other/x.md",
+        ]
+        .map(|p| (p.to_string(), b"x".to_vec()));
+        let src = MemSource(files.into_iter().collect());
+        assert_eq!(
+            uss_files(&src),
+            [
+                "AGENTS.md",
+                "schema/s.json",
+                "standard/a.md",
+                "templates/t.yaml"
+            ]
+        );
+    }
+
+    #[test]
+    fn uss_path_normalises() {
+        assert_eq!(uss_path(".\\standard\\core\\a.md"), "standard/core/a.md");
+        assert_eq!(uss_path("./templates/record.yaml"), "templates/record.yaml");
+        assert_eq!(uss_path("standard/x.md"), "standard/x.md");
     }
 
     #[test]
