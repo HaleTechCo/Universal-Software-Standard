@@ -125,7 +125,7 @@ have this form, and the prefix in its ID MUST be the file's `Prefix`.
 | Verify | always | How an auditor determines pass or fail from the project's artifacts. |
 | References | always | The external standards, CWEs and specifications that the rule relies on, with their versions, or `none`. |
 | Enables | MAY rules only, when needed | The facts that become true when a project adopts the rule (section 5). |
-| Refines | module rules only, when needed | The IDs of the core rules that this rule makes concrete for its technology. Each one MUST be a rule in an area file. |
+| Refines | module rules only, when needed | The IDs of the core rules that this rule makes concrete for its technology. Each one MUST be a rule in an area file, and the rule MUST apply only where each of them applies. |
 | Status | retired rules | `Retired` (section 4). A rule without `Status` is active. |
 | Retired in | retired rules | The version of the standard that retired the rule. |
 | Replaced by | retired rules | The ID of the rule that replaces it, or `none`. |
@@ -177,6 +177,10 @@ the prefix of its module, such as `USS-GO-004`, `USS-PY-010` or
   place, so links to it and old records stay valid.
 - A change to the meaning of a rule MUST be made by retiring the rule and
   adding a new rule with a new ID.
+
+Each rule ID that a standard file names outside a fenced code block MUST be a
+rule of the standard. `uss lint` checks `applicability.md` and every area and
+module file.
 
 To retire a rule:
 

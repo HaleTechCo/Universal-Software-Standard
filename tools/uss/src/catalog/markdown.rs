@@ -9,6 +9,9 @@ use super::Diagnostic;
 use super::registry::constant_regex;
 use crate::text;
 
+static REF_RE: LazyLock<Regex> =
+    LazyLock::new(|| constant_regex(r"\bUSS-[A-Z][A-Z0-9]{1,7}-\d{3}\b"));
+
 static FIELD_RE: LazyLock<Regex> =
     LazyLock::new(|| constant_regex(r"^- \*\*([A-Za-z ]+):\*\* (.*)$"));
 
@@ -161,6 +164,31 @@ pub(crate) fn parse_doc(file: &str, data: &[u8]) -> (Doc, Vec<Diagnostic>) {
     (doc, diags)
 }
 
+/// Finds the rule IDs that `data` names outside fenced code blocks, each with
+/// its 1-based line.
+pub(crate) fn rule_refs(data: &[u8]) -> Vec<(usize, String)> {
+    let raw = String::from_utf8_lossy(data);
+    let text = text::normalise(&raw);
+    let mut fence: Option<&str> = None;
+    let mut out = Vec::new();
+    for (i, line) in text.lines().enumerate() {
+        if let Some(marker) = fence {
+            if line.starts_with(marker) {
+                fence = None;
+            }
+        } else if let Some(marker) = ["```", "~~~"].into_iter().find(|m| line.starts_with(m)) {
+            fence = Some(marker);
+        } else {
+            out.extend(
+                REF_RE
+                    .find_iter(line)
+                    .map(|m| (i + 1, m.as_str().to_string())),
+            );
+        }
+    }
+    out
+}
+
 /// Reads `line` (with its 1-based number) as a field or a continuation of the
 /// last field. Returns `false` when the line ends the field block.
 fn read_field(
@@ -274,6 +302,23 @@ mod tests {
             assert!(!s.prose.contains("MAY"));
             assert!(s.prose.contains("Text.") && s.prose.contains("After."));
         }
+    }
+
+    #[test]
+    fn rule_refs_skips_fences() {
+        let src = "See USS-SEC-001 and USS-A1-042.
+```
+USS-SEC-002
+```
+Not XUSS-SEC-003 or USS-SEC-0044.
+~~~
+USS-SEC-005
+~~~
+USS-GO-007
+";
+        let refs = rule_refs(src.as_bytes());
+        let want = [(1, "USS-SEC-001"), (1, "USS-A1-042"), (9, "USS-GO-007")];
+        assert_eq!(refs, want.map(|(n, id)| (n, id.to_string())).to_vec());
     }
 
     #[test]

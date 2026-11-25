@@ -1,12 +1,15 @@
 //! The catalog of the standard: registry, rules and related data.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use crate::expr::{self, Expr};
 use crate::source::Source;
 use facts::parse_facts;
 use rules::parse_rule_file;
+
+/// Most identifiers that the reach check of `Refines` enumerates.
+const MAX_REACH_IDENTS: usize = 16;
 
 /// Path of the facts file, relative to the USS root.
 const FACTS_PATH: &str = "standard/applicability.md";
@@ -94,6 +97,10 @@ pub fn load(src: &dyn Source) -> Result<Catalog, Vec<Diagnostic>> {
     }
 
     let mut files = Vec::new();
+    let mut texts: Vec<(String, Vec<u8>)> = Vec::new();
+    if let Some(data) = src.read(FACTS_PATH) {
+        texts.push((FACTS_PATH.to_string(), data.to_vec()));
+    }
     for (dir, kind) in [
         ("standard/core", FileKind::Area),
         ("standard/modules", FileKind::Module),
@@ -110,6 +117,7 @@ pub fn load(src: &dyn Source) -> Result<Catalog, Vec<Diagnostic>> {
                 continue;
             };
             let (file, d) = parse_rule_file(&path, &data);
+            texts.push((path.clone(), data.to_vec()));
             diags.extend(d);
             if file.kind != kind {
                 let want = if kind == FileKind::Area {
@@ -150,7 +158,7 @@ pub fn load(src: &dyn Source) -> Result<Catalog, Vec<Diagnostic>> {
         file_count,
         modules,
     };
-    catalog.check(&files, &mut diags);
+    catalog.check(&files, &texts, &mut diags);
     if diags.is_empty() {
         Ok(catalog)
     } else {
@@ -166,8 +174,19 @@ fn sorted(mut diags: Vec<Diagnostic>) -> Vec<Diagnostic> {
 
 impl Catalog {
     /// Runs the checks that need more than one file.
-    fn check(&self, files: &[RuleFile], diags: &mut Vec<Diagnostic>) {
+    fn check(&self, files: &[RuleFile], texts: &[(String, Vec<u8>)], diags: &mut Vec<Diagnostic>) {
         Self::check_unique(files, diags);
+        for (path, data) in texts {
+            for (line, id) in markdown::rule_refs(data) {
+                if self.rule(&id).is_none() {
+                    diags.push(Diagnostic {
+                        file: path.clone(),
+                        line,
+                        message: format!("unknown rule {id}"),
+                    });
+                }
+            }
+        }
         for rule in &self.rules {
             let at = |message: String| Diagnostic {
                 file: rule.file.clone(),
@@ -288,7 +307,70 @@ impl Catalog {
                     "{} refines {target}, which is not in an area file",
                     rule.id
                 ))),
-                Some(_) => {}
+                Some(t) => self.check_reach(rule, a, t, at, diags),
+            }
+        }
+    }
+
+    /// Checks that `rule`, which refines `target`, applies only where
+    /// `target` does.
+    fn check_reach(
+        &self,
+        rule: &Rule,
+        a: &Active,
+        target: &Rule,
+        at: &dyn Fn(String) -> Diagnostic,
+        diags: &mut Vec<Diagnostic>,
+    ) {
+        let Some(t) = target.active() else {
+            return;
+        };
+        let idents: Vec<String> = a
+            .applies
+            .idents()
+            .union(&t.applies.idents())
+            .cloned()
+            .collect();
+        if idents.len() > MAX_REACH_IDENTS {
+            diags.push(at(format!(
+                "{}: cannot check that it applies only where {} does: {} identifiers, over the limit of {MAX_REACH_IDENTS}",
+                rule.id,
+                target.id,
+                idents.len()
+            )));
+            return;
+        }
+        for mask in 0..(1_u32 << idents.len()) {
+            let mut set: BTreeSet<String> = idents
+                .iter()
+                .enumerate()
+                .filter(|(i, _)| mask >> i & 1 == 1)
+                .map(|(_, id)| id.clone())
+                .collect();
+            self.close_implies(&mut set);
+            if a.applies.eval(&set) && !t.applies.eval(&set) {
+                let shown = if set.is_empty() {
+                    "nothing".to_string()
+                } else {
+                    set.into_iter().collect::<Vec<_>>().join(", ")
+                };
+                diags.push(at(format!(
+                    "{} applies where {}, which it refines, does not (for example when true: {shown})",
+                    rule.id, target.id
+                )));
+                return;
+            }
+        }
+    }
+
+    /// Adds to `set` every fact that a fact in it implies, directly or not.
+    fn close_implies(&self, set: &mut BTreeSet<String>) {
+        let mut queue: Vec<String> = set.iter().cloned().collect();
+        while let Some(id) = queue.pop() {
+            for next in self.facts.get(&id).map_or(&[][..], |f| &f.implies[..]) {
+                if set.insert(next.clone()) {
+                    queue.push(next.clone());
+                }
             }
         }
     }
@@ -415,6 +497,71 @@ mod tests {
             let text = text_of(&load(src).unwrap_err());
             assert!(text.contains(want), "case {i}: want {want:?} in:\n{text}");
         }
+    }
+
+    #[test]
+    fn load_unknown_rule_reference() {
+        let sec = "standard/core/security.md";
+        let src = edited(
+            sec,
+            "Every project MUST validate external input.",
+            "Every project MUST validate external input.
+See USS-SEC-099.",
+        );
+        let text = text_of(&load(&src).unwrap_err());
+        assert!(
+            text.contains("standard/core/security.md:15: unknown rule USS-SEC-099"),
+            "{text}"
+        );
+
+        let src = edited(
+            sec,
+            "Every project MUST validate external input.",
+            "Every project MUST validate external input.
+
+```
+See USS-SEC-099.
+```",
+        );
+        assert!(load(&src).is_ok());
+
+        let src = edited(
+            "standard/applicability.md",
+            "Yes when it reads or writes a database.",
+            "Yes when it reads or writes a database, as USS-NOPE-001 says.",
+        );
+        let text = text_of(&load(&src).unwrap_err());
+        assert!(text.contains("unknown rule USS-NOPE-001"), "{text}");
+    }
+
+    #[test]
+    fn load_refines_reach() {
+        let go = "standard/modules/languages/go.md";
+        let refine = |target: &str, applies: &str| {
+            let src = edited(
+                go,
+                "**Refines:** USS-SEC-001",
+                &format!("**Refines:** {target}"),
+            );
+            let mut m = src;
+            let text = String::from_utf8(m.0[go].clone()).unwrap();
+            let text = text.replacen(
+                "- **Applies when:** always",
+                &format!("- **Applies when:** {applies}"),
+                1,
+            );
+            m.0.insert(go.to_string(), text.into_bytes());
+            load(&m)
+        };
+        let text = text_of(&refine("USS-SEC-002", "always").unwrap_err());
+        assert!(
+            text.contains(
+                "USS-GO-001 applies where USS-SEC-002, which it refines, does not (for example when true: lang.go)"
+            ),
+            "{text}"
+        );
+        assert!(refine("USS-SEC-002", "uses-database").is_ok());
+        assert!(refine("USS-SEC-003", "has-web-ui").is_ok());
     }
 
     #[test]
