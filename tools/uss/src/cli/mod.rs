@@ -1546,6 +1546,12 @@ mod tests {
         ),
         ("skills/adopt/SKILL.md", ADOPT_SKILL),
         ("skills/audit/SKILL.md", AUDIT_SKILL),
+        ("README.md", include_str!("../../../../README.md")),
+        ("docs/cli.md", include_str!("../../../../docs/cli.md")),
+        (
+            "docs/troubleshooting.md",
+            include_str!("../../../../docs/troubleshooting.md"),
+        ),
     ];
 
     const ADOPT_SKILL: &str = include_str!("../../../../skills/adopt/SKILL.md");
