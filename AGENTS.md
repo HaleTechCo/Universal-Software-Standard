@@ -30,7 +30,7 @@ These workflows apply USS to one project. They use these terms:
    record, it is the version of the installed `uss`. With no record and no
    `uss`, use the latest USS release.
 3. Run `uss version`. Compare the version that it prints with the version
-   from step 2.
+   that you found.
 4. If `uss` is not installed, or the versions are different, install that
    version:
 
@@ -80,36 +80,40 @@ in `USS-SEC-013`.
 ### Adopt a new project
 
 1. Do the steps in "Before every workflow".
-2. Copy the output of `uss show templates/record.yaml` to `.uss/record.yaml`.
-3. Set `project.name`.
-4. List the stack. Use the identifiers that
+2. Do the steps in "Start the record", below.
+3. Add the output of `uss show templates/AGENTS.snippet.md` to `AGENTS.md` in
+   the project root. If the project has a `CLAUDE.md` and no `AGENTS.md`, add
+   it to `CLAUDE.md`.
+4. If the project publishes releases on GitHub, copy the output of
+   `uss show templates/ci/uss-release.yml` to
+   `.github/workflows/uss-release.yml`. Follow the comments in the file.
+5. Commit the record, the draft deviations and the files that you changed.
+6. Read the rules that apply with `uss applicable --full .uss/record.yaml`.
+   Build the project to these rules.
+7. Meet every MUST and MUST NOT rule. Only a Standard Deviation excuses one,
+   and the project is then "not compliant".
+8. To get a report, do the steps in "Audit an existing project".
+
+#### Start the record
+
+1. Copy the output of `uss show templates/record.yaml` to `.uss/record.yaml`.
+2. Set `project.name`.
+3. List the stack. Use the identifiers that
    `uss show standard/registry.yaml` lists. No module covers an identifier
    that the registry does not list.
-5. Answer every fact from the project description. The `false` values of the
+4. Answer every fact from the project description. The `false` values of the
    template are placeholders, not answers. Do not add or remove a fact.
-6. Ask the developer to confirm the facts, as "Questions to the developer"
+5. Ask the developer to confirm the facts, as "Questions to the developer"
    says.
-7. Run `uss applicable .uss/record.yaml`.
-8. Ask about the SHOULD, SHOULD NOT and MAY rules that apply.
-9. Write each MAY answer in `decisions`, as `<RULE-ID>: { adopt: true }` or
+6. Run `uss applicable .uss/record.yaml`.
+7. Ask about the SHOULD, SHOULD NOT and MAY rules that apply.
+8. Write each MAY answer in `decisions`, as `<RULE-ID>: { adopt: true }` or
    `<RULE-ID>: { adopt: false }`. Write no decision for a rule of another
    level.
-10. If the developer adopts a MAY rule, run `uss applicable .uss/record.yaml`
-    again. Ask about the new rules only. Do this until no new rules apply.
-11. Run `uss check .uss/record.yaml`. Correct each problem that it reports.
+9. If the developer adopts a MAY rule, run `uss applicable .uss/record.yaml`
+   again. Ask about the new rules only. Do this until no new rules apply.
+10. Run `uss check .uss/record.yaml`. Correct each problem that it reports.
     Run it again until it reports no problems.
-12. Add the output of `uss show templates/AGENTS.snippet.md` to `AGENTS.md` in
-    the project root. If the project has a `CLAUDE.md` and no `AGENTS.md`, add
-    it to `CLAUDE.md`.
-13. If the project publishes releases on GitHub, copy the output of
-    `uss show templates/ci/uss-release.yml` to
-    `.github/workflows/uss-release.yml`. Follow the comments in the file.
-14. Commit the record, the draft deviations and the files that you changed.
-15. Read the rules that apply with `uss applicable --full .uss/record.yaml`.
-    Build the project to these rules.
-16. Meet every MUST and MUST NOT rule. Only a Standard Deviation excuses one,
-    and the project is then "not compliant".
-17. To get a report, do the steps in "Audit an existing project".
 
 ### Audit an existing project
 
@@ -117,8 +121,8 @@ in `USS-SEC-013`.
 2. Scan the project. Find its languages, frameworks, build tools, CI,
    containers, UI, databases, authentication, network use, releases and
    documents. Write down the obvious findings.
-3. If the project has no record, do steps 2 to 11 of "Adopt a new project".
-   Take the answers from the scan.
+3. If the project has no record, do the steps in "Start the record", under
+   "Adopt a new project". Take the answers from the scan.
 4. If the project has a record, compare its facts with the scan. Ask the
    developer about each fact that the scan does not agree with.
 5. If a fact changes, run `uss applicable .uss/record.yaml`. Ask about the
@@ -239,10 +243,14 @@ audit:
 
 1. Ask nothing.
 2. Do not change a fact, a decision or a deviation in the record.
-3. Write each open question as an `unverified` result on each rule that
-   applies and depends on it. Write the question as the evidence.
-4. If `uss check` reports a problem that needs such a change, stop. Report
+3. If `uss check` reports a problem that needs such a change, stop. Report
    the problem.
+4. Write each open question as an `unverified` result on each rule that
+   applies and depends on it. Write the question as the evidence.
+5. If no rule that applies depends on an open question, write `unverified`
+   on USS-REL-011, "Audit each release". Write the question as the evidence.
+   The audit is not complete until a person answers the question.
+6. If USS-REL-011 does not apply to the record, stop. Report the question.
 
 The report then says "Not compliant" until a person answers each question.
 
@@ -267,7 +275,9 @@ Do the upgrade as in "Audit an existing project", with these differences:
 9. Ask questions only about the added and changed rules that apply.
 10. Run `uss check .uss/record.yaml`. Correct each problem that it reports.
 11. Do a full audit.
-12. Merge the branch when the project is compliant.
+12. Merge the branch when the project is compliant with the new version. If
+    the project was not compliant before the upgrade, merge the branch when
+    the developer accepts the new report.
 
 ## Agent conduct
 
