@@ -206,20 +206,24 @@ and nothing else.
 - **Refines:** USS-DEP-002, USS-DEP-003
 - **Verify:** `go.sum` is in version control. No file of the repository (CI
   configuration, build scripts, Dockerfiles, a `go env -w` setting that the
-  repository documents) sets `GOSUMDB=off`, a `GONOSUMDB` or `GOPRIVATE`
-  pattern that matches a public module (`GONOSUMDB` defaults to `GOPRIVATE`),
-  or `GOFLAGS=-mod=mod`. Without access to the build environment's settings,
+  repository documents) sets `GOSUMDB=off` (which turns the checksum database
+  off for every module), a `GONOSUMDB` or `GOPRIVATE` pattern that matches a
+  public module (`GONOSUMDB` defaults to `GOPRIVATE`), or
+  `GOFLAGS=-mod=mod`. Without access to the build environment's settings,
   record `unverified` for them.
 - **References:** Go Modules Reference, environment variables and
   authenticating modules (read 2026-11-24)
 
-`go.sum` MUST be committed, and no `GOSUMDB=off`, `GONOSUMDB` or `GOPRIVATE`
-setting for a public module, and no `GOFLAGS=-mod=mod`, may turn off checksum
-verification or let a build rewrite `go.sum`.
+`go.sum` MUST be committed, and the project's settings MUST leave out
+`GOSUMDB=off` (which turns the checksum database off for every module), a
+`GONOSUMDB` or `GOPRIVATE` pattern that matches a public module, and
+`GOFLAGS=-mod=mod`.
 
 **Rationale:** The `go` command checks each module it downloads against
-`go.sum` and the checksum database. A setting that turns this off lets a
-changed module be accepted without notice.
+`go.sum` and the checksum database. A setting that turns the database off for
+a module lets a changed module be accepted without notice. `GOFLAGS=-mod=mod`
+does a different harm: it lets the `go` command rewrite `go.sum` during a
+build, so the file no longer fixes what the build uses.
 
 ### USS-GO-011: No local replace directives in a released module
 
@@ -292,16 +296,16 @@ answering holds the call, its goroutine and its connection for good.
 - **Category:** Reliability
 - **Refines:** USS-RES-001
 - **Verify:** Each `http.Server` in the code sets `ReadHeaderTimeout` to a
-  finite positive value. It also sets `ReadTimeout`, `WriteTimeout` and
-  `IdleTimeout` to finite positive values, except for a timeout that its
-  handlers do not allow (such as a `WriteTimeout` on a handler that streams a
-  response for longer). A server
-  that is started with `http.ListenAndServe`, which takes no timeouts, fails.
+  value above zero. It also sets `ReadTimeout`, `WriteTimeout` and
+  `IdleTimeout` to values above zero, except for a timeout that its handlers
+  do not allow (such as a `WriteTimeout` on a handler that streams a response
+  for longer). A server that is started with `http.ListenAndServe`, which
+  takes no timeouts, fails.
 - **References:** Go `net/http` package documentation (Go 1.27.4), Server;
   CWE-400
 
 Each `http.Server` MUST set `ReadHeaderTimeout`, and the read, write and idle
-timeouts that its handlers allow.
+timeouts that its handlers allow, each to a value above zero.
 
 **Rationale:** A server with no timeouts keeps each slow or silent connection
 open, so a client that sends its request a byte at a time can use up the
