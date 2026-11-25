@@ -226,7 +226,7 @@ commit.
 - **Level:** SHOULD
 - **Applies when:** has-dependencies
 - **Category:** Safety
-- **Refines:** USS-DEP-001, USS-DEP-007, USS-LIC-003, USS-SUP-005
+- **Refines:** USS-DEP-001, USS-DEP-007, USS-LIC-003
 - **Verify:** CI runs `cargo deny check` (with no check named, it runs the
   advisories, licenses, bans and sources checks), and the job fails when it
   exits with a non-zero status (the status is a bit set of the checks that
