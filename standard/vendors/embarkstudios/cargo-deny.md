@@ -13,7 +13,8 @@ database and yanked crates), `licenses` (an allow list of SPDX licences),
 and git repositories that crates may come from). The Rust module recommends it
 in USS-RUST-010. Put the baseline below in `deny.toml` in the workspace root
 (cargo-deny also reads `.deny.toml`, `.cargo/deny.toml` and
-`.config/deny.toml`, or the file named with `--config`). The settings that the
+`.config/deny.toml`, or the file named with `--config`); this repository's own
+`deny.toml` is an example. The settings that the
 mappings name are those of cargo-deny 0.22.1, from its documentation (read
 2026-11-24). The licence allow list in the baseline is an example: it is the
 project's own policy, and USS-LIC-003 asks for one that is compatible with the

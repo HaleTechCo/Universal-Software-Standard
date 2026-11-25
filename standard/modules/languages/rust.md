@@ -23,14 +23,15 @@ profile. The core rules that this module does not refine apply as written.
 - **Category:** Maintainability
 - **Refines:** USS-QLT-001, USS-QLT-003
 - **Verify:** CI runs `cargo clippy` on all targets and all features (such as
-  `--all-targets --all-features`, with `--workspace` for a workspace), and
-  turns warnings into errors: `-D warnings` after `--`, the environment
-  variable `CARGO_BUILD_WARNINGS=deny`, or `build.warnings = "deny"` in a Cargo
-  configuration file. The job fails when the command exits with a non-zero
-  status (it does so when a lint at deny level fires, or when a warning is an
-  error). The effective lint levels set each lint of the baseline of the Clippy
-  profile (`standard/vendors/rust-lang/clippy.md`) that the profile applies to
-  the project at `deny` or `forbid`. Cargo's `[lints]` or `[workspace.lints]`
+  `--all-targets --all-features`; a workspace project can add
+  `--workspace`), and turns warnings into errors: `-D warnings` after `--`,
+  the environment variable `CARGO_BUILD_WARNINGS=deny`, or
+  `build.warnings = "deny"` in a Cargo configuration file. The job fails when
+  the command exits with a non-zero status (it does so when a lint at deny
+  level fires, or when a warning is an error). The effective lint levels set
+  each lint of the baseline of the Clippy profile
+  (`standard/vendors/rust-lang/clippy.md`) that the profile applies to the
+  project at `deny` or `forbid`. Cargo's `[lints]` or `[workspace.lints]`
   tables, `rustflags` in a Cargo configuration file, command-line `-D` flags
   and crate attributes (`#![deny(...)]`) are all places that set a level. A run
   on the default branch reports no finding.
@@ -53,10 +54,9 @@ suppressions out of the code, so the levels matter as much as the run.
 - **Applies when:** always
 - **Category:** Maintainability
 - **Refines:** USS-QLT-002
-- **Verify:** CI runs `cargo fmt --check`, over every package of the workspace
-  (such as `cargo fmt --all --check`), and the job fails when it exits with a
-  non-zero status (`rustfmt` exits with status 1 in `--check` mode when it
-  would change a file).
+- **Verify:** CI runs `cargo fmt --check` (a workspace project can add `--all`),
+  and the job fails when it exits with a non-zero status (`rustfmt` exits with
+  status 1 in `--check` mode when it would change a file).
 - **References:** rustfmt README (rust-lang/rustfmt, read 2026-11-24)
 
 CI MUST run `cargo fmt --check`.
@@ -134,10 +134,9 @@ code.
 - **Category:** Safety
 - **Refines:** USS-SAF-003
 - **Verify:** Search the project's own code for each `unsafe` block. Each one
-  has a comment that starts with `// SAFETY:`, on or directly above the block,
-  and the comment says why the operations in the block are sound: the condition
-  that makes them safe and why it holds. A block with no such comment, or with
-  a comment that does not say why, fails.
+  has a comment that starts with `// SAFETY:` and says why the operations in
+  the block are sound: the condition that makes them safe and why it holds. A
+  block with no such comment, or with a comment that does not say why, fails.
 - **References:** The Rust Reference, Unsafe blocks (read 2026-11-24)
 
 Each `unsafe` block MUST have a `// SAFETY:` comment that says why it is
@@ -203,8 +202,9 @@ fixes what the library's own CI tests.
 - **Verify:** In each `Cargo.toml` of the project (the dependency, development
   dependency and build dependency tables, the target-specific tables and
   `[workspace.dependencies]`), each requirement is read by Cargo's rules and
-  has an upper bound at or below the next incompatible version: the next major
-  version, or the next minor version for a `0.x` version. The default caret
+  has an upper bound below the next incompatible version, so the range does
+  not admit it: the next major version, or the next minor version for a `0.x`
+  version. The default caret
   form (`1.2`, `^1.2`, `0.3`), a tilde, an exact `=` and a range with such an
   upper bound pass. `*`, a lower bound with no upper bound (such as `>=1.2`)
   and an upper bound beyond the next incompatible version (such as `<3` for a
