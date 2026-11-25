@@ -83,14 +83,20 @@ the dependency check.
 - **Refines:** USS-ACC-002
 - **Verify:** The CI configuration runs a linter over all of the project's JSX
   files (`.jsx` and `.tsx`, and each `.js` or `.ts` file that contains JSX),
-  and the configuration turns on the accessibility rules for JSX that the
-  linter's documentation names (such as the `jsx-a11y` plugin of Oxlint), each
-  at error level. The job fails when the linter reports a violation, as the
+  and the effective configuration turns on the linter's accessibility rules
+  for JSX at error level, with at least a rule for each of these: the text
+  alternative of an image (`alt-text`), the label of a form control
+  (`label-has-associated-control`), valid ARIA attributes (`aria-props`) and
+  roles (`aria-role`), and keyboard handlers on elements with click handlers
+  (`click-events-have-key-events`). The names are those of Oxlint's `jsx-a11y`
+  plugin and of the recommended set of eslint-plugin-jsx-a11y, which both have
+  these rules. The job fails when the linter reports a violation, as the
   linter's documentation states for its exit status (Oxlint exits with status
   1). A file that the linter does not read, a rule at warn level that the job
   does not count as a failure and a job that tolerates failures fail.
 - **References:** Oxlint 1.95.0, documentation, Configuration and jsx-a11y
-  rules (read 2026-11-24)
+  rules (read 2026-11-24); eslint-plugin-jsx-a11y 6.10.2, source of the
+  `recommended` configuration (read 2026-11-24)
 
 CI MUST lint JSX against accessibility rules, and a violation MUST fail the
 build.
@@ -168,11 +174,11 @@ the author wrote by hand can miss a form that it does not know.
 - **Verify:** Find where the application creates its root (the calls of
   `createRoot` or `hydrateRoot`). The element that the root renders has
   `<StrictMode>` (or `<React.StrictMode>`) around the whole application. In a
-  framework that creates the root itself, the framework's setting turns it on:
-  for Next.js, `reactStrictMode` is not `false` in the Next.js configuration
-  (it is on by default with the App Router since 13.5.1, and off by default
-  with the Pages Router, which needs `reactStrictMode: true`). A `StrictMode`
-  around only a part of the application fails.
+  framework that creates the root itself, the framework's setting turns it on.
+  For Next.js, an App Router application (Next.js 13.5.1 or later) passes
+  unless `reactStrictMode` is `false` in the Next.js configuration, and a Pages
+  Router application passes only when `reactStrictMode` is `true` there. A
+  `StrictMode` around only a part of the application fails.
 - **References:** React documentation, `StrictMode` (read 2026-11-24); Next.js
   documentation, `reactStrictMode` (read 2026-11-24)
 

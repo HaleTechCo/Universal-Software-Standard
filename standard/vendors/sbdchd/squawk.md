@@ -16,17 +16,18 @@ Squawk 2.74.0, from its documentation and source (read 2026-11-24). `squawk`
 (or `squawk check`) exits with status 1 when it reports any violation, and
 with status 0 when it reports none.
 
-The baseline is Squawk's default rule set with no exclusions, and the
-PostgreSQL version set. Squawk has 27 opt-in rules that are off by default,
-and the baseline turns on none of them: no opt-in rule tests a requirement of
-USS-DAT-002 or of a rule of the PostgreSQL module. The checks that ban dropping
-a column, a table, a schema or a database and truncating with `CASCADE`
-(`ban-drop-column`, `ban-drop-table`, `ban-drop-schema`, `ban-drop-database`,
-`ban-truncate-cascade`) are on by default, and so is `require-lock-timeout`.
-The opt-in rules are `require-table-schema`, `ban-drop-trigger`,
-`ban-alter-generated-expression`, `ban-drop-index`, `ban-set-default`,
-`ban-disable-trigger`, `ban-replica-identity`, `ban-drop-policy`,
-`ban-revoke`, `ban-replace-view-function`, `ban-alter-policy-condition`,
+The baseline is Squawk's default rule set with no exclusions, and the PostgreSQL
+version set. Squawk has 27 opt-in rules that are off by default (26 rules and
+the alias `require-timeout-settings`), and the baseline turns on none of them:
+no opt-in rule tests a requirement of USS-DAT-002 or of a rule of the PostgreSQL
+module. The checks that ban dropping a column, a table, a schema or a database
+and truncating with `CASCADE` (`ban-drop-column`, `ban-drop-table`,
+`ban-drop-schema`, `ban-drop-database`, `ban-truncate-cascade`) are on by
+default, and so is `require-lock-timeout`. The opt-in rules are
+`require-table-schema`, `ban-drop-trigger`, `ban-alter-generated-expression`,
+`ban-drop-index`, `ban-set-default`, `ban-disable-trigger`,
+`ban-replica-identity`, `ban-drop-policy`, `ban-revoke`,
+`ban-replace-view-function`, `ban-alter-policy-condition`,
 `ban-alter-policy-roles`, `ban-create-policy`, `ban-alter-function-options`,
 `ban-alter-view-options`, `ban-alter-role-options`,
 `ban-alter-database-options`, `ban-alter-row-level-security`,

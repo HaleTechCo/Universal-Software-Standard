@@ -146,18 +146,19 @@ version is TLS 1.2, which meets USS-SEC-022.
   In the migrations and the role-setup scripts of the repository, the
   application role owns no object (no table, view, sequence, function, schema
   or type: each `CREATE` runs as the migration role, or is followed by
-  `ALTER ... OWNER TO` that names another role). The application role has no
-  `SUPERUSER`,
-  `CREATEDB`, `CREATEROLE` or `BYPASSRLS` attribute, and the privileges that
-  `GRANT` statements give it (to the role or to a group role that it belongs
-  to, or to `PUBLIC`) are the ones that the code uses: a table privilege that
-  no query of the code needs fails. Where the repository sets up no roles, and
+  `ALTER ... OWNER TO` that names another role). The privileges that the
+  application role has are the ones that the code uses: those that `GRANT`
+  statements give it (to the role, to a group role that it belongs to, or to
+  `PUBLIC`) and its role attributes (`SUPERUSER`, `CREATEDB`, `CREATEROLE` and
+  `BYPASSRLS`, which the code does not use). A privilege that no query or
+  statement of the code needs fails. Where the repository sets up no roles, and
   the roles live on a host that the auditor cannot see, record `unverified`.
 - **References:** PostgreSQL 19 documentation, Privileges (read 2026-11-24);
   PostgreSQL 19 documentation, `CREATE ROLE` (read 2026-11-24)
 
 The application MUST connect with a role that owns no objects and has only the
-privileges that it uses, and the migrations MUST run with a separate role.
+privileges that it uses, role attributes such as `SUPERUSER` included, and the
+migrations MUST run with a separate role.
 
 **Rationale:** The owner of an object holds every privilege on it and can drop
 it, and that right cannot be revoked. An application that owns its tables
@@ -224,18 +225,17 @@ invites its users to run on one.
 - **Applies when:** uses-relational-database
 - **Category:** Reliability
 - **Refines:** USS-TST-004
-- **Verify:** The PostgreSQL major versions that the project supports are those
-  that its documentation names (a range names each major version in it); a
-  project that names none fails. CI runs the integration tests against a real
-  PostgreSQL server of each of those major versions, in a matrix, a service
+- **Verify:** The PostgreSQL major versions that the project's documentation
+  names as supported are the ones to test (a range names each major version in
+  it); a project that names none fails. CI runs the integration tests against a
+  real PostgreSQL server of each of those major versions, in a matrix, a service
   container or a container that the tests start, with one run for each major
-  version (any minor release of it). A supported major version without a run
-  fails.
+  version (any minor release of it). A named major version without a run fails.
 - **References:** PostgreSQL Global Development Group, Versioning Policy (read
   2026-11-24)
 
 CI SHOULD run the integration tests against each PostgreSQL major version that
-the project supports.
+the project's documentation names as supported.
 
 **Rationale:** Major versions of PostgreSQL change the planner, the defaults
 and the catalogue, so a query that works on one can behave differently on
