@@ -273,10 +273,13 @@ the tools stay out of what users install.
 - **Verify:** The CI configuration runs a check that compares the imports of
   all Python code (source, tests and scripts) with the declared direct
   dependencies, and the job fails on an import of a third-party package that
-  is not declared. A check that reads only static imports misses imports
-  made at run time (such as `importlib.import_module`), so a clean report is
-  partial evidence, and the auditor looks for such imports in the code.
-- **References:** deptry Docs, Rules and Violations (read 2026-11-24)
+  is not declared (for deptry, the job runs `deptry .` and fails on its
+  non-zero exit status, which deptry returns when it finds any violation).
+  A check that reads only static imports misses imports made at run time
+  (such as `importlib.import_module`), so a clean report is partial
+  evidence, and the auditor looks for such imports in the code.
+- **References:** deptry Docs, Rules and Violations (read 2026-11-24);
+  deptry 0.25.1 source, `python/deptry/core.py` (exit status)
 
 CI MUST fail when the code imports a third-party package that is not a
 declared direct dependency.
