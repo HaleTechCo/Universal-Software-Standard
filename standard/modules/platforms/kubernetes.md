@@ -144,13 +144,12 @@ core rule.
 - **Verify:** Each chart that the project ships has a `values.schema.json` in
   its directory. Each object in the schema that lists its properties sets
   `additionalProperties` to `false`, and each property declares its type (with
-  `type`, `$ref` or `enum`). An
-  object whose keys the user chooses (labels, annotations or a node selector)
-  has no fixed properties, so it gives `additionalProperties` a schema for its
-  values instead. Then run `helm lint` on the chart, once with a key that the
-  chart does not define (such as `--set unknownKey=1`) and once with a defined
-  value of the wrong type (`--set` of a number key to a word): each run reports
-  an error.
+  `type`, `$ref` or `enum`). An object whose keys the user chooses (labels,
+  annotations or a node selector) has no fixed properties, so it gives
+  `additionalProperties` a schema for its values instead. Then run `helm lint`
+  on the chart, once with a key that the chart does not define (such as `--set
+  unknownKey=1`) and once with a defined value of the wrong type (`--set` of a
+  number key to a word): each run reports an error.
 - **References:** Helm 4.3.1 documentation, Charts, Schema Files (read
   2026-11-24; the page is not yet updated for Helm 4); Helm 4.3.2, run of `helm
   lint` on a chart with `additionalProperties` false (2026-11-24)
