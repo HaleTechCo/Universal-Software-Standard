@@ -659,11 +659,21 @@ hand.
 
 Written once in this repo's `AGENTS.md` (works with any coding agent) and
 packaged as Claude skills (§9). The skills follow the AGENTS.md text, never a
-separate copy of it.
+separate copy of it. The workflows read the standard and the workflows
+themselves only through `uss show` and `uss applicable --full` (§9), at the
+version the record pins, and the agent installs `uss` before it starts because
+scores are never computed by hand.
+
+**Questions come in batches.** The facts come in one table: each fact with its
+question, an answer filled in from the scan, and the evidence for it; the
+developer confirms or corrects it in one reply. SHOULD and SHOULD NOT rules
+come one area at a time, with "comply" as the recommended answer, and the
+developer can accept a whole area at once. MAY rules also come one area at a
+time, each with its score category, answered in one reply per area.
 
 ### 8.1 Adopt (new project)
 
-1. Load the standard at the version being adopted.
+1. Load the standard at the version being adopted, through `uss`.
 2. **Profile.** Ask the applicability questions, inferring answers from the
    project description where possible and confirming them. Stack facts come
    from the chosen languages, frameworks, platforms and tools.
@@ -699,6 +709,12 @@ separate copy of it.
    SHOULDs the developer chose to comply with; in batches by area; each fix
    verified before its result changes to `pass`; report updated as it goes.
 
+**Before the first release.** Every new project meets this: a rule whose Verify
+judges each release passes with the evidence "no release yet"; a rule that
+needs a published artifact (binaries, an SBOM, signatures, provenance) fails; a
+document about a release waits for the release; a document that does not depend
+on a release is examined now.
+
 ### 8.3 Audits at any time, and at every release
 
 An audit can run at any point in a project's life; it is the same workflow
@@ -710,9 +726,11 @@ At release, an audit is required (REL). USS supports two ways to run it:
 
 - **Locally:** run the audit skill before tagging, commit the results.
 - **In CI:** run the agent audit headless (e.g. a coding agent in a release
-  workflow). With no human present, any new question is left open, recorded
-  as `unverified`, and the report says "not compliant" until someone answers
-  it. Nothing is guessed.
+  workflow). With no human present the agent asks nothing and changes no
+  fact, decision or deviation. Each open question becomes `unverified` on the
+  rules whose result depends on it, or on USS-REL-011 when none does, and the
+  report says "not compliant" until someone answers it. When the record must
+  change, the agent stops. Nothing is guessed.
 
 Either way, the release CI job (template in `templates/ci/`) runs
 `uss release-check`: the audit results must be for the release commit (or for
@@ -723,18 +741,32 @@ regenerated, and the report is attached to the release.
 
 Same as audit, but questions cover only rules added or changed between the two
 versions (from the changelog), and the record's version is bumped once the
-project is compliant with the new one.
+project is compliant with the new one (or, for a project that was not compliant
+before, once the developer accepts the new report).
+
+### 8.5 Projects with several released units
+
+A repository can hold units that are released separately. Each unit has its own
+record at `<unit>/.uss/record.yaml` (components, conventions §11), all pinning
+the same version. The root record lists the units in `components` and covers
+the rules for the whole repository: CI, the supply chain, `SECURITY.md` and the
+licence. The repository is compliant when the root record and every unit's
+record are. `uss check` also checks the units' records, and `uss release-check`
+examines the latest audit of every record.
 
 ## 9. Repository layout and tooling
 
 ```
 Universal-Software-Standard/
 ├── README.md                  what USS is; how to adopt; how to audit
-├── AGENTS.md                  agent entry point: workflows in §8
-├── CLAUDE.md                  points to AGENTS.md
+├── AGENTS.md                  agent entry point: workflows in §8, agent
+│                              conduct, contributor section
+├── CLAUDE.md                  imports AGENTS.md
 ├── LICENSE                    MIT
 ├── CHANGELOG.md               per-release added / changed / retired IDs
 ├── CONTRIBUTING.md            how to add rules, areas, modules; ID policy
+├── CODE_OF_CONDUCT.md
+├── GOVERNANCE.md              who decides; succession
 ├── SECURITY.md
 ├── standard/
 │   ├── conventions.md         keywords, rule format, IDs, prefixes registry,
@@ -750,18 +782,22 @@ Universal-Software-Standard/
 │   ├── record.yaml
 │   ├── standard-deviation.md
 │   ├── audit-report.md.j2     report template used by `uss report`
-│   ├── AGENTS.snippet.md
-│   └── ci/                    release-audit workflow for adopters (§8.3)
-├── skills/                    Claude skills: uss-adopt, uss-audit
+│   ├── AGENTS.snippet.md      names no version; points to the record
+│   └── ci/uss-release.yml     release-check workflow for adopters (§8.3)
+├── skills/                    Claude skills: adopt, audit
 ├── .claude-plugin/            plugin + marketplace manifests
+├── docs/                      cli, architecture, dependencies, troubleshooting,
+│                              adr/
 ├── Cargo.toml, Cargo.lock     Rust workspace (lock file committed)
 ├── rust-toolchain.toml        pinned Rust toolchain
 ├── deny.toml                  cargo-deny policy (advisories, licences, sources)
 ├── tools/uss/                 validator: Rust library + `uss` CLI
 ├── tools/xtask/               `cargo xtask check`: every check in one command
 ├── .uss/                      this repo's own record and audits
-├── .github/CODEOWNERS         vendor profile ownership
-└── .github/workflows/         CI
+├── .githooks/pre-commit       runs `cargo xtask check`
+└── .github/                   CODEOWNERS (vendor profile ownership),
+                               dependabot.yml, issue and PR templates,
+                               workflows/ (CI)
 ```
 
 **Validator `uss`**, in **Rust** (the user's call, made for a future VS Code
@@ -771,8 +807,9 @@ linting, applicability, compliance, scores, report rendering) and does no
 filesystem, network or process I/O: it works on file contents handed to it.
 The CLI does the I/O (reading files, calling `git`). That keeps the library
 able to run inside a VS Code extension or a web page through WebAssembly, or
-to be embedded elsewhere, without a rewrite. The standard's files are embedded
-in the binary, so a binary's version is always the standard's version.
+to be embedded elsewhere, without a rewrite. The standard's files, `AGENTS.md` and
+`CHANGELOG.md` are embedded in the binary, so a binary's version is always the
+version of the standard and of the workflows.
 Distribution: release binaries per OS, plus
 `cargo install --git <repo> --tag vX.Y.Z uss` for people with Rust. Commands:
 
@@ -785,7 +822,11 @@ Distribution: release binaries per OS, plus
   pinned standard version: known facts, every deviation names a real rule and
   an existing document, every applicable MAY has a decision.
 - `uss applicable <record>` — prints the applicable rules for a record, so
-  agents compute applicability deterministically instead of by reading.
+  agents compute applicability deterministically instead of by reading;
+  `--full` prints the full text of each one.
+- `uss show [PATH]` — prints an embedded file (the standard, schemas,
+  templates, `AGENTS.md`, `CHANGELOG.md`), or lists them. This is how an agent
+  reads the standard at the version the record pins.
 - `uss report <results>` — validates audit results, computes the compliance
   status and category scores, and writes the Markdown report.
 - `uss release-check` — for release CI: confirms the audit results match the
@@ -794,6 +835,16 @@ Distribution: release binaries per OS, plus
 
 The tool is optional for adopters (agents can work from the Markdown), required
 in this repo's CI.
+
+**Plugin and skills.** The plugin is `uss`, at the repository root, in the
+marketplace `universal-software-standard` (`.claude-plugin/plugin.json` and
+`marketplace.json`, source `./`). It has two skills, `skills/adopt/` and
+`skills/audit/`, which Claude Code names `/uss:adopt` and `/uss:audit` (the
+plugin namespace is added to the skill names). The audit skill also takes
+`release`, `upgrade <version>` and `headless`. Each skill tells Claude to
+follow the workflow in `${CLAUDE_PLUGIN_ROOT}/AGENTS.md` and copies none of
+it. A marketplace from a local path loads the plugin in place, so a trial
+needs no release.
 
 **Dogfooding.** This repo complies with its own standard: MIT LICENSE,
 SECURITY.md, pinned Rust toolchain, CI actions pinned by SHA, strict Clippy
@@ -833,8 +884,10 @@ ASD-STE100. It is the first audit target and the reference example.
 - The exact fact vocabulary beyond the examples.
 - Validator internals, Markdown parsing approach, release mechanism for the
   binary.
-- Claude plugin / skill packaging details, and how a skill obtains the pinned
-  standard version when it differs from the installed one.
+- Claude plugin / skill packaging details. (Settled: a skill obtains the
+  pinned standard version by installing the `uss` release of the record's
+  version and reading the standard and the workflows through it, with
+  `uss show` and `uss applicable --full`.)
 - CI job layout.
 
 ## 13. Delivery order and review points
@@ -845,6 +898,7 @@ ASD-STE100. It is the first audit target and the reference example.
    review**: this is where levelling and tone get calibrated.
 3. Draft the remaining core areas, then the modules with their
    community-maintained vendor profiles, in batches.
-4. AGENTS.md workflows, the Claude skills, and this repo's self-audit.
-5. Release **0.1.0** for the user's review. 1.0.0 comes when the user declares
-   it.
+4. AGENTS.md workflows, the Claude skills, and this repo's self-audit. Done.
+5. Release **0.1.0** for the user's review. It waits for the user's trial of
+   the plugin on one of their own repositories and for the release plan.
+   1.0.0 comes when the user declares it.
