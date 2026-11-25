@@ -129,8 +129,10 @@ Each dependency MUST have a release version, directly or through
 
 **Rationale:** A range, `LATEST` and `RELEASE` let the build pick a version
 that nobody has tested, and a snapshot changes under the same version number.
-A release version names one set of files, so the same POM builds the same
-dependencies.
+Maven discourages `LATEST` and `RELEASE` in its own documentation, and USS
+forbids them because each resolves to whatever is newest at build time, an
+unbounded version that no two builds share. A release version names one set of
+files, so the same POM builds the same dependencies.
 
 ### USS-MVN-005: Fail on dependency version conflicts
 

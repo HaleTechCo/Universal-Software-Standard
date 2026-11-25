@@ -58,7 +58,8 @@ over.
 </plugin>
 ```
 
-The `.mvn/jvm.config` lines for a compiler that does not fork:
+The `.mvn/jvm.config` lines for a compiler that does not fork (from the Error
+Prone installation guide, read 2026-11-24, for Error Prone 2.53.0):
 
 - `--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED`
 - `--add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED`

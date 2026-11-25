@@ -215,8 +215,8 @@ change to the code.
 - **References:** Eclipse Temurin, Support (Adoptium, read 2026-11-24); javac
   documentation, JDK 25, `--release` (read 2026-11-24)
 
-The project MUST NOT build with, or target, a Java release that its JDK vendor
-no longer supports with security fixes.
+The project MUST NOT build with, or target, a feature release of Java that its
+JDK vendor no longer supports with security fixes.
 
 **Rationale:** A flaw that is found in a release that the vendor no longer
 updates is not fixed, so every build and every program on that release keeps
