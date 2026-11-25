@@ -1,0 +1,14 @@
+{
+  "name": "universal-software-standard",
+  "owner": { "name": "HaleTechCo" },
+  "metadata": {
+    "description": "The Universal Software Standard and the Claude skills that apply it."
+  },
+  "plugins": [
+    {
+      "name": "uss",
+      "source": "./",
+      "description": "Skills that adopt the Universal Software Standard and audit projects against it."
+    }
+  ]
+}

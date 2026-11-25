@@ -1,0 +1,10 @@
+{
+  "name": "uss",
+  "version": "0.1.0",
+  "description": "Adopt the Universal Software Standard in a new project, and audit an existing project against it.",
+  "author": { "name": "HaleTechCo" },
+  "homepage": "https://github.com/HaleTechCo/Universal-Software-Standard",
+  "repository": "https://github.com/HaleTechCo/Universal-Software-Standard",
+  "license": "MIT",
+  "keywords": ["standard", "audit", "compliance", "engineering"]
+}

@@ -1544,7 +1544,12 @@ mod tests {
             "templates/ci/uss-release.yml",
             include_str!("../../../../templates/ci/uss-release.yml"),
         ),
+        ("skills/adopt/SKILL.md", ADOPT_SKILL),
+        ("skills/audit/SKILL.md", AUDIT_SKILL),
     ];
+
+    const ADOPT_SKILL: &str = include_str!("../../../../skills/adopt/SKILL.md");
+    const AUDIT_SKILL: &str = include_str!("../../../../skills/audit/SKILL.md");
 
     /// Returns the commands in a document, with the number of the line of each.
     /// In a YAML file (`.yml` or `.yaml`), a command is a line that starts with
@@ -1858,5 +1863,37 @@ mod tests {
             }
         }
         assert!(problems.is_empty(), "{}", problems.join("\n"));
+    }
+
+    #[test]
+    fn plugin_matches_standard() {
+        let plugin: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../.claude-plugin/plugin.json")).unwrap();
+        let market: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../.claude-plugin/marketplace.json"))
+                .unwrap();
+        let registry = load_registry(&Embedded).unwrap();
+        assert_eq!(plugin["version"], registry.version.as_str());
+        assert_eq!(plugin["name"], "uss");
+        assert_eq!(market["name"], "universal-software-standard");
+        let plugins = market["plugins"].as_array().unwrap();
+        assert_eq!(plugins.len(), 1);
+        assert_eq!(plugins[0]["name"], "uss");
+        assert_eq!(plugins[0]["source"], "./");
+
+        let agents = include_str!("../../../../AGENTS.md");
+        for (name, body) in [("adopt", ADOPT_SKILL), ("audit", AUDIT_SKILL)] {
+            assert!(body.contains("${CLAUDE_PLUGIN_ROOT}/AGENTS.md"), "{name}");
+            let named: Vec<&str> = body
+                .lines()
+                .flat_map(|line| line.split('"').skip(1).step_by(2))
+                .filter(|quoted| {
+                    agents
+                        .lines()
+                        .any(|l| l.trim_start_matches('#').trim() == *quoted && l.starts_with('#'))
+                })
+                .collect();
+            assert!(!named.is_empty(), "{name} names no heading of AGENTS.md");
+        }
     }
 }
