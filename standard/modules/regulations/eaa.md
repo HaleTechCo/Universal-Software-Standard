@@ -16,7 +16,8 @@ consumers after 28 June 2025 (Article 2(1) and (2)). A member state may apply
 the rules on answering the emergency number 112 as late as 28 June 2027
 (Article 31(3)); that does not concern software. Three exclusions matter for
 software: a service provider may keep using products that it lawfully used
-before 28 June 2025 for similar services until 28 June 2030, and a service
+before 28 June 2025 (USS reads "before that date" so) for similar services
+until 28 June 2030, and a service
 contract agreed before 28 June 2025 may continue without alteration until it
 expires, but not beyond 28 June 2030 (Article 32(1)); a microenterprise (fewer
 than 10 persons, and an annual turnover or balance sheet total of at most EUR 2
@@ -29,10 +30,11 @@ media and office file formats published before 28 June 2025, third-party
 content, and archives (Article 2(4)). Compliance with a harmonised standard
 whose reference the Official Journal publishes gives a presumption of
 conformity (Article 15(1)). When this module was written, no reference to EN
-301 549 had been published for this Directive: EN 301 549 V3.2.1 (2021-03) is
-referenced only for Directive (EU) 2016/2102 (Implementing Decision (EU)
-2021/1339), and V4.1.1 is the latest version that the standards bodies have
-published (ETSI lists it from 2 September 2026). The article and annex
+301 549 was found for this Directive (searched on 2026-11-24): EN 301 549
+V3.2.1 (2021-03) is referenced only for Directive (EU) 2016/2102
+(Implementing Decision (EU) 2021/1339), and V4.1.1 is the latest version
+that the standards bodies have published (ETSI lists it from 2 September
+2026). The article and annex
 references were read in the Official Journal text on 2026-11-24. The module
 maps the obligations of the Directive to USS rules and adds three rules for
 what the core rules leave open. The core rules that the module does not name
@@ -64,15 +66,13 @@ service, and for each member state where it is offered.
 - **Category:** Accessibility & Usability
 - **Verify:** Take the screens, pages, documents and dialogs that the user
   documentation describes (the main workflows) and the screens that those
-  workflows pass through. Find the version of EN 301 549 that the project
-  names (V4.1.1 or a later version). For each one, take the requirements of
+  workflows pass through. Take the version of EN 301 549 that the project
+  uses (V4.1.1 or a later version). For each one, take the requirements of
   that version that the standard says apply to its kind (web content,
   documents or software) and check each one. A requirement that is not met,
-  and that the standard does not mark as not applicable to it, fails the rule.
-  A requirement that the project's written Article 14 assessment shows is
-  lifted (a fundamental alteration, or a disproportionate burden) is not
-  checked; where the assessment is missing, the requirement is checked. A
-  project that names no version, or a version earlier than V4.1.1, fails.
+  and that the standard does not mark as not applicable to it, fails the rule,
+  except a requirement that Article 14 lifts (a fundamental alteration, or a
+  disproportionate burden). A version earlier than V4.1.1 fails.
 - **References:** Directive (EU) 2019/882, Official Journal L 151, 7.6.2019,
   Articles 2, 14 and 15 and Annex I (read 2026-11-24); EN 301 549 V4.1.1,
   ETSI (listed by ETSI, 2026-09-02; the full text was not read)
@@ -98,12 +98,10 @@ documentation.
 - **Applies when:** always
 - **Category:** Accessibility & Usability
 - **Verify:** Where the software is provided as a service, find the terms and
-  conditions, or an equivalent public document or page. It describes the
-  accessibility requirements that apply to the service, and says how the
-  service meets them, with a general description of the service and the
-  explanations that a reader needs to understand how it operates. A service
-  with no such text, a text that names no requirement or says nothing about
-  how the service meets them, or a text that users cannot reach, fails.
+  conditions, or an equivalent public document or page. It says how the
+  service meets the applicable accessibility requirements. A service with no
+  such text, a text that says nothing about how the service meets them, or a
+  text that users cannot reach, fails.
 - **References:** Directive (EU) 2019/882, Official Journal L 151, 7.6.2019,
   Article 13(2) and Annex V point 1 (read 2026-11-24)
 

@@ -55,18 +55,21 @@ qualified person confirms each row, and what is left, for the project.
   adversely affect the rights and freedoms of others. The export is in a
   structured, commonly used and machine-readable format (such as JSON, CSV or
   XML), and not in a format that only the software can read, or only an image
-  or a PDF of text. An operator, acting for the person, can start it. An export
+  or a PDF of text. The operator can run it. An export
   that omits an item, or is in another format, fails.
 - **References:** Regulation (EU) 2016/679, Official Journal L 119, 4.5.2016,
   Articles 15(3) and (4) and 20(1) and (4) (read 2026-11-24)
 
-The software MUST export all personal data about one person, on request, in a
-structured, commonly used and machine-readable format, except where the export
-would adversely affect the rights and freedoms of others.
+The software MUST let its operator export all personal data about one person,
+when the person asks, in a structured, commonly used and machine-readable
+format, except where the export would adversely affect the rights and freedoms
+of others.
 
-**Rationale:** Article 15 gives each person a copy of their personal data, and
-Article 20 the right to receive the data that they provided in a format that
-another controller can use. One export serves both rights.
+**Rationale:** Article 15 gives each person a copy of their personal data (in
+"a commonly used electronic form"), and Article 20 the right to receive the
+data that they provided in a structured, commonly used and machine-readable
+format. Applying the Article 20 format to all personal data, so that one export
+serves both rights, is USS's reading, for a qualified person to confirm.
 
 ### USS-GDPR-002: Let personal data be corrected
 
@@ -77,13 +80,14 @@ another controller can use. One export serves both rights.
   documented procedure that corrects, or completes, any item of personal data
   about one person. Run it on a test person for one item in each store that
   holds personal data: the item changes, and a later export or read shows the
-  new value in every store. An operator, acting for the person, can start it.
-  A store whose item cannot be corrected or completed fails.
+  new value in every store. The operator can run it. A store whose item cannot
+  be corrected or completed fails.
 - **References:** Regulation (EU) 2016/679, Official Journal L 119, 4.5.2016,
   Article 16 (read 2026-11-24)
 
-The software MUST let the personal data about one person be corrected, and
-incomplete data be completed, when the person asks.
+The software MUST let its operator correct the personal data about one person,
+in every store that holds it, and complete incomplete data, when the person
+asks.
 
 **Rationale:** Wrong data leads to wrong decisions about the person, and only
 the software can change what it stores.
@@ -94,20 +98,21 @@ the software can change what it stores.
 - **Applies when:** always
 - **Category:** Safety
 - **Verify:** The software has an operation, a command or a documented
-  procedure that erases all personal data about one person. Run it on a test
-  person in a test instance, and then search each store that the software
-  controls (the primary database, search indexes, caches and files) for the
-  person's identifier and name: no record remains. A record that remains must
-  be data that Article 17(3) lets the controller keep (for example, data that a
-  legal obligation requires), and the project names the ground; a record kept
-  on another ground, or with no ground named, fails. An operator, acting for
-  the person, can start it.
+  procedure that the operator can run and that erases all personal data about
+  one person. Run it on a test person in a test instance, and then search each
+  store that the software controls (the primary database, search indexes,
+  caches and files) for the person's identifier and name: no record remains,
+  except data that Article 17(3) lets the controller keep (for example, data
+  that a legal obligation requires). A store that still holds other data about
+  the person fails. Whether an erasure request is granted under Article 17(1)
+  is the controller's judgement and is not checked.
 - **References:** Regulation (EU) 2016/679, Official Journal L 119, 4.5.2016,
   Article 17(1) and (3) (read 2026-11-24)
 
-The software MUST erase all personal data about one person on request, in
-every store that it controls, except data that Article 17(3) allows the
-controller to keep.
+The software MUST give its operator a way to erase all personal data about one
+person, in every store that it controls, when an erasure request is granted
+under Article 17(1), except data that Article 17(3) allows the controller to
+keep. The controller judges the grounds.
 
 **Rationale:** The right to erasure is empty when a copy survives in an index
 or a cache. USS-DAT-005 asks the same of user data in general, with the backup
@@ -133,7 +138,9 @@ When the software relies on consent, it MUST record who consented, when, and to
 what.
 
 **Rationale:** Article 7(1) makes the controller able to demonstrate that the
-person consented, and only a record shows it.
+person consented, and only a record shows it. That the record holds who, when
+and to what is USS's reading of what "demonstrate" needs, for a qualified
+person to confirm.
 
 ### USS-GDPR-005: Make withdrawing consent as easy as giving it
 
@@ -165,23 +172,23 @@ a qualified person to confirm.
 - **Applies when:** operates-service
 - **Category:** Safety
 - **Verify:** The project has a written procedure that the auditor can read. It
-  names the supervisory authority to notify, and says that the notification
-  is made without undue delay and, where feasible, not later than 72 hours
-  after becoming aware of a personal-data breach, unless the breach is
-  unlikely to result in a risk to the rights and freedoms of people. It says
-  that, when a breach is likely to result in a high risk to them, the people
-  affected are told without undue delay, as Article 34 requires. A procedure
-  with no authority named, no deadline, a deadline later than 72 hours with
-  no "where feasible" condition, or no communication to the people affected,
-  fails.
+  says that the supervisory authority is notified without undue delay and,
+  where feasible, not later than 72 hours after becoming aware of a
+  personal-data breach, unless the breach is unlikely to result in a risk to
+  the rights and freedoms of people. It says that the people affected are
+  told, as Article 34 requires, when a breach is likely to result in a high
+  risk to them (the exceptions of Article 34(3) may be stated). A procedure
+  with no deadline, a deadline later than 72 hours with no "where feasible"
+  condition, or no communication to the people affected where Article 34
+  requires it, fails.
 - **References:** Regulation (EU) 2016/679, Official Journal L 119, 4.5.2016,
   Articles 33(1) and 34(1) (read 2026-11-24)
 
-A written procedure MUST notify the supervisory authority of a personal-data
-breach without undue delay and, where feasible, within 72 hours of becoming
-aware of it, unless the breach is unlikely to result in a risk to the rights
-and freedoms of people, and MUST notify the people affected when Article 34
-requires it.
+The project MUST have a written procedure that notifies the supervisory
+authority of a personal-data breach without undue delay and, where feasible,
+within 72 hours of becoming aware of it, unless the breach is unlikely to
+result in a risk to the rights and freedoms of people, and that notifies the
+people affected when Article 34 requires it.
 
 **Rationale:** The 72 hours run from the moment the controller becomes aware,
 so a team with no procedure in place cannot meet them.
@@ -195,10 +202,8 @@ so a team with no procedure in place cannot meet them.
   (a document or a file, on paper or in electronic form). For a controller, it
   holds each item that Article 30(1) lists; for a processor, each item that
   Article 30(2) lists. A record that is missing, not in writing, or that lacks
-  one of the items fails. A project that Article 30(5) exempts (fewer than 250
-  persons, with processing that is occasional, not likely to risk the rights
-  and freedoms of people, and without special categories of data) does not need
-  the record, and the auditor records the facts that show the exemption.
+  one of the items fails. A project that Article 30(5) lifts the duty
+  for passes, and the auditor records the facts that show it.
 - **References:** Regulation (EU) 2016/679, Official Journal L 119, 4.5.2016,
   Article 30(1), (2), (3) and (5) (read 2026-11-24)
 
