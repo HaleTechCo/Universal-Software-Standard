@@ -154,6 +154,24 @@ fn check() -> Result<(), String> {
         cargo,
         &["test", "--locked", "--workspace", "--all-features"],
     )?;
+    println!("==> wasm32 library clippy");
+    run(
+        &root,
+        cargo,
+        &[
+            "clippy",
+            "--locked",
+            "-p",
+            "uss",
+            "--lib",
+            "--no-default-features",
+            "--target",
+            "wasm32-unknown-unknown",
+            "--",
+            "-D",
+            "warnings",
+        ],
+    )?;
     println!("==> wasm32 library build");
     run(
         &root,
