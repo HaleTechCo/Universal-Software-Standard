@@ -1,0 +1,151 @@
+# USS project record: the inputs to compliance for one independently
+# released unit. Copy this file to .uss/record.yaml in the project root,
+# fill it in, then run: uss check .uss/record.yaml
+# Format: schema/record.schema.json. Meaning: standard/conventions.md.
+
+# The version of the standard that the project follows.
+standard:
+  # The pinned USS version. Change it only to upgrade on purpose.
+  version: 0.1.0
+
+# The project that this record describes.
+project:
+  # The project's name, as audit reports show it.
+  name: universal-software-standard
+
+# The project's stack. Use the identifiers in standard/registry.yaml.
+# Each entry sets a stack fact, such as lang.go for go in languages.
+stack:
+  # Programming languages, such as go or python.
+  languages: [rust]
+  # Frameworks, such as react.
+  frameworks: []
+  # Platforms, such as postgresql or kubernetes.
+  platforms: []
+  # Other tools, such as maven.
+  tools: []
+
+# One answer, true or false, for every fact in standard/applicability.md
+# that has a Question.
+facts:
+  # Do people use it through a user interface?
+  has-ui: false
+  # Does it serve a UI in a web browser?
+  has-web-ui: false
+  # Does it have a command-line interface?
+  has-cli: true
+  # Does it send or receive data over a network?
+  uses-network: false
+  # Does it send usage or diagnostic data to the project or a third party?
+  collects-telemetry: false
+  # Does it keep data across restarts?
+  stores-persistent-data: false
+  # Does it store data about its users or created by them?
+  stores-user-data: false
+  # Does it use a database engine?
+  uses-database: false
+  # Is the database a relational (SQL) database?
+  uses-relational-database: false
+  # Does it accept requests over a network?
+  exposes-network-api: false
+  # Does it accept HTTP-based requests from other software?
+  exposes-web-api: false
+  # Does it run as a long-lived network service?
+  is-network-service: false
+  # Does the project run its own production deployment?
+  operates-service: false
+  # Does it authenticate users or clients?
+  handles-authentication: false
+  # Does it handle sensitive data?
+  handles-sensitive-data: false
+  # Does it handle personal data?
+  handles-personal-data: false
+  # Does it need secrets to run?
+  uses-secrets: false
+  # Could a failure cause serious harm?
+  high-assurance: false
+  # Does any of its own code run without memory safety?
+  has-memory-unsafe-code: false
+  # Does its code run in parallel and share data?
+  uses-concurrency: false
+  # Does it parse data that an untrusted source could have written?
+  parses-untrusted-input: true
+  # Does it use cryptography?
+  uses-cryptography: false
+  # Is providing cryptography to other software the main purpose of the project?
+  implements-cryptography: false
+  # Must it run in a FIPS 140-3 validated configuration?
+  requires-fips: false
+  # Does it publish a container image?
+  ships-container-image: false
+  # Does it ship Kubernetes manifests or Helm charts?
+  deploys-to-kubernetes: false
+  # Does the repository use container images?
+  uses-container-images: false
+  # Do others use it as a library or SDK?
+  is-library: false
+  # Is it a tool that software developers use in their work?
+  is-developer-tool: true
+  # Is it released as an installable package or binary?
+  distributed-as-package: true
+  # Does it publish versioned releases?
+  publishes-releases: true
+  # Does it use third-party code?
+  has-dependencies: true
+  # Does it use packages from a private registry or repository?
+  uses-private-packages: false
+  # Does it keep copies of third-party code in its repository?
+  vendors-dependencies: false
+  # Can people outside the core team contribute?
+  accepts-external-contributions: true
+  # Can more than one person approve and merge changes?
+  has-multiple-maintainers: false
+  # Does it call or run AI models?
+  uses-ai-models: false
+  # Does it provide an MCP server?
+  exposes-mcp-server: false
+  # Can an AI model make it take actions?
+  has-ai-tool-use: false
+  # Does more than one person or account use one installation?
+  has-multiple-users: false
+  # Is any part of it sold?
+  is-commercial: false
+  # Is it released under an OSI-approved licence?
+  is-foss: true
+  # Is it placed on the EU market?
+  sold-in-eu: false
+  # Does it process personal data of people in the EU?
+  processes-eu-personal-data: false
+  # Is it a product or service that the European Accessibility Act covers?
+  covered-by-eaa: false
+
+# One decision for every applicable MAY rule. Run
+# uss applicable .uss/record.yaml to list the rules that apply. Form:
+#   USS-<PREFIX>-<NNN>: { adopt: true }
+decisions:
+  USS-DST-001: { adopt: false }
+  USS-DST-002: { adopt: true }
+  USS-DST-003: { adopt: false }
+  USS-DST-006: { adopt: false }
+  USS-DST-007: { adopt: false }
+  USS-DST-008: { adopt: true }
+  USS-EXT-001: { adopt: false }
+
+# One entry for every approved Standard Deviation, each written from
+# templates/standard-deviation.md. Form:
+#   - rule: USS-<PREFIX>-<NNN>
+#     document: docs/standard-deviations/USS-<PREFIX>-<NNN>.md
+#     approved-by: "<name and role>"
+#     date: YYYY-MM-DD
+#     review-by: YYYY-MM-DD
+deviations: []
+
+# One entry for every audit. Form:
+#   - date: YYYY-MM-DD
+#     results: .uss/audits/YYYY-MM-DD.yaml
+#     report: .uss/audits/YYYY-MM-DD.md
+audits: []
+
+# The directories of child components, relative to the project root. Each
+# one has its own .uss/record.yaml. Example: [libs/core, cli]
+components: []

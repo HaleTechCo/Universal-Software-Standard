@@ -194,6 +194,21 @@ fn check() -> Result<(), String> {
         &root,
         cargo,
         &["run", "--locked", "--quiet", "-p", "uss", "--", "lint"],
+    )?;
+    println!("==> uss check");
+    run(
+        &root,
+        cargo,
+        &[
+            "run",
+            "--locked",
+            "--quiet",
+            "-p",
+            "uss",
+            "--",
+            "check",
+            ".uss/record.yaml",
+        ],
     )
 }
 
