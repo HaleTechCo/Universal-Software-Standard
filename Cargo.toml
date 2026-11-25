@@ -22,3 +22,6 @@ expect_used = "deny"
 panic = "deny"
 allow_attributes = "deny"
 allow_attributes_without_reason = "deny"
+
+[profile.release]
+overflow-checks = true
