@@ -76,7 +76,8 @@ one.
   fails.
 - **References:** Kubernetes documentation, Configure a Security Context for
   a Pod or Container (read 2026-11-24); Docker documentation, `docker
-  container run`, `--read-only` (read 2026-11-24)
+  container run`, `--read-only` (read 2026-11-24); Compose Specification,
+  services, `read_only` (read 2026-11-24)
 
 Containers SHOULD run with a read-only root filesystem, and each path that the
 software writes to SHOULD be a declared volume.

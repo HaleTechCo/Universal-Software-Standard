@@ -133,7 +133,7 @@ mod tests {
             .into_iter()
             .filter(|rule| is_core(rule))
             .count();
-        assert_eq!((floor, core), (59, 317));
+        assert_eq!((floor, core), (59, 318));
         assert!(
             applicable(&c, &r).iter().all(|rule| is_core(rule)),
             "a non-core rule applies to the all-false record"

@@ -207,9 +207,9 @@ large.
   cannot open are `unverified`.
 - **References:** OWASP Top 10 for LLM Applications 2025, LLM10
 
-The software MUST limit the tokens per request and the total spend, where the
-model has tokens or a cost per call, and the requests per user, and MUST alert
-when a limit is reached.
+The software MUST limit the requests per user, the tokens per request when the
+model works in tokens, and the total spend when calls cost money, and MUST
+alert when a limit is reached.
 
 **Rationale:** Model calls cost money for each token, and an attacker, a loop
 or a popular day can use a month's budget in an hour. The limits keep a
@@ -250,19 +250,21 @@ for it later.
 ### USS-AI-009: Tell people when they deal with AI
 
 - **Level:** MUST
-- **Applies when:** uses-ai-models and has-ui
+- **Applies when:** uses-ai-models and (has-ui or has-cli)
 - **Category:** Safety
-- **Verify:** List the screens, dialogs and messages through which a person
-  interacts with an AI system (a chat, an assistant, an automated reply), and
-  those that show content that a model generated (text, images, audio, video,
-  or a summary). In a test instance, open each: it states in the interface that
-  the person is dealing with an AI system, and the generated content carries a
-  visible mark (such as a label or an icon with a text alternative). A
-  screen that does either with no statement or mark fails.
+- **Verify:** List the screens, dialogs, messages and command-line outputs
+  through which a person interacts with an AI system (a chat, an assistant, an
+  automated reply), and those that show content that a model generated (text,
+  images, audio, video, or a summary). In a test instance, open or run each: it
+  states in the interface or in the command's output that the person is dealing
+  with an AI system, and the generated content carries a visible mark (such as
+  a label, an icon with a text alternative, or a line of text in command-line
+  output). A screen or an output that does either with no statement or mark
+  fails.
 - **References:** Regulation (EU) 2024/1689 (AI Act), Article 50(1) and 50(4)
 
-The interface MUST tell people when they are interacting with an AI system, and
-MUST mark content that AI generated.
+The interface, command-line output included, MUST tell people when they are
+interacting with an AI system, and MUST mark content that AI generated.
 
 **Rationale:** People judge a message differently when they know that a machine
 wrote it. Article 50 of the AI Act requires the notice for systems that

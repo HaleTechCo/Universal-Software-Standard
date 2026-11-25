@@ -203,15 +203,19 @@ data and services behind.
   configuration and data. Install the latest release over it, as the
   documentation says, with no uninstall first. The installation detects the
   existing one and upgrades it: the version is the new one, and it runs from the
-  existing installation, not from a second copy or a fresh set of files. An
-  upgrade that needs an uninstall first, or that sets up a second installation
-  next to the first, fails. Whether the configuration and the data are kept is
-  judged by USS-DST-011 and USS-DAT-002, not here.
+  existing installation, not from a second copy or a fresh set of files. The
+  existing data is still where it was: the upgrade did not delete it, move it
+  aside or replace it with fresh data. An upgrade that needs an uninstall first,
+  that sets up a second installation next to the first, or that deletes, moves
+  aside or replaces the existing data fails. Whether the configuration is kept
+  is judged by USS-DST-011, and the changes that a data migration makes to the
+  data by USS-DAT-002, not here.
 - **References:** none
 
 Installing a new version over an existing install MUST detect it and upgrade it
-in place, with no uninstall first. Keeping its configuration is USS-DST-011, and
-keeping its data is USS-DAT-002.
+in place, with no uninstall first, and MUST keep the existing data where it is,
+not deleted, moved aside or replaced. Keeping its configuration is USS-DST-011,
+and the changes that a data migration makes to the data are USS-DAT-002's.
 
 **Rationale:** Users upgrade often. An upgrade that asks them to remove the
 old version first, or that starts from empty, is one they put off.
@@ -300,7 +304,7 @@ release without it leaves those users to build the software themselves.
 ### USS-DST-015: Explain how to verify signatures
 
 - **Level:** SHOULD
-- **Applies when:** distributed-as-package or ships-container-image
+- **Applies when:** always
 - **Category:** Compatibility
 - **Verify:** List the kinds of release artifact that carry a signature (each
   signed package, archive, binary and image of the latest release). The release

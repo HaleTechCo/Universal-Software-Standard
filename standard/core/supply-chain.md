@@ -274,7 +274,7 @@ the job.
 ### USS-SUP-013: Publish an SBOM
 
 - **Level:** SHOULD
-- **Applies when:** distributed-as-package or ships-container-image
+- **Applies when:** publishes-releases
 - **Category:** Safety
 - **Verify:** Each release has an SBOM in SPDX or CycloneDX format, published
   with the release. The SBOM lists the components of the release, and its
@@ -294,7 +294,7 @@ contains to find out whether a newly disclosed flaw affects them.
 ### USS-SUP-014: Sign release artifacts
 
 - **Level:** SHOULD
-- **Applies when:** distributed-as-package or ships-container-image
+- **Applies when:** publishes-releases
 - **Category:** Safety
 - **Verify:** Each release artifact has a signature published with it or in a
   registry (a Sigstore signature, for example).
@@ -310,7 +310,7 @@ project and was not changed after the release.
 ### USS-SUP-015: Meet SLSA Build Level 2
 
 - **Level:** SHOULD
-- **Applies when:** distributed-as-package or ships-container-image
+- **Applies when:** publishes-releases
 - **Category:** Safety
 - **Verify:** Release builds run on a hosted build platform, and each release
   has provenance that is signed by the build platform (for example an
@@ -327,8 +327,7 @@ source and which build produced an artifact.
 ### USS-SUP-016: Meet SLSA Build Level 3
 
 - **Level:** SHOULD
-- **Applies when:** (distributed-as-package or ships-container-image) and
-  high-assurance
+- **Applies when:** publishes-releases and high-assurance
 - **Category:** Safety
 - **Verify:** The release build platform and its provenance meet the SLSA v1.2
   Build Level 3 requirements, as the platform's documentation or an

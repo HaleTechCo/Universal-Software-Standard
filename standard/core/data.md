@@ -93,12 +93,14 @@ is in it. Generated documentation cannot fall behind the schema.
   database encryption) or by the software (such as encrypted fields). Without
   access to the hosting settings, the auditor records `unverified` for storage
   that the project does not configure itself. Traffic over the network is a
-  separate rule (USS-SEC-022), and so are backups (USS-BAK-008).
+  separate rule (USS-SEC-022), and so are backups (USS-BAK-008 and
+  USS-BAK-014).
 - **References:** CWE-311; CWE-312; OWASP ASVS 5.0, V14 (Data Protection);
   NIST SP 800-111 (2007-11)
 
-Sensitive data MUST be encrypted where it is stored, by the storage layer or
-by the software.
+Sensitive data MUST be encrypted where the software stores it, by the storage
+layer or by the software. Backups are the Backup (BAK) area's (USS-BAK-008 and
+USS-BAK-014).
 
 **Rationale:** Stored data outlives the process that wrote it, and it reaches
 readers who never pass through the software, such as a lost disk, a copied

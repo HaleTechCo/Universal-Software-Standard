@@ -5,7 +5,9 @@
 
 This area covers getting data back after a loss, in three scopes: what the
 software offers its operators, the deployments that the project runs itself, and
-the project's source. Its rules count toward Reliability. The Data (DAT) area
+the project's source. Its rules count toward Reliability, except the two that
+protect the confidentiality of backups (USS-BAK-008 and USS-BAK-014), which
+count toward Safety. The Data (DAT) area
 holds the migrations that an upgrade runs (USS-DAT-001), the Privacy (PRV) area
 holds when personal data is deleted (USS-PRV-003), and the Distribution and
 install (DST) area points to the backup before an upgrade (USS-BAK-003).
@@ -98,6 +100,28 @@ proves it.
 onto the one that held the data. A test in CI keeps the procedure true as the
 software changes.
 
+### USS-BAK-014: Offer encrypted backups
+
+- **Level:** SHOULD
+- **Applies when:** stores-persistent-data and publishes-releases and
+  handles-sensitive-data
+- **Category:** Safety
+- **Verify:** Read the documented backup procedure (USS-BAK-001). It can write
+  an encrypted backup: an option, a setting or a documented step (such as
+  encrypting the backup file with a named tool) turns encryption on. On a test
+  instance, take a backup with that option, setting or step: the backup file
+  cannot be read without a key (opening it gives no plain data). When no test
+  instance is available, the documentation and the code show the same. A
+  procedure that can write only plain backups fails.
+- **References:** CWE-311; CIS Critical Security Controls v8.1, safeguard 11.3
+
+The backup procedure that the software offers (USS-BAK-001) SHOULD be able to
+write encrypted backups.
+
+**Rationale:** A backup file holds all the sensitive data in one place and
+travels to storage that the software does not control. An operator can turn
+encryption on only when the software or its documentation gives a way to do it.
+
 ## The project's own deployments
 
 ### USS-BAK-005: Set recovery objectives
@@ -168,7 +192,7 @@ reading; the CISA page does not say whether it counts.
 
 - **Level:** MUST
 - **Applies when:** operates-service and stores-persistent-data
-- **Category:** Reliability
+- **Category:** Safety
 - **Verify:** The backup configuration turns on encryption for each copy
   (USS-BAK-007), by the backup tool or by the storage layer. Take one backup
   file from storage: it cannot be read without a key (opening it gives no

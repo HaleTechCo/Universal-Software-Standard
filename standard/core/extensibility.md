@@ -54,10 +54,10 @@ follow apply once the interface exists.
   kinds of change keep a plugin that was written for an earlier version working,
   and which kinds do not. In the contract's change history since the last audit,
   or the last 12 months when there is none, each incompatible change, as SemVer
-  defines it, raises the MAJOR version; while MAJOR is 0, SemVer item 4 applies
-  and this rule adds nothing to it. A contract with no version, no stated
+  defines it, raises the MAJOR version; while MAJOR is 0, anything may change
+  (SemVer item 4), so no change fails. A contract with no version, no stated
   guarantees, or an incompatible change under a lower increment fails.
-- **References:** Semantic Versioning 2.0.0, items 1, 3, 4 and 8
+- **References:** Semantic Versioning 2.0.0, items 1 to 4 and 8
 
 The plugin contract MUST be documented and versioned under Semantic
 Versioning, with stated compatibility guarantees.

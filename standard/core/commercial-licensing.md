@@ -8,11 +8,12 @@ This area covers the terms on which software is sold: published prices,
 price increases, the licence terms and the way a licence is delivered, and
 the licence models on offer. Its rules count toward Fairness. The Fair
 dealing (TRU) area holds the promises across versions, including that users'
-export of their own data never depends on their licence (USS-TRU-004) and
-that price and licence changes are announced in the changelog
+export of their own data never depends on their licence (USS-TRU-004, a MUST
+rule) and that price and licence changes are announced in the changelog
 (USS-TRU-005). The Independence (IND) area holds running the software on the
 customer's own infrastructure (USS-IND-001); the rules on a licence server
-here build on it.
+here build on it. The other rules of this area apply to negotiated agreements
+too.
 
 ## Transparent pricing
 
@@ -46,15 +47,12 @@ the other rules of this area checkable.
   (or, when it offers none for review, its approved agreement templates and
   its discount rules). For each, compare each term with the published terms
   for the same thing (price, what is included, notice, term, grace period).
-  A term worse than the published one fails. Then check the agreement
-  against the other rules of this area: a term that removes or contradicts
-  what another rule of this area asks for, such as dropping the cap of
-  USS-COM-005 or the grace period of USS-COM-013, fails. Record `unverified`
+  A term worse than the published one fails. Record `unverified`
   when the auditor can read neither the agreements nor the templates.
 - **References:** none
 
 A negotiated agreement SHOULD NOT have a term worse than the published terms
-for the same thing, nor a term that sets aside another rule of this area.
+for the same thing.
 
 **Rationale:** Volume and corporate agreements are welcome on top of the
 published prices. They stop being fair when they are a way around the rules

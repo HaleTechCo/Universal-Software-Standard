@@ -598,7 +598,7 @@ project can be held to them.
 ### USS-SEC-031: Publish security advisories
 
 - **Level:** MUST
-- **Applies when:** distributed-as-package or ships-container-image
+- **Applies when:** publishes-releases
 - **Category:** Safety
 - **Verify:** For each fixed vulnerability in a released version, a published
   advisory (such as a repository security advisory, a database entry or a
@@ -618,7 +618,7 @@ fix is announced where they look.
 ### USS-SEC-032: Publish VEX statements
 
 - **Level:** SHOULD
-- **Applies when:** distributed-as-package or ships-container-image
+- **Applies when:** publishes-releases
 - **Category:** Safety
 - **Verify:** For each release, any known vulnerability in a dependency that the
   release is not affected by has a VEX statement (in a format such as OpenVEX,
