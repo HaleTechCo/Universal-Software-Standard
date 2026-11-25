@@ -306,7 +306,8 @@ templates and the `uss` tool.
 2. Clone the repository. Run all commands from its root.
 3. Run `rustup toolchain install`. It installs the toolchain that
    `rust-toolchain.toml` pins.
-4. Run `cargo xtask check`. The first run also installs cargo-deny under
+4. Run `git config core.hooksPath .githooks`. It turns on the pre-commit hook.
+5. Run `cargo xtask check`. The first run also installs cargo-deny under
    `.tools`.
 
 ### Commands

@@ -1547,6 +1547,10 @@ mod tests {
         ("skills/adopt/SKILL.md", ADOPT_SKILL),
         ("skills/audit/SKILL.md", AUDIT_SKILL),
         ("README.md", include_str!("../../../../README.md")),
+        (
+            "CONTRIBUTING.md",
+            include_str!("../../../../CONTRIBUTING.md"),
+        ),
         ("docs/cli.md", include_str!("../../../../docs/cli.md")),
         (
             "docs/troubleshooting.md",

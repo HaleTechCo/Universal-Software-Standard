@@ -1,0 +1,6 @@
+#!/bin/sh
+# Fast checks that CI also runs. Turn on with: git config core.hooksPath .githooks
+set -eu
+
+cargo fmt --all --check
+cargo run --locked -q -p uss -- lint
