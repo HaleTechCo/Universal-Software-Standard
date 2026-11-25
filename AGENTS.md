@@ -239,8 +239,10 @@ in `USS-SEC-013`.
       an SBOM, signatures or provenance, write `fail`.
     - If the rule only says what each release or artifact must be, write
       `pass`. Give the evidence "no release yet", and the command.
-    - If the Verify also examines a document that needs no release, examine
-      that document. Combine the results of the parts.
+    - Treat a document about a release as part of the release. Examples are
+      the steps to rebuild release artifacts, and release notes.
+    - Examine a document that does not depend on a release now, such as the
+      definition of the public API. Combine the results of the parts.
 17. Save the results file after each area, so that a stopped audit can
     continue.
 18. Add each suppression in the checks of the project to `suppressions`, with
