@@ -40,6 +40,28 @@ pub(crate) struct Section {
     pub prose: String,
 }
 
+/// One line of a `##` group.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct Line {
+    /// 1-based line number.
+    pub n: usize,
+    /// The text of the line.
+    pub text: String,
+    /// Whether the line is part of a fenced code block, fences included.
+    pub fenced: bool,
+}
+
+/// A `##` heading with the lines up to the next `##` or `###` heading.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct Group {
+    /// Heading text after `## `.
+    pub heading: String,
+    /// 1-based line of the heading.
+    pub line: usize,
+    /// The lines under the heading.
+    pub lines: Vec<Line>,
+}
+
 /// A scanned document.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct Doc {
@@ -51,6 +73,8 @@ pub(crate) struct Doc {
     pub header: BTreeMap<String, Field>,
     /// The `###` sections, in order.
     pub sections: Vec<Section>,
+    /// The `##` groups, in order.
+    pub groups: Vec<Group>,
 }
 
 /// Where the scanner is putting lines.
@@ -87,6 +111,7 @@ pub(crate) fn parse_doc(file: &str, data: &[u8]) -> (Doc, Vec<Diagnostic>) {
     let mut target = Target::None;
     let mut block = Block::Closed;
     let mut have_title = false;
+    let mut in_group = false;
     // Lines of the current section: (text, fenced).
     let mut lines: Vec<(&str, bool)> = Vec::new();
 
@@ -97,6 +122,7 @@ pub(crate) fn parse_doc(file: &str, data: &[u8]) -> (Doc, Vec<Diagnostic>) {
                 fence = None;
             }
             lines.push((line, true));
+            note(&mut doc, in_group, (line, n), true);
             continue;
         }
         if let Some(marker) = ["```", "~~~"].into_iter().find(|m| line.starts_with(m)) {
@@ -104,6 +130,7 @@ pub(crate) fn parse_doc(file: &str, data: &[u8]) -> (Doc, Vec<Diagnostic>) {
             fence_line = n;
             block = Block::Closed;
             lines.push((line, true));
+            note(&mut doc, in_group, (line, n), true);
             continue;
         }
         if let Some(rest) = line.strip_prefix("### ") {
@@ -117,12 +144,19 @@ pub(crate) fn parse_doc(file: &str, data: &[u8]) -> (Doc, Vec<Diagnostic>) {
             });
             target = Target::Section;
             block = Block::Waiting;
+            in_group = false;
             continue;
         }
-        if line.starts_with("## ") {
+        if let Some(rest) = line.strip_prefix("## ") {
             finish(&mut doc, target, &mut lines);
+            doc.groups.push(Group {
+                heading: rest.trim().to_string(),
+                line: n,
+                lines: Vec::new(),
+            });
             target = Target::None;
             block = Block::Closed;
+            in_group = true;
             continue;
         }
         if let Some(rest) = line.strip_prefix("# ")
@@ -153,6 +187,7 @@ pub(crate) fn parse_doc(file: &str, data: &[u8]) -> (Doc, Vec<Diagnostic>) {
         }
         if !consumed {
             lines.push((line, false));
+            note(&mut doc, in_group, (line, n), false);
         }
     }
     if fence.is_some() {
@@ -162,6 +197,106 @@ pub(crate) fn parse_doc(file: &str, data: &[u8]) -> (Doc, Vec<Diagnostic>) {
     }
     finish(&mut doc, target, &mut lines);
     (doc, diags)
+}
+
+/// Adds a line to the open `##` group, if there is one.
+fn note(doc: &mut Doc, in_group: bool, (text, n): (&str, usize), fenced: bool) {
+    if in_group && let Some(g) = doc.groups.last_mut() {
+        g.lines.push(Line {
+            n,
+            text: text.to_string(),
+            fenced,
+        });
+    }
+}
+
+/// A table of a `##` group.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct Table {
+    /// The header cells.
+    pub header: Vec<String>,
+    /// The rows under the separator line.
+    pub rows: Vec<Row>,
+}
+
+/// One row of a [`Table`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct Row {
+    /// 1-based line of the row.
+    pub line: usize,
+    /// The cells, trimmed.
+    pub cells: Vec<String>,
+}
+
+/// Splits a table line into trimmed cells. A `|` escaped as `\|` stays in the
+/// cell as `|`.
+fn split_cells(line: &str) -> Vec<String> {
+    let mut cells = Vec::new();
+    let mut cur = String::new();
+    let mut chars = line.trim().chars().peekable();
+    // The leading pipe starts the first cell.
+    chars.next_if_eq(&'|');
+    while let Some(c) = chars.next() {
+        match c {
+            '\\' if chars.peek() == Some(&'|') => {
+                chars.next();
+                cur.push('|');
+            }
+            '|' => cells.push(std::mem::take(&mut cur).trim().to_string()),
+            _ => cur.push(c),
+        }
+    }
+    if !cur.trim().is_empty() {
+        cells.push(cur.trim().to_string());
+    }
+    cells
+}
+
+/// Reads the first table in `lines`: the first run of unfenced lines that
+/// start with `|`. Its second line is the separator.
+///
+/// # Errors
+///
+/// Returns the line of the problem (`0` when there is no table) and what is
+/// wrong: no table, no separator line, or a row with the wrong number of
+/// cells.
+pub(crate) fn parse_table(lines: &[Line]) -> Result<Table, (usize, String)> {
+    let is_row = |l: &&Line| !l.fenced && l.text.starts_with('|');
+    let start = lines
+        .iter()
+        .position(|l| is_row(&l))
+        .ok_or((0, "no table".to_string()))?;
+    let run: Vec<&Line> = lines[start..].iter().take_while(is_row).collect();
+    let header = split_cells(&run[0].text);
+    let separator = run.get(1).filter(|l| {
+        let cells = split_cells(&l.text);
+        cells.len() == header.len()
+            && cells.iter().all(|c| {
+                let c = c.strip_prefix(':').unwrap_or(c);
+                let c = c.strip_suffix(':').unwrap_or(c);
+                !c.is_empty() && c.chars().all(|ch| ch == '-')
+            })
+    });
+    if separator.is_none() {
+        let at = run.get(1).map_or(run[0].n, |l| l.n);
+        return Err((at, "table has no separator line".to_string()));
+    }
+    let mut rows = Vec::new();
+    for l in &run[2..] {
+        let cells = split_cells(&l.text);
+        if cells.len() != header.len() {
+            return Err((
+                l.n,
+                format!(
+                    "table row has {} cells, the header has {}",
+                    cells.len(),
+                    header.len()
+                ),
+            ));
+        }
+        rows.push(Row { line: l.n, cells });
+    }
+    Ok(Table { header, rows })
 }
 
 /// Finds the rule IDs that `data` names outside fenced code blocks, each with
@@ -361,5 +496,72 @@ USS-GO-007
         assert_eq!(diags[0].line, 6);
         assert_eq!(diags[0].file, "a.md");
         assert_eq!(doc.sections[0].fields["Level"].value, "MUST");
+    }
+
+    #[test]
+    fn parse_doc_groups() {
+        let src = "# T\n\n- **Prefix:** X\n\n## One\n\ntext\n```\n## not a heading\n```\n\n### rule\n\n- **Level:** MUST\n\nBody.\n\n## Two\n\nmore\n";
+        let (doc, diags) = parse_doc("a.md", src.as_bytes());
+        assert!(diags.is_empty(), "{diags:?}");
+        let g = &doc.groups;
+        assert_eq!(g.len(), 2);
+        assert_eq!((g[0].heading.as_str(), g[0].line), ("One", 5));
+        let shown: Vec<_> = g[0]
+            .lines
+            .iter()
+            .map(|l| (l.n, l.text.as_str(), l.fenced))
+            .collect();
+        assert_eq!(
+            shown,
+            [
+                (6, "", false),
+                (7, "text", false),
+                (8, "```", true),
+                (9, "## not a heading", true),
+                (10, "```", true),
+                (11, "", false),
+            ]
+        );
+        assert_eq!((g[1].heading.as_str(), g[1].line), ("Two", 18));
+        assert_eq!(g[1].lines.last().map(|l| l.text.as_str()), Some("more"));
+        assert_eq!(doc.sections.len(), 1);
+        assert!(doc.header.contains_key("Prefix"));
+    }
+
+    fn lines_of(text: &str) -> Vec<Line> {
+        let (doc, _) = parse_doc("a.md", format!("# T\n\n## G\n{text}").as_bytes());
+        doc.groups[0].lines.clone()
+    }
+
+    #[test]
+    fn parse_table_cases() {
+        let ok = parse_table(&lines_of(
+            "\ntext\n| A | B |\n|---|:-:|\n| 1 | a \\| b |\n|2|x|\n\nafter\n",
+        ))
+        .unwrap();
+        assert_eq!(ok.header, ["A", "B"]);
+        assert_eq!(ok.rows.len(), 2);
+        assert_eq!(ok.rows[0].line, 8);
+        assert_eq!(ok.rows[0].cells, ["1", "a | b"]);
+        assert_eq!(ok.rows[1].cells, ["2", "x"]);
+
+        let no_sep = parse_table(&lines_of("| A | B |\n| 1 | 2 |\n"));
+        assert_eq!(no_sep, Err((5, "table has no separator line".to_string())));
+        let only_header = parse_table(&lines_of("| A | B |\n"));
+        assert_eq!(
+            only_header,
+            Err((4, "table has no separator line".to_string()))
+        );
+
+        let wide = parse_table(&lines_of("| A | B |\n|---|---|\n| 1 | 2 | 3 |\n"));
+        assert_eq!(
+            wide,
+            Err((6, "table row has 3 cells, the header has 2".to_string()))
+        );
+
+        let fenced = parse_table(&lines_of("```\n| A | B |\n|---|---|\n```\n"));
+        assert_eq!(fenced, Err((0, "no table".to_string())));
+        let after = parse_table(&lines_of("```\n| X |\n```\n| A |\n|---|\n| 1 |\n")).unwrap();
+        assert_eq!(after.header, ["A"]);
     }
 }

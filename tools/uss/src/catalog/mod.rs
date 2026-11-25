@@ -6,7 +6,17 @@ use std::path::Path;
 use crate::expr::{self, Expr};
 use crate::source::Source;
 use facts::parse_facts;
-use rules::parse_rule_file;
+use profiles::{check_mappings, parse_profile};
+use rules::{RULE_ID_RE, list, parse_rule_file};
+
+/// Directory of the vendor profiles.
+const VENDORS_DIR: &str = "standard/vendors";
+
+/// Directory of the regulation modules.
+const REGULATIONS_DIR: &str = "standard/modules/regulations/";
+
+/// The header of the obligations table of a regulation module.
+const OBLIGATION_HEADER: [&str; 4] = ["Obligation", "Source", "Rules", "Coverage"];
 
 /// Most identifiers that the reach check of `Refines` enumerates.
 const MAX_REACH_IDENTS: usize = 16;
@@ -18,12 +28,14 @@ mod diag;
 mod export;
 mod facts;
 pub(crate) mod markdown;
+mod profiles;
 pub(crate) mod registry;
 mod rules;
 
 pub use diag::Diagnostic;
-pub use export::{Export, ExportCategory, ExportFact, ExportRule};
+pub use export::{Export, ExportCategory, ExportFact, ExportMapping, ExportProfile, ExportRule};
 pub use facts::{Fact, FactSource};
+pub use profiles::{Coverage, Maintainer, Mapping, Profile};
 pub use registry::{Category, Registry, load_registry};
 pub use rules::{Active, FileKind, Level, Rule, RuleFile, RuleState};
 
@@ -47,10 +59,12 @@ pub struct Catalog {
     pub facts: BTreeMap<String, Fact>,
     /// Every rule, retired ones included, sorted by ID.
     pub rules: Vec<Rule>,
-    /// How many rule files were read.
+    /// How many area, module and profile files were read.
     pub file_count: usize,
     /// Every file under `standard/modules/`, sorted by path.
     pub modules: Vec<ModuleFile>,
+    /// Every vendor profile, sorted by path.
+    pub profiles: Vec<Profile>,
 }
 
 impl Catalog {
@@ -134,6 +148,8 @@ pub fn load(src: &dyn Source) -> Result<Catalog, Vec<Diagnostic>> {
         }
     }
 
+    let profiles = load_profiles(src, &mut files, &mut texts, &mut diags);
+
     let file_count = files.len();
     let mut modules: Vec<ModuleFile> = files
         .iter()
@@ -157,6 +173,7 @@ pub fn load(src: &dyn Source) -> Result<Catalog, Vec<Diagnostic>> {
         rules,
         file_count,
         modules,
+        profiles,
     };
     catalog.check(&files, &texts, &mut diags);
     if diags.is_empty() {
@@ -164,6 +181,35 @@ pub fn load(src: &dyn Source) -> Result<Catalog, Vec<Diagnostic>> {
     } else {
         Err(sorted(diags))
     }
+}
+
+/// Reads every profile under `standard/vendors/`, adding its rule file and
+/// text to `files` and `texts`.
+fn load_profiles(
+    src: &dyn Source,
+    files: &mut Vec<RuleFile>,
+    texts: &mut Vec<(String, Vec<u8>)>,
+    diags: &mut Vec<Diagnostic>,
+) -> Vec<Profile> {
+    let mut profiles = Vec::new();
+    for path in src.list(VENDORS_DIR) {
+        if !Path::new(&path)
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("md"))
+        {
+            continue;
+        }
+        let Some(data) = src.read(&path) else {
+            diags.push(Diagnostic::new(&path, "file not found"));
+            continue;
+        };
+        let (file, profile, d) = parse_profile(&path, &data);
+        texts.push((path, data.to_vec()));
+        diags.extend(d);
+        files.push(file);
+        profiles.push(profile);
+    }
+    profiles
 }
 
 /// Sorts diagnostics by file, then line.
@@ -186,6 +232,12 @@ impl Catalog {
                     });
                 }
             }
+        }
+        for profile in &self.profiles {
+            check_mappings(self, profile, diags);
+        }
+        for (path, data) in texts.iter().filter(|(p, _)| p.starts_with(REGULATIONS_DIR)) {
+            self.check_regulation(path, data, diags);
         }
         for rule in &self.rules {
             let at = |message: String| Diagnostic {
@@ -224,6 +276,102 @@ impl Catalog {
                         fact.id
                     ),
                 });
+            }
+        }
+    }
+
+    /// Checks a regulation module: its disclaimer, its obligations table and
+    /// that none of its rules uses `Refines`.
+    fn check_regulation(&self, path: &str, data: &[u8], diags: &mut Vec<Diagnostic>) {
+        let (doc, _) = markdown::parse_doc(path, data);
+        let at = |line: usize, message: String| Diagnostic {
+            file: path.to_string(),
+            line,
+            message,
+        };
+        for rule in self.rules.iter().filter(|r| r.file == path) {
+            if rule.active().is_some_and(|a| !a.refines.is_empty()) {
+                diags.push(at(
+                    rule.line,
+                    format!(
+                        "{} uses \"Refines\"; a regulation rule maps through the obligations table",
+                        rule.id
+                    ),
+                ));
+            }
+        }
+        match doc.groups.iter().find(|g| g.heading == "Disclaimer") {
+            None => diags.push(at(1, "missing section \"Disclaimer\"".to_string())),
+            Some(g) if g.lines.iter().all(|l| l.text.trim().is_empty()) => {
+                diags.push(at(g.line, "section \"Disclaimer\" is empty".to_string()));
+            }
+            Some(_) => {}
+        }
+        let Some(g) = doc.groups.iter().find(|g| g.heading == "Obligations") else {
+            diags.push(at(1, "missing section \"Obligations\"".to_string()));
+            return;
+        };
+        let table = match markdown::parse_table(&g.lines) {
+            Ok(t) if t.header == OBLIGATION_HEADER => t,
+            Ok(_) => {
+                diags.push(at(
+                    g.line,
+                    format!(
+                        "the obligations table header must be \"{}\"",
+                        OBLIGATION_HEADER.join(" | ")
+                    ),
+                ));
+                return;
+            }
+            Err((line, message)) => {
+                diags.push(at(if line == 0 { g.line } else { line }, message));
+                return;
+            }
+        };
+        for row in &table.rows {
+            let [obligation, source, rules, coverage] = &row.cells[..] else {
+                continue;
+            };
+            let at = |message: String| at(row.line, message);
+            for (cell, name) in [(obligation, "Obligation"), (source, "Source")] {
+                if cell.is_empty() {
+                    diags.push(at(format!("empty \"{name}\" cell")));
+                }
+            }
+            let ids = if rules == "none" {
+                Vec::new()
+            } else {
+                list(rules)
+            };
+            if ids.is_empty() && rules != "none" {
+                diags.push(at("\"Rules\" must be none or rule IDs".to_string()));
+            }
+            for id in &ids {
+                if !RULE_ID_RE.is_match(id) {
+                    diags.push(at(format!("\"{id}\" is not a rule ID")));
+                } else if self.rule(id).is_some_and(|r| r.active().is_none()) {
+                    diags.push(at(format!("obligation maps retired rule {id}")));
+                }
+            }
+            let kind = match coverage.split_once(':') {
+                None if coverage == "full" => "full",
+                Some((k @ ("partial" | "none"), rest)) if !rest.trim().is_empty() => k,
+                _ => {
+                    diags.push(at(format!(
+                        "invalid coverage \"{coverage}\" (want full, partial: <what is left> or none: <what is left>)"
+                    )));
+                    continue;
+                }
+            };
+            if ids.is_empty() && kind != "none" {
+                diags.push(at(format!(
+                    "an obligation with no rules has coverage \"{kind}\"; it must be \"none: <what is left>\""
+                )));
+            } else if !ids.is_empty() && kind == "none" {
+                diags.push(at(
+                    "an obligation with rules has coverage \"none\"; it must be full or partial"
+                        .to_string(),
+                ));
             }
         }
     }
@@ -408,14 +556,14 @@ mod tests {
     #[test]
     fn load_fixture_ok() {
         let c = load_fixture();
-        assert_eq!(c.rules.len(), 7);
-        assert_eq!(c.file_count, 3);
+        assert_eq!(c.rules.len(), 8);
+        assert_eq!(c.file_count, 5);
         assert_eq!(c.rules[0].id, "USS-EXT-001");
         assert_eq!(c.facts.len(), 4);
         let go = c.rule("USS-GO-001").unwrap();
         assert_eq!(go.active().unwrap().applies.to_string(), "lang.go");
         assert!(c.rule("USS-NOPE-001").is_none());
-        assert_eq!(c.modules.len(), 1);
+        assert_eq!(c.modules.len(), 2);
         assert_eq!(c.modules[0].file, "standard/modules/languages/go.md");
         assert_eq!(c.modules[0].title, "Go");
         assert_eq!(c.modules[0].applies.to_string(), "lang.go");
@@ -588,7 +736,128 @@ See USS-SEC-099.
         let mut m = testfixture::standard();
         m.0.retain(|p, _| !p.starts_with("standard/modules/"));
         let c = load(&m).unwrap();
-        assert_eq!((c.rules.len(), c.file_count), (6, 2));
+        assert_eq!((c.rules.len(), c.file_count), (6, 3));
+    }
+
+    const LINT: &str = "standard/vendors/acme/lint.md";
+
+    /// The fixture profile with a prefix, a condition and one rule that
+    /// refines `target`.
+    fn profile_with_rule(target: &str) -> MemSource {
+        let rule = format!(
+            "\n## Rules\n\n### USS-LINT-001: Keep the config\n\n- **Level:** MUST\n- **Applies when:** always\n- **Category:** Safety\n- **Verify:** Check the config.\n- **References:** none\n- **Refines:** {target}\n\nThe config MUST stay.\n"
+        );
+        let mut m = edited(
+            LINT,
+            "- **Versions:** >=1.0.0, <2.0.0\n",
+            "- **Versions:** >=1.0.0, <2.0.0\n- **Prefix:** LINT\n- **Applies when:** lang.go\n",
+        );
+        let text = String::from_utf8(m.0[LINT].clone()).unwrap();
+        m.0.insert(LINT.to_string(), (text + &rule).into_bytes());
+        m
+    }
+
+    #[test]
+    fn load_profile_with_rules() {
+        let c = load(&profile_with_rule("USS-SEC-001")).unwrap();
+        assert_eq!((c.rules.len(), c.file_count), (9, 5));
+        let rule = c.rule("USS-LINT-001").unwrap();
+        assert_eq!(rule.kind, FileKind::Profile);
+        assert_eq!(rule.file, LINT);
+        let a = rule.active().unwrap();
+        assert_eq!(a.applies.to_string(), "lang.go");
+        assert_eq!(a.refines, ["USS-SEC-001"]);
+        assert_eq!(c.profiles[0].mappings.len(), 2);
+
+        // The reach check covers a profile rule that refines.
+        let text = text_of(&load(&profile_with_rule("USS-SEC-002")).unwrap_err());
+        assert!(
+            text.contains("USS-LINT-001 applies where USS-SEC-002, which it refines, does not"),
+            "{text}"
+        );
+    }
+
+    #[test]
+    fn regulation_errors() {
+        let law = "standard/modules/regulations/law.md";
+        let disclaimer =
+            "## Disclaimer\n\nUSS compliance is not legal compliance and not legal advice.\n\n";
+        let none_row = "| none | none: a lawyer confirms this |";
+        let full_row = "| USS-SEC-003, USS-LAW-001 | full |";
+        let cases: Vec<(MemSource, &str)> = vec![
+            (
+                edited(law, disclaimer, ""),
+                "missing section \"Disclaimer\"",
+            ),
+            (
+                edited(
+                    law,
+                    "USS compliance is not legal compliance and not legal advice.\n",
+                    "",
+                ),
+                "section \"Disclaimer\" is empty",
+            ),
+            (
+                edited(
+                    law,
+                    "| Obligation | Source | Rules | Coverage |",
+                    "| Duty | Source | Rules | Coverage |",
+                ),
+                "the obligations table header must be \"Obligation | Source | Rules | Coverage\"",
+            ),
+            (
+                edited(
+                    law,
+                    "## Obligations",
+                    "## Obligations\n\nNo table.\n\n## Notes",
+                ),
+                "no table",
+            ),
+            (
+                edited(law, "## Obligations", "## Duties"),
+                "missing section \"Obligations\"",
+            ),
+            (
+                edited(law, none_row, "| none | full |"),
+                "an obligation with no rules has coverage \"full\"; it must be \"none: <what is left>\"",
+            ),
+            (
+                edited(law, none_row, "| none | partial: some |"),
+                "an obligation with no rules has coverage \"partial\"",
+            ),
+            (
+                edited(law, full_row, "| USS-SEC-003, USS-LAW-001 | none: x |"),
+                "an obligation with rules has coverage \"none\"; it must be full or partial",
+            ),
+            (
+                edited(law, full_row, "| USS-SEC-003 | maybe |"),
+                "invalid coverage \"maybe\"",
+            ),
+            (
+                edited(law, "| USS-SEC-003, USS-LAW-001 |", "| USS-SEC-099 |"),
+                "unknown rule USS-SEC-099",
+            ),
+            (
+                edited(law, "| USS-SEC-003, USS-LAW-001 |", "| USS-SEC-004 |"),
+                "obligation maps retired rule USS-SEC-004",
+            ),
+            (
+                edited(law, "| USS-SEC-003, USS-LAW-001 |", "| soon |"),
+                "\"soon\" is not a rule ID",
+            ),
+            (
+                edited(
+                    law,
+                    "- **References:** Example law Art. 1\n",
+                    "- **References:** Example law Art. 1\n- **Refines:** USS-SEC-001\n",
+                ),
+                "USS-LAW-001 uses \"Refines\"",
+            ),
+        ];
+        for (i, (src, want)) in cases.iter().enumerate() {
+            let text = text_of(&load(src).unwrap_err());
+            assert!(text.contains(want), "case {i}: want {want:?} in:\n{text}");
+        }
     }
 
     #[test]

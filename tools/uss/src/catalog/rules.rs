@@ -11,10 +11,11 @@ use super::markdown::{Field, Section, parse_doc};
 use super::registry::{VERSION_RE, constant_regex};
 use crate::expr::{self, Expr};
 
-static PREFIX_RE: LazyLock<Regex> = LazyLock::new(|| constant_regex(r"^[A-Z][A-Z0-9]{1,7}$"));
+pub(crate) static PREFIX_RE: LazyLock<Regex> =
+    LazyLock::new(|| constant_regex(r"^[A-Z][A-Z0-9]{1,7}$"));
 static HEADING_RE: LazyLock<Regex> =
     LazyLock::new(|| constant_regex(r"^(USS-([A-Z][A-Z0-9]{1,7})-(\d{3})): (.+)$"));
-static RULE_ID_RE: LazyLock<Regex> =
+pub(crate) static RULE_ID_RE: LazyLock<Regex> =
     LazyLock::new(|| constant_regex(r"^USS-[A-Z][A-Z0-9]{1,7}-\d{3}$"));
 static KEYWORD_RE: LazyLock<Regex> = LazyLock::new(|| {
     constant_regex(
@@ -91,13 +92,15 @@ impl FromStr for Level {
     }
 }
 
-/// Whether a rule file covers an area or a module.
+/// Whether a rule file covers an area, a module or a vendor profile.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FileKind {
     /// A core area file.
     Area,
     /// A module file.
     Module,
+    /// A vendor profile (the rules after its `## Rules` heading).
+    Profile,
 }
 
 /// The content of an active rule.
@@ -174,7 +177,7 @@ pub struct RuleFile {
     pub title: String,
     /// The prefix of the rule IDs in the file.
     pub prefix: String,
-    /// Area or module.
+    /// Area, module or profile.
     pub kind: FileKind,
     /// The file's `Applies when` text (`always` when absent).
     pub applies_when: String,
@@ -182,10 +185,10 @@ pub struct RuleFile {
     pub rules: Vec<Rule>,
 }
 
-type At<'a> = &'a dyn Fn(usize, String) -> Diagnostic;
+pub(crate) type At<'a> = &'a dyn Fn(usize, String) -> Diagnostic;
 
 /// Splits a comma-separated field value.
-fn list(value: &str) -> Vec<String> {
+pub(crate) fn list(value: &str) -> Vec<String> {
     value
         .split(',')
         .map(str::trim)
@@ -254,7 +257,11 @@ pub(crate) fn parse_rule_file(file: &str, data: &[u8]) -> (RuleFile, Vec<Diagnos
 }
 
 /// Reads an optional `Applies when` field: its text and parsed expression.
-fn condition(field: Option<&Field>, at: At<'_>, diags: &mut Vec<Diagnostic>) -> (String, Expr) {
+pub(crate) fn condition(
+    field: Option<&Field>,
+    at: At<'_>,
+    diags: &mut Vec<Diagnostic>,
+) -> (String, Expr) {
     let Some(f) = field else {
         return ("always".to_string(), Expr::Always);
     };
@@ -271,7 +278,7 @@ fn condition(field: Option<&Field>, at: At<'_>, diags: &mut Vec<Diagnostic>) -> 
 }
 
 /// Parses and checks one `###` section.
-fn parse_rule(
+pub(crate) fn parse_rule(
     s: &Section,
     file: &str,
     prefix: &str,
@@ -352,11 +359,11 @@ fn parse_rule(
     }
     let refines = s.fields.get("Refines");
     if let Some(f) = refines
-        && kind != FileKind::Module
+        && kind == FileKind::Area
     {
         diags.push(at(
             f.line,
-            "\"Refines\" is only allowed in a module file".to_string(),
+            "\"Refines\" is only allowed in a module or profile file".to_string(),
         ));
     }
     scan_keywords(s, level, at, diags);
@@ -602,7 +609,7 @@ mod tests {
                     &format!("{may_fields}- **Refines:** USS-SEC-002\n"),
                     "It MAY hold.",
                 ),
-                "\"Refines\" is only allowed in a module file",
+                "\"Refines\" is only allowed in a module or profile file",
             ),
             (
                 rule("area", FIELDS, "It SHALL hold. It MUST hold."),

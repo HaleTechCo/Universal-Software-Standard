@@ -30,6 +30,10 @@ The standard is made of these files:
 | `standard/applicability.md` | The applicability facts (section 5). |
 | `standard/core/<area>.md` | Area files. Each one holds the core rules of one area, such as security. |
 | `standard/modules/<group>/<module>.md` | Module files. Each one holds the rules for one technology, such as a language or a tool, in a group directory such as `languages`. |
+| `standard/vendors/<vendor>/<product>.md` | Vendor profiles. Each one states how one checking tool meets the rules (section 12). |
+
+A module under `standard/modules/regulations/` is a regulation module
+(section 13).
 
 Every `.md` file under `standard/core/` and `standard/modules/` is a rule
 file. A rule file has this layout:
@@ -45,7 +49,7 @@ The header has these fields:
 | Field | Present | Value |
 |---|---|---|
 | Prefix | always | The prefix of every rule ID in the file: an uppercase letter, then 1 to 7 uppercase letters or digits (`^[A-Z][A-Z0-9]{1,7}$`), such as `SEC` or `GO`. |
-| Kind | always | `area` in a file under `standard/core/`; `module` in a file under `standard/modules/`. |
+| Kind | always | `area` in a file under `standard/core/`; `module` in a file under `standard/modules/`; `profile` in a vendor profile (section 12). |
 | Applies when | when needed | A condition for every rule in the file (section 5). The default is `always`. |
 
 The header MUST NOT have any field that is not in this table.
@@ -77,7 +81,8 @@ and a leading UTF-8 byte order mark.
 
 `uss lint` loads every file of the standard and reports each problem it
 finds, with the file and line. When it finds none, it prints
-`uss lint: ok (<N> rules, <M> files)`, where `<M>` counts the rule files.
+`uss lint: ok (<N> rules, <M> files)`, where `<M>` counts the area, module and
+profile files.
 
 1. Go to the root of your USS checkout.
 2. Run `cargo run --locked -p uss -- lint`.
@@ -125,7 +130,7 @@ have this form, and the prefix in its ID MUST be the file's `Prefix`.
 | Verify | always | How an auditor determines pass or fail from the project's artifacts. |
 | References | always | The external standards, CWEs and specifications that the rule relies on, with their versions, or `none`. |
 | Enables | MAY rules only, when needed | The facts that become true when a project adopts the rule (section 5). |
-| Refines | module rules only, when needed | The IDs of the core rules that this rule makes concrete for its technology. Each one MUST be a rule in an area file, and the rule MUST apply only where each of them applies. |
+| Refines | module and profile rules only, when needed | The IDs of the core rules that this rule makes concrete for its technology. Each one MUST be a rule in an area file, and the rule MUST apply only where each of them applies. |
 | Status | retired rules | `Retired` (section 4). A rule without `Status` is active. |
 | Retired in | retired rules | The version of the standard that retired the rule. |
 | Replaced by | retired rules | The ID of the rule that replaces it, or `none`. |
@@ -179,8 +184,8 @@ the prefix of its module, such as `USS-GO-004`, `USS-PY-010` or
   adding a new rule with a new ID.
 
 Each rule ID that a standard file names outside a fenced code block MUST be a
-rule of the standard. `uss lint` checks `applicability.md` and every area and
-module file.
+rule of the standard. `uss lint` checks `applicability.md` and every area,
+module and profile file.
 
 To retire a rule:
 
@@ -385,6 +390,28 @@ switching the check off. The check-integrity rules cover every kind of check
 (linters, compilers, type checkers, security scanners, tests and coverage):
 they set a minimum configuration, need a reason for each disabled rule and
 each suppression, and make audits list every suppression.
+
+### Module rules
+
+- A module rule that makes core rules concrete MUST name them in `Refines`,
+  and MUST apply only where each of them applies. It has the strength of the
+  strongest of them: MUST and MUST NOT are one strength, SHOULD and
+  SHOULD NOT another. A module never weakens a core rule or silently raises
+  one.
+- The best tool for an outcome is a separate SHOULD rule, a tool rule. It
+  names the tool's vendor profile (section 12), refines the same core rules
+  as its outcome rule, and is exempt from the strength rule above.
+- A SHOULD rule that is not a tool rule MUST NOT refine a MUST rule.
+- A module states the settings of its own technology: the compiler, the
+  standard formatter and the package manager, and, for a module whose subject
+  is a configuration (such as Maven, Compose or Kubernetes), that
+  configuration. The configuration of a separate checking tool that has a
+  rule set (a linter, a type checker, a scanner) belongs in the tool's vendor
+  profile (section 12). A tool without such a rule set is named by the rule
+  of its module and has no profile.
+- A regulation module (section 13) can set a stronger level than core where
+  the law does. Its rules do not use `Refines`. Its obligations table maps the
+  law to the rules instead.
 
 ## 8. Compliance and scores
 
@@ -678,3 +705,105 @@ the audits describe the release commit:
 - The audited commit MUST be in the clone, so a CI job that runs
   `uss release-check` MUST fetch the full history. With `actions/checkout`,
   set `fetch-depth: 0`.
+
+## 12. Vendor profiles
+
+A vendor profile states how one checking tool meets rules of the standard. It
+holds the configuration of a separate tool whose rule set sets a floor, such as
+a linter, a type checker or a scanner. The modules name the tool and its
+profile. Neither side restates the other's content.
+
+A profile is in `standard/vendors/<vendor>/<product>.md`: exactly one
+directory below `standard/vendors/`. `<vendor>` is the lowercase name of the
+organisation that owns the tool's source repository. A profile is labelled
+`community` (written by USS contributors) or `vendor` (written or taken over by
+the vendor).
+
+The header comes after the `#` title and has these fields, and no other:
+
+| Field | Present | Value |
+|---|---|---|
+| Kind | always | `profile`. |
+| Product | always | The tool's name. |
+| Vendor | always | The vendor's name. |
+| Maintainer | always | `community` or `vendor`. |
+| Versions | always | The tool versions that the profile was checked against, as a range such as `>=0.14.0, <0.15.0`. |
+| Prefix | only when the profile has rules | The prefix of the profile's rules (section 2). |
+| Applies when | only when the profile has rules | A condition for the profile's rules (section 5). |
+
+The profile has these `##` sections, and no other:
+
+1. `## Baseline configuration`: exactly one fenced code block that holds the
+   configuration of the tool, ready to copy. It is the floor that the
+   check-integrity rules refer to (section 7).
+2. `## Mappings`: one table, below.
+3. `## Check-integrity guards`: the tool's own settings that make it report a
+   disabled check, a blanket suppression or a suppression that no longer
+   suppresses anything. A profile MUST list them when the tool has any.
+4. `## Rules`: the tool-specific rules, only when the profile has rules.
+
+The mapping table has this header, exactly:
+
+```markdown
+| Rule | Category | Tool rules or settings | Coverage | How to verify |
+|---|---|---|---|---|
+```
+
+Each row is one active rule:
+
+- `Rule` is the rule ID, and `Category` is the rule's category, written as the
+  rule has it.
+- The rows go in the order of the categories in `registry.yaml`, then by rule
+  ID. A rule appears once.
+- `Coverage` is `full`, or `partial: <what else is needed>`. A mapping MUST
+  say `full` only when the baseline configuration alone decides the rule.
+  Otherwise it MUST say `partial` and name what else is needed.
+- `Tool rules or settings` and `How to verify` MUST NOT be empty.
+- For each category that a profile lists, the profile MUST map every MUST
+  rule of that category that falls within what the tool can check. It cannot
+  list a category and leave such a rule out.
+
+The rules of a profile (`## Rules`) have the normal rule format (section 3),
+with the profile's `Prefix`, and exist only because of the tool. They can use
+`Refines`. A profile rule is in the catalog like any other rule.
+
+A project that runs a tool with the baseline of its profile can mark the
+rules that the profile maps with `full` as `pass`, and give the profile and the
+verified configuration as the evidence. For a `partial` mapping, the auditor
+still checks what the profile says is left. The profile does not change what a
+rule requires.
+
+`uss lint` checks the format of each profile, that every rule ID in it is a
+rule of the standard, and that each mapped rule is active, in its category,
+mapped once and in order. USS maintainers review each profile, and each change
+to one, for the accuracy of its claims.
+
+## 13. Regulation modules
+
+A regulation module is a module file under `standard/modules/regulations/`.
+It maps the obligations of a law to the rules of the standard, and adds rules
+only for what the standard does not already cover. A regulation module can set
+a stronger level than the core rule on the same subject where the law does.
+Its rules MUST NOT use `Refines`.
+
+After the header and the title, the module has two sections before its rules:
+
+1. `## Disclaimer`: text that MUST NOT be empty. It says that USS compliance is
+   not legal compliance and not legal advice, and that a qualified person
+   confirms what is left.
+2. `## Obligations`: one table, below.
+
+The obligations table has this header, exactly:
+
+```markdown
+| Obligation | Source | Rules | Coverage |
+|---|---|---|---|
+```
+
+- `Obligation` states one obligation of the law, and `Source` names where the
+  law states it.
+- `Rules` is `none`, or the IDs of the active rules that help meet the
+  obligation, separated by commas.
+- `Coverage` is `full`, `partial: <what is left>` or `none: <what is left>`.
+  An obligation with `none` in `Rules` MUST have `none:` coverage. An
+  obligation with `full` or `partial` coverage MUST list at least one rule.

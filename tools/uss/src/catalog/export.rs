@@ -2,7 +2,7 @@
 
 use serde::Serialize;
 
-use super::{Catalog, Fact, FactSource, Rule, RuleState};
+use super::{Catalog, Coverage, Fact, FactSource, Maintainer, Profile, Rule, RuleState};
 
 /// The whole catalog, ready to serialise. Every field is always present; a
 /// value that does not exist for an item is `null`.
@@ -17,6 +17,44 @@ pub struct Export {
     pub facts: Vec<ExportFact>,
     /// Every rule, retired ones included, sorted by ID.
     pub rules: Vec<ExportRule>,
+    /// The vendor profiles, sorted by path.
+    pub profiles: Vec<ExportProfile>,
+}
+
+/// A vendor profile.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExportProfile {
+    /// Path of the profile file.
+    pub file: String,
+    /// The tool's name.
+    pub product: String,
+    /// The vendor's name.
+    pub vendor: String,
+    /// `community` or `vendor`.
+    pub maintainer: &'static str,
+    /// The tool versions that the profile was checked against.
+    pub versions: String,
+    /// The mapping table, in file order.
+    pub mappings: Vec<ExportMapping>,
+}
+
+/// One row of a profile's mapping table.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExportMapping {
+    /// The rule ID.
+    pub rule: String,
+    /// The rule's category name.
+    pub category: String,
+    /// The tool's rules or settings that satisfy the rule.
+    pub tool: String,
+    /// `full` or `partial`.
+    pub coverage: &'static str,
+    /// What else is needed, for partial coverage; `null` otherwise.
+    pub needs: Option<String>,
+    /// How an auditor checks it.
+    pub verify: String,
 }
 
 /// A score category.
@@ -138,6 +176,39 @@ impl From<&Rule> for ExportRule {
     }
 }
 
+impl From<&Profile> for ExportProfile {
+    fn from(p: &Profile) -> Self {
+        Self {
+            file: p.file.clone(),
+            product: p.product.clone(),
+            vendor: p.vendor.clone(),
+            maintainer: match p.maintainer {
+                Maintainer::Community => "community",
+                Maintainer::Vendor => "vendor",
+            },
+            versions: p.versions.clone(),
+            mappings: p
+                .mappings
+                .iter()
+                .map(|m| {
+                    let (coverage, needs) = match &m.coverage {
+                        Coverage::Full => ("full", None),
+                        Coverage::Partial(text) => ("partial", Some(text.clone())),
+                    };
+                    ExportMapping {
+                        rule: m.rule.clone(),
+                        category: m.category.clone(),
+                        tool: m.tool.clone(),
+                        coverage,
+                        needs,
+                        verify: m.verify.clone(),
+                    }
+                })
+                .collect(),
+        }
+    }
+}
+
 impl Catalog {
     /// Returns the catalog as plain data for serialisation.
     #[must_use]
@@ -155,6 +226,7 @@ impl Catalog {
                 .collect(),
             facts: self.facts.values().map(ExportFact::from).collect(),
             rules: self.rules.iter().map(ExportRule::from).collect(),
+            profiles: self.profiles.iter().map(ExportProfile::from).collect(),
         }
     }
 }
@@ -182,7 +254,7 @@ mod tests {
         assert_eq!(json["version"], "0.1.0");
         assert_eq!(json["categories"][0].as_object().unwrap().len(), 2);
         let rules = json["rules"].as_array().unwrap();
-        assert_eq!(rules.len(), 7);
+        assert_eq!(rules.len(), 8);
         let by_id = |id: &str| rules.iter().find(|r| r["id"] == id).unwrap();
 
         let go = by_id("USS-GO-001");
@@ -232,5 +304,42 @@ mod tests {
         assert_eq!(enabled["question"], serde_json::Value::Null);
         let asked = facts.iter().find(|f| f["question"].is_string()).unwrap();
         assert_eq!(asked["enabledBy"], serde_json::Value::Null);
+
+        let profiles = json["profiles"].as_array().unwrap();
+        assert_eq!(profiles.len(), 1);
+        let p = &profiles[0];
+        assert_eq!(
+            keys(p),
+            [
+                "file",
+                "maintainer",
+                "mappings",
+                "product",
+                "vendor",
+                "versions"
+            ]
+        );
+        assert_eq!(p["file"], "standard/vendors/acme/lint.md");
+        assert_eq!(p["product"], "Lint");
+        assert_eq!(p["vendor"], "Acme");
+        assert_eq!(p["maintainer"], "community");
+        assert_eq!(p["versions"], ">=1.0.0, <2.0.0");
+        let maps = p["mappings"].as_array().unwrap();
+        assert_eq!(maps.len(), 2);
+        assert_eq!(
+            keys(&maps[0]),
+            ["category", "coverage", "needs", "rule", "tool", "verify"]
+        );
+        assert_eq!(maps[0]["rule"], "USS-SEC-001");
+        assert_eq!(maps[0]["category"], "Safety");
+        assert_eq!(maps[0]["coverage"], "full");
+        assert_eq!(maps[0]["needs"], serde_json::Value::Null);
+        assert_eq!(maps[1]["coverage"], "partial");
+        assert_eq!(maps[1]["needs"], "a reviewer checks the plugin rights");
+        assert_eq!(maps[1]["verify"], "Read the plugin settings.");
+        assert_eq!(
+            by_id("USS-LAW-001")["file"],
+            "standard/modules/regulations/law.md"
+        );
     }
 }

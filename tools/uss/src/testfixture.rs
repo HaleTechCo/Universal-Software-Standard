@@ -166,7 +166,64 @@ const GO: &str = "# Go
 Go code MUST handle every returned error.
 ";
 
-/// The mini-standard: registry, facts and seven rules in three files.
+const LAW: &str = "# Example law
+
+- **Prefix:** LAW
+- **Kind:** module
+- **Applies when:** has-web-ui
+
+## Disclaimer
+
+USS compliance is not legal compliance and not legal advice.
+
+## Obligations
+
+| Obligation | Source | Rules | Coverage |
+|---|---|---|---|
+| Escape output | Art. 1 | USS-SEC-003, USS-LAW-001 | full |
+| Appoint a representative | Art. 2 | none | none: a lawyer confirms this |
+
+## Rules
+
+### USS-LAW-001: Report incidents
+
+- **Level:** MUST
+- **Applies when:** always
+- **Category:** Safety
+- **Verify:** Check that incidents are reported.
+- **References:** Example law Art. 1
+
+A project MUST report each incident.
+";
+
+const LINT: &str = "# Lint
+
+- **Kind:** profile
+- **Product:** Lint
+- **Vendor:** Acme
+- **Maintainer:** community
+- **Versions:** >=1.0.0, <2.0.0
+
+## Baseline configuration
+
+```toml
+[lint]
+select = [\"ALL\"]
+```
+
+## Mappings
+
+| Rule | Category | Tool rules or settings | Coverage | How to verify |
+|---|---|---|---|---|
+| USS-SEC-001 | Safety | `select = [\"ALL\"]` | full | Run `lint` and read the report. |
+| USS-EXT-002 | Features | `plugin-rights` | partial: a reviewer checks the plugin rights | Read the plugin settings. |
+
+## Check-integrity guards
+
+- `unused-ignore` reports an ignore that suppresses nothing.
+";
+
+/// The mini-standard: registry, facts and eight rules in five files.
 pub(crate) fn standard() -> MemSource {
     let mut m = MemSource::default();
     for (path, text) in [
@@ -175,6 +232,8 @@ pub(crate) fn standard() -> MemSource {
         ("standard/core/security.md", SECURITY),
         ("standard/core/extensibility.md", EXTENSIBILITY),
         ("standard/modules/languages/go.md", GO),
+        ("standard/modules/regulations/law.md", LAW),
+        ("standard/vendors/acme/lint.md", LINT),
     ] {
         m.0.insert(path.to_string(), text.as_bytes().to_vec());
     }
