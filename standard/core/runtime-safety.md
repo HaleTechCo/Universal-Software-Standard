@@ -84,8 +84,9 @@ wrong reason is visible.
   and an undefined-behaviour sanitizer that the toolchain offers (such as
   AddressSanitizer and UndefinedBehaviorSanitizer for C and C++, or Miri for
   Rust), on each pull request or on a schedule of at most a week, and a finding
-  fails the job. A sanitizer of a kind that the toolchain does not offer is not
-  needed; where it offers neither, there is nothing to run and the rule is met.
+  fails the job. For a schedule, the latest scheduled run is less than a week
+  old. A sanitizer of a kind that the toolchain does not offer is not needed;
+  where it offers neither, there is nothing to run and the rule is met.
 - **References:** Clang AddressSanitizer documentation (read 2026-11-24);
   Miri README (read 2026-11-24); CWE-119; CWE-787; CWE-416
 
@@ -96,7 +97,8 @@ UndefinedBehaviorSanitizer, or Miri for Rust).
 **Rationale:** A memory error often does not fail a test: it corrupts memory and
 the program goes on. A sanitizer turns it into a failure at the line where it
 happens. The weekly limit, for a project that runs the sanitizers on a schedule
-instead of on each pull request, is a number that USS adds.
+instead of on each pull request, is a number that USS adds. The date of the
+latest run shows a schedule that the host has turned off.
 
 ### USS-SAF-005: Publish a memory-safety roadmap
 
@@ -146,8 +148,9 @@ the project has to carry. New code in a memory-safe language does not.
 - **Verify:** Where the toolchain offers a data-race detector (such as Go's
   `-race` or ThreadSanitizer), the CI configuration runs the tests of the
   concurrent code with it, on each pull request or on a schedule of at most a
-  week, and a finding fails the job. Where the toolchain offers none, there is
-  nothing to run and the rule is met.
+  week, and a finding fails the job. For a schedule, the latest scheduled run
+  is less than a week old. Where the toolchain offers none, there is nothing
+  to run and the rule is met.
 - **References:** Clang ThreadSanitizer documentation (read 2026-11-24);
   CWE-362
 
@@ -157,4 +160,5 @@ toolchain offers one (such as Go's `-race` or ThreadSanitizer).
 **Rationale:** A data race shows up only under some timings, so a test can pass
 a hundred times and fail in production. A detector finds the race that did not
 happen to hurt. The weekly limit, for a project that runs the detector on a
-schedule instead of on each pull request, is a number that USS adds.
+schedule instead of on each pull request, is a number that USS adds. The date
+of the latest run shows a schedule that the host has turned off.
