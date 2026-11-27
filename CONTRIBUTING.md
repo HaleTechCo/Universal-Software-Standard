@@ -29,6 +29,12 @@ None is open at present (2026-11-25).
 3. Make the change. Keep each pull request to one subject.
 4. Run the checks that the next section lists.
 5. Write each commit message as `type(scope): summary`, as in `git log`.
+   Choose the type by what the commit changes:
+   - `fix` for a fix to code, or to rule fields that `uss` reads. Put its
+     test in the same commit (USS-TST-003).
+   - `fix(standard)` for a fix that changes only the prose of rules.
+   - `docs` for documents outside the product.
+   - `ci` and `build` for CI settings and build settings.
 6. Push the branch. Open a pull request. Fill in its template.
 
 ## Run the checks

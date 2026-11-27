@@ -463,7 +463,13 @@ templates and the `uss` tool.
 - Keep the version at 0.1.0 until the first release.
 - Do not change `Initial_Idea.md` or `todo.txt`. They are the maintainer's
   local notes, and Git ignores them.
-- Write commit messages as `type(scope): summary`, as in `git log`.
+- Write commit messages as `type(scope): summary`, as in `git log`. Choose
+  the type by what the commit changes (USS-TST-003):
+  - `fix` for a fix to code, or to rule fields that `uss` reads. Put its test
+    in the same commit.
+  - `fix(standard)` for a fix that changes only the prose of rules.
+  - `docs` for documents outside the product.
+  - `ci` and `build` for CI settings and build settings.
 - Write steps in the ASD-STE100 style (USS-DOC-007). Use one instruction in
   each sentence, the imperative and the active voice. Use at most 20 words in
   a sentence of a step, and 25 in other sentences.

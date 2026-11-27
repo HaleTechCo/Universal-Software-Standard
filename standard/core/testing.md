@@ -60,12 +60,16 @@ lets a later change to the module show at once what it breaks.
 - **Verify:** Take each change in the history window that the project labels
   as a bug fix (by its commit message, its issue label or its type in the
   changelog): the changes since the last audit, or the last 12 months when
-  there is none. Each one adds or changes a test in the same change. Run the
-  test against the code before the fix: it fails, and with the fix it passes.
-  A fix with no test, or whose test also passes without the fix, fails.
+  there is none. Leave out each change that changes only text that people
+  read, such as documentation, comments and prose, and no code, configuration
+  or data that a program acts on. Each remaining fix adds or changes a test in
+  the same change. Run the test against the code before the fix: it fails, and
+  with the fix it passes. A fix with no test, or whose test also passes
+  without the fix, fails.
 - **References:** none
 
-Each bug fix MUST come with a test that fails without the fix.
+Each bug fix in code, configuration or data that a program acts on MUST come
+with a test that fails without the fix.
 
 **Rationale:** A bug that was fixed once and has no test returns with the next
 change near it. The test keeps the fix.
@@ -227,9 +231,10 @@ the largest number.
 - **Verify:** List each parser of untrusted input in the code (a file format, a
   protocol, a request body). Each one has a fuzz target (such as for libFuzzer,
   AFL++ or cargo-fuzz) that runs with sanitizers on (USS-SAF-004), and CI runs
-  it (for a fixed time on each change, or on a schedule), or a continuous
-  fuzzing service such as OSS-Fuzz runs it. A recent run exists. A parser with
-  no fuzz target fails.
+  it (for a fixed time on each change, or on a schedule of at most a week), or
+  a continuous fuzzing service such as OSS-Fuzz runs it. A recent run exists.
+  For a schedule, the latest scheduled run is less than a week old. A parser
+  with no fuzz target fails.
 - **References:** NIST SP 800-218 (SSDF 1.1) PW.8.2; CWE-20; OSS-Fuzz (read
   2026-11-24)
 
@@ -238,7 +243,10 @@ a continuous fuzzing service.
 
 **Rationale:** In memory-unsafe code a malformed input can become a memory
 fault that an attacker uses. Fuzzing finds such inputs faster than review, and
-the sanitizers turn a silent corruption into a crash.
+the sanitizers turn a silent corruption into a crash. The weekly limit, for a
+project that fuzzes on a schedule instead of on each change, is a number that
+USS adds, as in USS-SAF-004. The date of the latest run shows a schedule that
+the host has turned off.
 
 ### USS-TST-012: Fuzz other parsers of untrusted input
 
@@ -248,9 +256,10 @@ the sanitizers turn a silent corruption into a crash.
 - **Verify:** List each parser of untrusted input in the code (a file format,
   a protocol, a request body). Each one has a fuzz target (such as for a
   libFuzzer-style engine, cargo-fuzz or the fuzzing support of the language's
-  test tools) that CI runs, for a fixed time on each change or on a schedule,
-  or that a continuous fuzzing service such as OSS-Fuzz runs. A recent run
-  exists. A parser with no fuzz target fails.
+  test tools) that CI runs, for a fixed time on each change or on a schedule
+  of at most a week, or that a continuous fuzzing service such as OSS-Fuzz
+  runs. A recent run exists. For a schedule, the latest scheduled run is less
+  than a week old. A parser with no fuzz target fails.
 - **References:** NIST SP 800-218 (SSDF 1.1) PW.8.2; CWE-20; OSS-Fuzz (read
   2026-11-24)
 
@@ -258,4 +267,7 @@ Each parser of untrusted input SHOULD be fuzzed, in CI or on a continuous
 fuzzing service.
 
 **Rationale:** A safe language turns many faults into errors, but a parser can
-still hang, use too much memory or give a wrong result on a crafted input.
+still hang, use too much memory or give a wrong result on a crafted input. The
+weekly limit, for a project that fuzzes on a schedule instead of on each
+change, is a number that USS adds, as in USS-SAF-004. The date of the latest
+run shows a schedule that the host has turned off.
