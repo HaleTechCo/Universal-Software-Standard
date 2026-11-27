@@ -1,5 +1,7 @@
 # USS follow-ups
 
+[remaining.md](remaining.md) replaces this list from 2026-11-27.
+
 This file lists all the open work after Plan 5. On 2026-11-25, `main` is
 at dd5ab83 and is pushed. USS 0.1.0 is not released yet.
 
