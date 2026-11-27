@@ -76,17 +76,24 @@ shallow`.
   directory, or in a directory above it, selects an older toolchain. It
   overrides the default toolchain.
 - Fix:
-  1. Run `rustup toolchain install stable`. It installs the stable toolchain,
-     or updates it.
-  2. Run the install command again with `+stable` after `cargo`. The
+  1. Install the toolchain that `uss` needs. This command does not update
+     rustup or the `stable` toolchain:
+
+     ```sh
+     rustup toolchain install 1.100.0 --profile minimal --no-self-update
+     ```
+
+  2. Run the install command again with `+1.100.0` after `cargo`. The
      toolchain that you give in the command overrides `rust-toolchain.toml`.
      For example:
 
      ```sh
-     cargo +stable install --locked --git https://github.com/HaleTechCo/Universal-Software-Standard --tag v<version> uss
+     cargo +1.100.0 install --locked --git https://github.com/HaleTechCo/Universal-Software-Standard --tag v<version> uss
      ```
 
-  3. In GitHub Actions, give the toolchain in the same way. The template
+  3. For another version of `uss`, use the `rust-version` of `Cargo.toml` at
+     its release tag. Add `.0`: `1.100` installs as `1.100.0`.
+  4. In GitHub Actions, give the toolchain in the same way. The template
      `templates/ci/uss-release.yml` does this with `USS_RUST_TOOLCHAIN`.
 
 ## `uss` says that a file is not valid UTF-8

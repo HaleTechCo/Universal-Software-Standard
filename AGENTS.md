@@ -52,21 +52,30 @@ These workflows apply USS to one project. They use these terms:
       later. A `rust-toolchain.toml` file in the project can select an older
       toolchain.
    3. If the releases page lists the release, install it with these commands.
-      `+stable` selects the stable toolchain in place of the toolchain of the
-      project.
+      `+1.100.0` selects that toolchain in place of the toolchain of the
+      project. The commands do not update rustup or the `stable` toolchain.
 
       ```sh
-      rustup toolchain install stable
-      cargo +stable install --locked --git https://github.com/HaleTechCo/Universal-Software-Standard --tag v<version> uss
+      rustup toolchain install 1.100.0 --profile minimal --no-self-update
+      cargo +1.100.0 install --locked --git https://github.com/HaleTechCo/Universal-Software-Standard --tag v<version> uss
       ```
 
-   4. `rustup toolchain install stable` installs the stable toolchain, or
-      updates it.
-   5. If the releases page does not list the release, install `uss` from a
+   4. The commands name the toolchain of this version of USS. For another
+      version, use the `rust-version` of `Cargo.toml` at its release tag. Add
+      `.0`: `1.100` installs as `1.100.0`.
+   5. If the machine has no rustup, ask the developer for permission to do
+      one of these:
+      - Install rustup from <https://rustup.rs> with
+        `--default-toolchain none`.
+      - Use an existing `cargo` at the `rust-version` or later.
+        `cargo --version` prints its version.
+   6. Do not install a Rust package of the system without asking. If neither
+      way works, stop, as step 10 says.
+   7. If the releases page does not list the release, install `uss` from a
       USS checkout at that version. Ask the developer for the path of the
       checkout. With no version to match, the developer can give any
       checkout.
-   6. In the root of the checkout, run
+   8. In the root of the checkout, run
       `cargo install --locked --path tools/uss`. Then go back to the project
       root.
 6. Read the workflows of that version with `uss show AGENTS.md`. If they are

@@ -1849,16 +1849,7 @@ mod tests {
         let release = &doc["on"]["release"];
         assert_eq!(release["types"], serde_json::json!(["published"]));
         assert_eq!(doc["permissions"], serde_json::json!({"contents": "read"}));
-
-        // The toolchain that installs uss meets its rust-version.
-        let toolchain = doc["env"]["USS_RUST_TOOLCHAIN"].as_str().unwrap();
-        let numbers = |version: &str| -> Vec<u64> {
-            version.split('.').map(|n| n.parse().unwrap()).collect()
-        };
-        assert!(
-            numbers(toolchain) >= numbers(env!("CARGO_PKG_RUST_VERSION")),
-            "USS_RUST_TOOLCHAIN {toolchain} is older than the rust-version of uss"
-        );
+        // `install_toolchain_is_rust_version` checks USS_RUST_TOOLCHAIN.
 
         let pinned = regex::Regex::new("^[^@]+@[0-9a-f]{40}$").unwrap();
         let mut uses = 0;
@@ -1892,6 +1883,51 @@ mod tests {
             }
         }
         assert!(uses > 0 && checkout && release_check && installs > 0);
+    }
+
+    /// Each toolchain that the repository pins, or that a document installs
+    /// `uss` with, is the `rust-version` of `uss` plus `.0`. A named number,
+    /// unlike `stable`, does not update the toolchain of the developer.
+    #[test]
+    fn install_toolchain_is_rust_version() {
+        let expected = format!("{}.0", env!("CARGO_PKG_RUST_VERSION"));
+
+        let pin = include_str!("../../../../rust-toolchain.toml");
+        let channel = regex::Regex::new(r#"(?m)^channel = "([^"]+)"$"#).unwrap();
+        let found = channel
+            .captures(pin)
+            .expect("rust-toolchain.toml has no channel");
+        assert_eq!(&found[1], expected.as_str(), "rust-toolchain.toml");
+
+        let template = include_str!("../../../../templates/ci/uss-release.yml");
+        let doc: serde_json::Value = crate::yaml::from_slice(template.as_bytes()).unwrap();
+        assert_eq!(
+            doc["env"]["USS_RUST_TOOLCHAIN"],
+            expected.as_str(),
+            "templates/ci/uss-release.yml"
+        );
+
+        // A toolchain in a command: after `rustup toolchain install `, after
+        // `cargo +`, or after a `+` that opens a code span.
+        let named =
+            regex::Regex::new(r"(?:rustup toolchain install |cargo \+|`\+)([^\s`]+)").unwrap();
+        for (name, text) in [
+            ("AGENTS.md", include_str!("../../../../AGENTS.md")),
+            (
+                "docs/troubleshooting.md",
+                include_str!("../../../../docs/troubleshooting.md"),
+            ),
+        ] {
+            let toolchains: Vec<&str> = named
+                .captures_iter(text)
+                .filter_map(|c| c.get(1))
+                .map(|m| m.as_str())
+                .collect();
+            assert!(!toolchains.is_empty(), "{name} names no toolchain");
+            for toolchain in toolchains {
+                assert_eq!(toolchain, expected, "{name}");
+            }
+        }
     }
 
     #[test]
