@@ -96,19 +96,23 @@ review or CI.
 - **Applies when:** always
 - **Category:** Contributability
 - **Verify:** The contributing guide states how long the one-command checks
-  (USS-CTB-003) take on a typical machine. Run the command, or read the
-  duration of the matching CI job, on the default branch: the time is not
-  more than 25% above the stated time. Without a run or a CI record, the
-  auditor records `unverified` for the second part.
+  (USS-CTB-003) take, and on what (a named machine class, or the CI job).
+  Compare with a run on the same kind of machine, warm or cold as the guide
+  states: run the command, or read the duration of the matching CI job, on
+  the default branch. The time is not more than 25% above the stated time.
+  Without a run or a CI record, the auditor records `unverified` for the
+  second part.
 - **References:** none
 
-The contributing guide SHOULD state how long the one-command checks take on a
-typical machine, and the checks SHOULD stay within that time.
+The contributing guide SHOULD state how long the one-command checks take, and
+on what kind of machine, and the checks SHOULD stay within that time.
 
 **Rationale:** A contributor who knows that the checks take ten minutes starts
 them and waits, while one who does not may stop a run that is working. A stated
 time also shows when the checks have become too slow. The margin of 25% is a
-number that USS adds, to allow for differences between machines.
+number that USS adds, to allow for differences between machines of the same
+kind. A time from another kind of machine, or from a cold run against a warm
+one, says nothing about the checks.
 
 ## Guides
 
