@@ -43,7 +43,7 @@ facts:
   # Does it send usage or diagnostic data to the project or a third party?
   # Answer this. false is not a default.
   collects-telemetry: false
-  # Does it keep data across restarts?
+  # Does it keep data that it needs again after a restart?
   # Answer this. false is not a default.
   stores-persistent-data: false
   # Does it store data about its users or created by them?
@@ -115,7 +115,8 @@ facts:
   # Is it a tool that software developers use in their work?
   # Answer this. false is not a default.
   is-developer-tool: false
-  # Is it released as an installable package or binary?
+  # Is it released as a package, a binary, a chart, or a plugin or extension
+  # of another tool?
   # Answer this. false is not a default.
   distributed-as-package: false
   # Does it publish versioned releases?

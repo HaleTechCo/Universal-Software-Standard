@@ -38,7 +38,7 @@ facts:
   uses-network: false
   # Does it send usage or diagnostic data to the project or a third party?
   collects-telemetry: false
-  # Does it keep data across restarts?
+  # Does it keep data that it needs again after a restart?
   stores-persistent-data: false
   # Does it store data about its users or created by them?
   stores-user-data: false
@@ -86,7 +86,8 @@ facts:
   is-library: false
   # Is it a tool that software developers use in their work?
   is-developer-tool: true
-  # Is it released as an installable package or binary?
+  # Is it released as a package, a binary, a chart, or a plugin or extension
+  # of another tool?
   distributed-as-package: true
   # Does it publish versioned releases?
   publishes-releases: true

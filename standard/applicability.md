@@ -35,8 +35,8 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 
 ### stores-persistent-data
 
-- **Question:** Does it keep data across restarts?
-- **Definition:** Yes when data it writes is still there after it stops and starts again.
+- **Question:** Does it keep data that it needs again after a restart?
+- **Definition:** Yes when it writes data that it, or a later version of it, reads back after it stops and starts again, as its own state or as its users' data, such as a database, a data directory, uploaded files, keys, or saved settings. Output that it only hands to people or to other programs, such as reports, logs, build outputs and exported files, does not count, and neither does a cache that it can rebuild.
 
 ### stores-user-data
 
@@ -166,8 +166,8 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 
 ### distributed-as-package
 
-- **Question:** Is it released as an installable package or binary?
-- **Definition:** Yes when it is released as a package or a binary that people install.
+- **Question:** Is it released as a package, a binary, a chart, or a plugin or extension of another tool?
+- **Definition:** Yes when it is released as something that people install or that another tool fetches or loads: a package in a registry (such as crates.io, npm, PyPI or Maven Central), a library module that others fetch, a binary, a Helm chart, or a plugin, extension or action for another tool (such as a Claude Code plugin, a VS Code extension or a GitHub Action). A container image alone does not count: `ships-container-image` covers it.
 - **Implies:** publishes-releases
 
 ### publishes-releases
