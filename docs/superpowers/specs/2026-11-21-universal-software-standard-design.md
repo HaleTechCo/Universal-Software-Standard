@@ -711,11 +711,18 @@ time, each with its score category, answered in one reply per area.
    SHOULDs the developer chose to comply with; in batches by area; each fix
    verified before its result changes to `pass`; report updated as it goes.
 
-**Before the first release.** Every new project meets this: a rule whose Verify
-judges each release passes with the evidence "no release yet"; a rule that
-needs a published artifact (binaries, an SBOM, signatures, provenance) fails; a
-document about a release waits for the release; a document that does not depend
-on a release is examined now.
+**Before the first release.** Every new project meets this. A rule whose Verify
+judges a release then has no release to examine. The audit judges the release
+process at the audited commit in its place: the CI workflow or the documented
+steps that build and publish a release. The rule passes when the process makes
+what the rule requires, such as binaries, an SBOM, signatures, provenance or a
+notices file. It fails when the process does not, or when no release process
+exists. Documents, such as the rebuild steps, the instructions to verify
+signatures and the definition of the public API, are examined now. A Verify
+that compares with a published artifact uses a substitute that the evidence
+names, such as two builds from the audited commit with equal checksums. The
+release audit runs before the tag, so only this reading lets a first release
+audit pass.
 
 ### 8.3 Audits at any time, and at every release
 

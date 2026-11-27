@@ -267,16 +267,18 @@ in `USS-SEC-013`.
 15. If the audited commit has no CI run of its own, also run the check on the
     audited commit. Give both results in the evidence.
 16. Before the first release, some Verify texts have no release to examine.
-    Show with a command that no release exists, such as `git tag`. Then use
-    these rules:
-    - If the rule requires a release to publish something, such as binaries,
-      an SBOM, signatures or provenance, write `fail`.
-    - If the rule only says what each release or artifact must be, write
-      `pass`. Give the evidence "no release yet", and the command.
-    - Treat a document about a release as part of the release. Examples are
-      the steps to rebuild release artifacts, and release notes.
-    - Examine a document that does not depend on a release now, such as the
-      definition of the public API. Combine the results of the parts.
+    Show with a command that no release exists, such as `git tag`. Then
+    judge the release process at the audited commit in place of the release.
+    The release process is the CI workflow or the documented steps that build
+    and publish a release.
+    - If the process makes what the rule requires, write `pass`. Examples are
+      binaries, an SBOM, signatures, provenance and a notices file.
+    - If it does not, or the project has no release process, write `fail`.
+    - Examine each document now. Examples are the rebuild steps, the
+      instructions to verify signatures and the definition of the public API.
+    - If the Verify compares with a published artifact, use a substitute. For
+      example, build twice from the audited commit. Compare the checksums.
+      Name the substitute in the evidence.
 17. Save the results file after each area, so that a stopped audit can
     continue.
 18. Add each suppression in the checks of the project to `suppressions`, with
