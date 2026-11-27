@@ -435,6 +435,10 @@ An audit gives each applicable rule exactly one outcome:
   `file:line`, a configuration key or a CI job.
 - An auditor that cannot decide a rule MUST record `unverified`. It MUST NOT
   guess.
+- A Verify can judge each item of a set, such as each budget, each signed
+  artifact or each closed report. When the set is empty, the rule is `pass`,
+  unless the Verify says otherwise. The rule that requires the set judges its
+  absence.
 - An applicable rule with no result is `unverified`. The one exception is an
   applicable MAY rule that the record declines: with no result, it is
   `declined`.

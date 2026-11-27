@@ -44,6 +44,8 @@ users feel the sum of the steps.
   percentage against a baseline), and the job fails the build when the result is
   beyond it. That a failed job blocks the merge is judged by USS-SUP-008, not
   here. A job that only records the numbers, or a measure with no job, fails.
+  A project with no budgeted measure has nothing to judge here; USS-PRF-001
+  judges the missing budget.
 - **References:** web.dev, Incorporate performance budgets into your build
   process (read 2026-11-24)
 
@@ -106,23 +108,26 @@ nobody forecast.
 - **Level:** MUST NOT
 - **Applies when:** has-ui or has-cli or is-network-service
 - **Category:** Efficiency
-- **Verify:** Run the software idle, with nothing to do, for 60 seconds
-  after start-up, and measure the process's processor time: it stays below 1
-  percent of one core. Also search the code for loops whose body checks a
-  condition and repeats, with no call that blocks (no wait on an event, a
-  lock, a socket or a timer): each is a finding. A loop that waits on an event
-  or a timer between checks passes. A process that uses a core at rest, or such
-  a loop, fails.
+- **Verify:** Start the software and wait until start-up ends (it reports
+  ready, or 30 seconds pass). Then measure its processor time for 5 minutes,
+  with nothing to do: it stays below 1 percent of one core. Also search the
+  code for loops whose body checks a condition and repeats, with no call that
+  blocks (no wait on an event, a lock, a socket or a timer): each is a
+  finding. A loop that waits on an event or a timer between checks passes. A
+  process that uses a core at rest, or such a loop, fails.
 - **References:** Apple, Energy Efficiency Guide for iOS Apps, Minimize Timer
-  Use (read 2026-11-24)
+  Use (read 2026-11-24); Microsoft Learn, Power consumption improvements and
+  Windows Application Performance (read 2026-11-27)
 
 The software MUST NOT wait in a loop that uses CPU while it has nothing to do;
 when idle, it waits on events or timers.
 
 **Rationale:** A spinning loop wastes energy, heats a laptop, drains a battery
 and takes processor time from other programs, for no work. Waiting on an event
-costs nothing until the event comes. The limit of 1 percent of one core over 60
-seconds is a number that USS adds, to make "idle" measurable.
+costs nothing until the event comes. The limit of 1 percent of one core is a
+number that USS adds, to make "idle" measurable. The window of 5 minutes after
+start-up follows Microsoft's idle test: it leaves out the work of start-up, and
+it catches a timer that fires every few minutes.
 
 ### USS-PRF-006: Measure carbon intensity
 
