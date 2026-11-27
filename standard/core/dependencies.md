@@ -180,9 +180,11 @@ attack and to keep updated, and it brings its own vulnerabilities.
   line is end-of-life at the audit date. A dependency fails only on evidence
   of end-of-life: an end-of-life date from its supplier that has passed, a
   deprecation or archive notice for the package or its release line, or a
-  registry or scanner flag that marks it as end-of-life or unmaintained. The
-  absence of a published support policy is not such evidence, so on its own it
-  leads to neither `fail` nor `unverified`.
+  registry or scanner flag that marks it as end-of-life or unmaintained. A
+  deprecation or archive notice that also says that the supplier still ships
+  security fixes for the release line is not such evidence. The absence of a
+  published support policy is not such evidence, so on its own it leads to
+  neither `fail` nor `unverified`.
 - **References:** CWE-1104; NIST SP 800-218 (SSDF 1.1) PW.4.4 (notional
   example on checking that a component is maintained and has not reached end
   of life)
@@ -192,7 +194,8 @@ end-of-life when evidence shows that its release line (the major or minor
 series, as the supplier defines it) no longer receives security fixes: an
 end-of-life date from the supplier that has passed, a deprecation or archive
 notice, or a registry or scanner flag that marks it as end-of-life or
-unmaintained.
+unmaintained. A notice that says that the supplier still ships security fixes
+for the release line does not make it end-of-life.
 
 **Rationale:** A flaw found in a version that is not fixed stays in every
 project that uses it.
