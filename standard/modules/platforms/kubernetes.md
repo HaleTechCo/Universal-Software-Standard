@@ -217,14 +217,14 @@ packaged dependency charts under `charts/`, and USS-DEP-002 judges that part.
 
 A Pod that does not call the Kubernetes API MUST NOT leave token mounting to
 its ServiceAccount: its own Pod spec sets `automountServiceAccountToken: false`.
-The Pod spec's value wins over the ServiceAccount's, and an unset value mounts
-the token.
+The Pod spec's value wins over the ServiceAccount's. An unset value leaves the
+choice to the ServiceAccount, whose default mounts the token.
 
-**Rationale:** A ServiceAccount's setting can change without the workload
-changing, and a Pod that sets nothing mounts a token. The setting on the Pod
-spec keeps the token away from a workload that has no use for it, whatever its
-ServiceAccount says. This rule is deliberately stricter than USS-HRD-008, which
-also accepts the setting on the ServiceAccount.
+**Rationale:** This rule is deliberately stricter than USS-HRD-008, which also
+accepts the setting on the ServiceAccount. A ServiceAccount can be shared with
+other workloads or created outside the chart, and its setting can change
+without the workload changing. The setting on the Pod spec keeps the token away
+from a workload that has no use for it, whatever its ServiceAccount says.
 
 ### USS-K8S-008: Ship a default-deny network policy
 
