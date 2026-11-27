@@ -131,6 +131,7 @@ decisions:
   USS-DST-007: { adopt: false }
   USS-DST-008: { adopt: true }
   USS-EXT-001: { adopt: false }
+  USS-I18N-006: { adopt: false }
 
 # One entry for every approved Standard Deviation, each written from
 # templates/standard-deviation.md. Form:

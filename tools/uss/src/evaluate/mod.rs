@@ -111,6 +111,20 @@ mod tests {
         assert!(ids(&a).contains(&"USS-SEC-003".to_string()));
     }
 
+    /// USS-I18N-006 applies to a command-line tool as well as to a UI, and
+    /// adopting it enables `offers-multiple-languages`.
+    #[test]
+    fn i18n_006_covers_the_command_line() {
+        let c = load(&Embedded).unwrap();
+        let cli = record("facts: { has-cli: true }\n");
+        assert!(ids(&applicable(&c, &cli)).contains(&"USS-I18N-006".to_string()));
+        assert!(!resolve_facts(&c, &cli).contains("offers-multiple-languages"));
+
+        let adopted =
+            record("facts: { has-cli: true }\ndecisions: { USS-I18N-006: { adopt: true } }\n");
+        assert!(resolve_facts(&c, &adopted).contains("offers-multiple-languages"));
+    }
+
     /// The light floor of spec §6.4: the shipped record template, whose
     /// facts are all false, is the smallest project. The spec's budget is at
     /// most a quarter of the core rules by the 0.1.0 release. The first

@@ -259,3 +259,8 @@ Some facts imply others. If a fact is yes, every fact it implies is also yes.
 
 - **Enabled by:** USS-EXT-008
 - **Definition:** Yes when the project adopts USS-EXT-008: the project runs or ships a marketplace through which users find and install plugins.
+
+### offers-multiple-languages
+
+- **Enabled by:** USS-I18N-006
+- **Definition:** Yes when the project adopts USS-I18N-006: its user interface or command line is available in at least two languages.

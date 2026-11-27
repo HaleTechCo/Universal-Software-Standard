@@ -135,21 +135,23 @@ the instant exactly, and every common language reads it.
 ### USS-I18N-006: Offer more than one language
 
 - **Level:** MAY
-- **Applies when:** has-ui
+- **Applies when:** has-ui or has-cli
 - **Category:** Accessibility & Usability
-- **Verify:** Adopting this rule means that the UI is available in at least two
-  languages. The project lists its languages (in the documentation, or as the
-  language files that it ships), and the user can use each one (by the system
-  language or by a setting). For each listed language, open the screens of the
-  main workflows (those that the user documentation describes): their text is
-  in that language. A listed language that shows the text of another language
-  on those screens fails, and so does a project that adopts the rule and lists
-  fewer than two languages.
+- **Enables:** offers-multiple-languages
+- **Verify:** Adopting this rule means that the UI or the command line is
+  available in at least two languages. The project lists its languages (in
+  the documentation, or as the language files that it ships). The user can
+  use each one, by the system language or by a setting. For each listed
+  language, open the screens of the main workflows, or run the documented
+  commands: their text is in that language. A listed language that shows the
+  text of another language there fails. A project that adopts the rule and
+  lists fewer than two languages fails.
 - **References:** W3C Internationalization, Localization vs.
   Internationalization (read 2026-11-24)
 
-The user interface MAY be available in more than one language.
+The user interface or the command line MAY be available in more than one
+language.
 
-**Rationale:** Most people use software best in the language they think in. The
-rule on keeping text out of code (USS-I18N-002) is what makes a second
+**Rationale:** Most people use software best in the language they think in.
+The rule on keeping text out of code (USS-I18N-002) is what makes a second
 language a matter of a new file and not of a new version.
