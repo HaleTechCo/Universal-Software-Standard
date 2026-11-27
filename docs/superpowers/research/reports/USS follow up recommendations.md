@@ -42,7 +42,7 @@ release audit can pass.
 | 6 | Changes of meaning before 0.1.0 | Make them now, in place (list below). | Rule changes without retired IDs. | M |
 
 A history rewrite changes the SHA of every commit. The audited commit of
-`.uss/audits/2026-11-25.yaml` (51435cb) then no longer exists, so the self-audit
+`.uss/audits/2026-11-25.yaml` (9e57b95) then no longer exists, so the self-audit
 runs again; the four worktree branches go first (section 5); and `main` is
 force-pushed, which is safe only while the repository is private and has no
 forks. Accepting the address costs nothing now but cannot be withdrawn later,
@@ -345,7 +345,7 @@ settings. **Reason.** Conventional Commits ties `fix` to "a bug fix for your
 application" ([Conventional
 Commits](https://www.conventionalcommits.org/en/v1.0.0/)), and for USS the rule
 text is the product, so relabelling prose fixes as `docs` would misstate
-PATCH-level changes. Of the 71 `fix` commits up to 51435cb, 22 change Rust code,
+PATCH-level changes. Of the 71 `fix` commits up to 9e57b95, 22 change Rust code,
 47 change only Markdown (4 of them change fields that `uss` reads) and 2 change
 other files; the change removes 43 of the 49 failures, and the remaining 6 need
 a test or a truthful type. **Effort** S. **Alternatives:** relabel only (wrong

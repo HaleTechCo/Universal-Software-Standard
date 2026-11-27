@@ -3,7 +3,7 @@
 Scope: `docs/superpowers/follow-ups.md` section 2.5 (R1 to R10, the three
 "other readings", the collapsed Plan 3 and Plan 4 rulings), section 3, section
 4.7, section 5, and USS-DEP-006 from section 2.3. Repository state: `main` at
-42c3280; audit `.uss/audits/2026-11-25.yaml` of commit 51435cb. All web and
+dd5ab83; audit `.uss/audits/2026-11-25.yaml` of commit 9e57b95. All web and
 API sources were read on 2026-11-25. Repository links are relative to this
 file. Nothing in the repository was changed except this file; experiments ran
 in a scratch copy outside the repository.
@@ -34,7 +34,7 @@ it only hands over.
   `publishes-releases`), BAK-006 to BAK-013 (with `operates-service`), the
   whole DAT area (area-level `Applies when`), I18N-001 (as one of four
   alternatives), I18N-004, PRV-003, RES-006, TST-007, PG-001 to PG-003, and
-  CRA-009 — `grep -rn stores-persistent-data standard` at 42c3280;
+  CRA-009 — `grep -rn stores-persistent-data standard` at dd5ab83;
   [standard/core/data.md:5](../../../../../standard/core/data.md)
 - Experiment: copied `.uss/record.yaml` to a scratch directory (with
   `audits: []`), set `stores-persistent-data: true`, and ran
@@ -172,7 +172,7 @@ general "finished crate" exemption.
 - `cargo tree --offline -i nohash-hasher`: only through serde-saphyr 2.2.0.
   `cargo tree --offline -i cfg-if`: through ahash 0.8.12, encoding_rs 0.8.44,
   **getrandom 0.3.4, getrandom 0.4.3 (via tempfile) and parking_lot_core
-  0.9.12** — local run at 42c3280. The audit evidence names only ahash and
+  0.9.12** — local run at dd5ab83. The audit evidence names only ahash and
   encoding_rs, so it under-reports the paths.
 - serde-saphyr pulls nohash-hasher only through its `serialize` feature:
   `serialize = ["dep:base64", "dep:num-traits", "dep:zmij", "dep:nohash-hasher"]`,
@@ -292,14 +292,14 @@ PATCH-level fixes. A test is possible only where a program acts on the change.
 - Keep a Changelog 1.1.0: "Fixed for any bug fixes" — [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/)
 - Standard versioning: PATCH = "wording, references or verification text with
   no normative change" — [standard/conventions.md:553-577](../../../../../standard/conventions.md)
-- History at 42c3280 (149 commits): `fix` 71 (`fix(standard)` 49, `fix(uss)`
+- History at dd5ab83 (149 commits): `fix` 71 (`fix(standard)` 49, `fix(uss)`
   8, bare `fix` 7, others 7), `feat` 41, `docs` 22, `chore` 9, `test` 2,
   `style`, `refactor`, `ci`, `build` 1 each — local `git log --format=%s`
-- Of the 71 `fix` commits up to 51435cb: 22 change a `.rs` file; 47 change only
-  Markdown; 2 change other files (d726138 `Cargo.toml`, 484209a
+- Of the 71 `fix` commits up to 9e57b95: 22 change a `.rs` file; 47 change only
+  Markdown; 2 change other files (4af78a6 `Cargo.toml`, 045c4a6
   `.github/workflows/ci.yml`). Of the 47, 4 change fields that `uss` reads
-  (`Level`, `Applies when`, `Refines` and so on): f759fc9, 3757de9, baebc97,
-  5ed257a — local `git show` classification
+  (`Level`, `Applies when`, `Refines` and so on): 0553250, 7fbb295, f3c9ce0,
+  5a10f89 — local `git show` classification
 - Audit result: 49 of 71 fix commits change no test, so TST-003 fails —
   [.uss/audits/2026-11-25.yaml](../../../../../.uss/audits/2026-11-25.yaml) (USS-TST-003)
 
@@ -319,12 +319,12 @@ PATCH-level fixes. A test is possible only where a program acts on the change.
   "Conventions"): use `fix` for a fix to code or to rule fields that `uss`
   reads, with its test in the same commit; `fix(standard)` for prose-only rule
   fixes (left out by the new Verify); `docs` for documents outside the
-  product; `ci` and `build` for CI and build settings (484209a and d726138
+  product; `ci` and `build` for CI and build settings (045c4a6 and 4af78a6
   would then not be labelled as bug fixes).
 - **Effect on this repository.** With the change, 43 of the 49 failing
   commits (the prose-only ones) leave the count. The 4 field changes and the
   2 configuration fixes stay (they need a test or a truthful type). The next audit's window starts
-  after 51435cb anyway.
+  after 9e57b95 anyway.
 - **Effect on other projects.** Projects that label typo fixes `fix` stop
   failing a MUST for them. Code fixes are judged as before; the auditor reads
   the diff, so a code fix cannot hide behind the label.
@@ -739,7 +739,7 @@ an untested minimum.** Neither flag reverses a ruling.
 - The other rule texts read for this list: QLT-006/007/008/012, TRU-001/004,
   REL-001/007, OPS-002, AUD-004/006, DAT-005, EXT-002, HRD-003, SAF-001,
   SEC-028, GO-006/010, RUST-010, SUP-005, TS-004/015, JAVA-001, REACT-004/005 —
-  `standard/core/*.md`, `standard/modules/**/*.md` at 42c3280
+  `standard/core/*.md`, `standard/modules/**/*.md` at dd5ab83
 
 ### Inferences
 Plan 3:
@@ -810,8 +810,8 @@ then unlock, remove without `--force`, and delete each branch with `-d`.** All
 four are clean, fully merged into `main`, and hold about 8.9 GB of build output.
 
 ### Cited Findings
-- `git worktree list --porcelain`: the four worktrees at 9a07f2d, d8eb4ae,
-  f414a61 and 42c3280, each `locked claude session <name> (pid 14180)` — local
+- `git worktree list --porcelain`: the four worktrees at 3d01e50, d430097,
+  efe7e95 and dd5ab83, each `locked claude session <name> (pid 14180)` — local
   run, 2026-11-25
 - `tasklist /FI "PID eq 14180"`: `claude.exe` is running (pid 14180) — local
   run, 2026-11-25. The project instructions loaded in this session come from

@@ -26,10 +26,10 @@ rule. The three calibrated areas (`standard/core/security.md`,
 `supply-chain.md`, `dependencies.md`) are the model for tone, Verify text and
 references: read one of them before writing.
 
-**Roadmap:** Plans 1 and 2 are merged and pushed (`main` at 9a07f2d). This is
+**Roadmap:** Plans 1 and 2 are merged and pushed (`main` at 3d01e50). This is
 Plan 3. Plan 4 adds the modules, the vendor profiles (OpenSSF Scorecard among
 them: recover its coverage notes with
-`git show 5ed257a:standard/core/supply-chain.md`), the regulation modules (the
+`git show 5a10f89:standard/core/supply-chain.md`), the regulation modules (the
 CRA module adds the SBOM duty) and validator support for them. Plan 5 adds the
 AGENTS.md workflows, the skills and this repo's self-audit, then releases
 0.1.0.

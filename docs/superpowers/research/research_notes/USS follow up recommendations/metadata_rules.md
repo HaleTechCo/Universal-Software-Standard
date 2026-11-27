@@ -4,7 +4,7 @@ Research for the `todo.txt` item "metadata": "there should be MUST for
 certain metadata (like what the parent tool/marketplace requires) and SHOULDs
 for anything that increases compatibility/QoL". Every web source below was
 read on 2026-11-25 unless a line says otherwise. Repository files were read at
-commit 42c3280 on `main`. Paths to repository files are relative to the
+commit dd5ab83 on `main`. Paths to repository files are relative to the
 repository root.
 
 ## Q1. What does USS already require about metadata, and where would a new rule overlap?

@@ -9,7 +9,7 @@ three subjects:
 - (C) Translations of USS itself: the standard, the workflows, the messages
   of `uss` and the report.
 
-Repository state read: `main` at `42c3280` (2026-11-25). Every web source
+Repository state read: `main` at `dd5ab83` (2026-11-25). Every web source
 below was read on 2026-11-25 unless the note says otherwise. Nothing in the
 repository was changed except this file.
 

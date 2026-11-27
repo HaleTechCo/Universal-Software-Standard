@@ -29,8 +29,8 @@ rulebook is `standard/conventions.md`: sections 5 (applicability), 8
 (compliance and scores), 9 (Standard Deviations) and 11 (records, results,
 reports, components, release audits).
 
-**Roadmap:** Plans 1–4 are merged into local `main` (f414a61). Plans 1–3 are
-pushed (`origin/main` is d8eb4ae); the Plan 4 commits are not. This is Plan 5
+**Roadmap:** Plans 1–4 are merged into local `main` (efe7e95). Plans 1–3 are
+pushed (`origin/main` is d430097); the Plan 4 commits are not. This is Plan 5
 without its last step: the user tries USS on one of their own repositories
 and makes changes first. A later release plan cuts 0.1.0; Task 11 writes its
 list.

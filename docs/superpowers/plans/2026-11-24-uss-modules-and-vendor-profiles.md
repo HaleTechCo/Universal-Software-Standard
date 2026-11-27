@@ -24,7 +24,7 @@ modules, §9 validator, §12 left to the builder). The normative rulebook is
 `standard/conventions.md`: read sections 1–7 before writing a rule, and the
 sections that Task 3 adds before writing a profile or a regulation module.
 
-**Roadmap:** Plans 1–3 are merged into local `main` (d8eb4ae; Plan 3 is not
+**Roadmap:** Plans 1–3 are merged into local `main` (d430097; Plan 3 is not
 pushed yet). This is Plan 4. Plan 5 adds the AGENTS.md workflows, the Claude
 skills and this repository's self-audit, then releases 0.1.0.
 
@@ -1012,7 +1012,7 @@ Cite: React documentation (version): Rules of Hooks, `StrictMode`,
 `feat(standard): add the OpenSSF Scorecard profile`.
 
 Recover the coverage notes that Plan 2 cut from the Supply chain Verify
-texts: `git show 5ed257a:standard/core/supply-chain.md`, rules draft SUP-004
+texts: `git show 5a10f89:standard/core/supply-chain.md`, rules draft SUP-004
 to SUP-013 (lines 78–295). Draft SUP-0NN is today's SUP-0(NN−1): draft
 SUP-004 is USS-SUP-003, and draft SUP-013 is USS-SUP-012.
 

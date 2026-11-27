@@ -779,7 +779,7 @@ Expected: `cargo build -p uss` succeeds.
   containing `colour`; `has-ui: "yes"` → `/facts/has-ui`; decision key
   `SEC-1` → `/decisions`; deviation without `approved-by` → `/deviations/0`;
   `date: 21/11/2026` → `/deviations/0/date`.
-- `results_valid`; `results_errors`: commit `1ab35de` → `/commit`; result
+- `results_valid`; `results_errors`: commit `357efdd` → `/commit`; result
   `passed` → `/results/USS-SEC-001/result`; `pass` without evidence →
   `/results/USS-SEC-001`.
 - `latest_audit_tie_takes_later`.

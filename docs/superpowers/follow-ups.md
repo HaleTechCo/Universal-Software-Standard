@@ -1,7 +1,7 @@
 # USS follow-ups
 
 This file lists all the open work after Plan 5. On 2026-11-25, `main` is
-at 42c3280 and is pushed. USS 0.1.0 is not released yet.
+at dd5ab83 and is pushed. USS 0.1.0 is not released yet.
 
 The recommendation for each item is in
 [USS follow up recommendations](<research/reports/USS follow up recommendations.md>),
@@ -12,7 +12,7 @@ questions about the standard, the release plan, housekeeping, then later
 work.
 
 This repository's own audit (`.uss/audits/2026-11-25.md`, audited commit
-51435cb) says:
+9e57b95) says:
 
 > Not compliant with USS 0.1.0 as of 2026-11-25: 23 MUST failures, 17 SHOULD
 > failures, 2 unverified rules.
