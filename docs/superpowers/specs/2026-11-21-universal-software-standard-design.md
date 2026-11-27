@@ -869,8 +869,9 @@ ASD-STE100. It is the first audit target and the reference example.
 - Repository: `HaleTechCo/Universal-Software-Standard` on GitHub, private for
   now, default branch `main`.
 - Development machine is Windows; everything must also work on Linux and macOS.
-- `Initial_Idea.md` and `todo.txt` are source material and stay untouched; the
-  user decides what happens to them.
+- `Initial_Idea.md` and `todo.txt` are source material and the maintainer's
+  local notes. They stay untouched and out of the repository: Git ignores
+  them.
 
 ## 11. Later (not v1)
 

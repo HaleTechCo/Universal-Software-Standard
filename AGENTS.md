@@ -461,7 +461,8 @@ templates and the `uss` tool.
 - Do not reuse or renumber a rule ID. A new rule takes the next free number at
   the end of its file.
 - Keep the version at 0.1.0 until the first release.
-- Do not change `Initial_Idea.md` or `todo.txt`.
+- Do not change `Initial_Idea.md` or `todo.txt`. They are the maintainer's
+  local notes, and Git ignores them.
 - Write commit messages as `type(scope): summary`, as in `git log`.
 - Write steps in the ASD-STE100 style (USS-DOC-007). Use one instruction in
   each sentence, the imperative and the active voice. Use at most 20 words in
